@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                  String           @id @default(cuid())
+  name                String?
+  email               String           @unique
+  phone               String?
+  password            String?
+  role                UserRole         @default(CUSTOMER)
+
+  emailVerified       DateTime?
+  failedLoginAttempts Int              @default(0)
+  lockedUntil         DateTime?
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  bookings            Booking[]
+  cargoRequests       CargoRequest[]
+  charterRequests     CharterRequest[]
+}
+
+
+model Booking {
+  id                      String        @id @default(cuid())
+  tripType                TripType      @default(ROUND_TRIP)
+  departureDate           DateTime
+  returnDate              DateTime?
+  passengersCount         Int
+  customerName            String
+  customerEmail           String
+  customerPhone           String?
+  airlineName             String?
+  flightNumber            String?
+  flightOfferId           String?
+  totalAmount             Decimal?      @db.Decimal(10, 2)
+  currency                String        @default("USD")
+  status                  BookingStatus @default(DRAFT)
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  airlineCode             String?
+  baseFare                Decimal?      @db.Decimal(10, 2)
+  bookingCode             String        @unique
+  destinationCity         String?
+  destinationCode         String
+  originCity              String?
+  originCode              String
+  paymentStatus           PaymentStatus @default(PENDING)
+  provider                String        @default("DUFFEL")
+  serviceFee              Decimal?      @db.Decimal(10, 2)
+  stripeCheckoutSessionId String?
+  stripePaymentIntentId   String?
+  taxes                   Decimal?      @db.Decimal(10, 2)
+  userId                  String?
+  user                    User?         @relation(fields: [userId], references: [id])
+  passengers              Passenger[]
+  payments                Payment[]
+}
+
+model Passenger {
+  id              String    @id @default(cuid())
+  bookingId       String
+  firstName       String
+  lastName        String
+  dateOfBirth     DateTime?
+  nationality     String?
+  passportNumber  String?
+  passportExpiry  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  gender          String?
+  middleName      String?
+  passportCountry String?
+  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  bookingId   String
+  amount      Decimal       @db.Decimal(10, 2)
+  currency    String        @default("USD")
+  status      PaymentStatus @default(PENDING)
+  provider    String        @default("STRIPE")
+  providerRef String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  booking     Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model CargoRequest {
+  id             String        @id @default(cuid())
+  fullName       String
+  email          String
+  phone          String
+  fromCity       String
+  toCity         String
+  description    String
+  status         RequestStatus @default(NEW)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  adminNotes     String?
+  cargoType      CargoType     @default(OTHER)
+  dimensions     String?
+  estimatedValue Decimal?      @db.Decimal(10, 2)
+  fromAddress    String?
+  preferredDate  DateTime?
+  requestCode    String        @unique
+  toAddress      String?
+  userId         String?
+  weight         Decimal?      @db.Decimal(10, 2)
+  user           User?         @relation(fields: [userId], references: [id])
+}
+
+model CharterRequest {
+  id              String        @id @default(cuid())
+  fullName        String
+  email           String
+  phone           String
+  message         String?
+  status          RequestStatus @default(NEW)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  adminNotes      String?
+  aircraftType    String?
+  budgetRange     String?
+  departureCity   String
+  departureDate   DateTime
+  destinationCity String
+  passengersCount Int
+  requestCode     String        @unique
+  returnDate      DateTime?
+  userId          String?
+  user            User?         @relation(fields: [userId], references: [id])
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  fullName  String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  STAFF
+}
+
+enum TripType {
+  ONE_WAY
+  ROUND_TRIP
+  MULTI_CITY
+}
+
+enum BookingStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAID
+  CONFIRMED
+  TICKETED
+  CANCELLED
+  REFUNDED
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum RequestStatus {
+  NEW
+  CONTACTED
+  QUOTED
+  CLOSED
+  IN_REVIEW
+  ACCEPTED
+  CANCELLED
+}
+
+enum CargoType {
+  DOCUMENTS
+  BOX
+  BARREL
+  PALLET
+  OTHER
+}

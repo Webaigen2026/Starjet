@@ -8,10 +8,12 @@ export default function CargoPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
-    setSuccess(false);
 
-    const formData = new FormData(event.currentTarget);
+const form = event.currentTarget;
+const formData = new FormData(form);
+
+setLoading(true);
+setSuccess(false);
 
     const payload = {
       fullName: formData.get("fullName"),
@@ -39,7 +41,7 @@ export default function CargoPage() {
 
     if (response.ok) {
       setSuccess(true);
-      event.currentTarget.reset();
+      form.reset();
     }
 
     setLoading(false);

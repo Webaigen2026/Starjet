@@ -6,39 +6,35 @@ import { useState } from "react";
 export default function PassengersPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-
   const [loading, setLoading] = useState(false);
 
-  const airline = searchParams.get("airline") || "Selected Flight";
+  const flightId = searchParams.get("flightId") || "";
+  const airline = searchParams.get("airline") || "SkyBridge Air";
   const originCode = searchParams.get("originCode") || "";
   const destinationCode = searchParams.get("destinationCode") || "";
   const departureDate = searchParams.get("departureDate") || "";
   const returnDate = searchParams.get("returnDate") || "";
   const passengersCount = searchParams.get("passengersCount") || "1";
-  const price = searchParams.get("price") || "485";
+  const price = searchParams.get("price") || "0";
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-
+    const formData = new FormData(event.currentTarget);
     setLoading(true);
 
     const payload = {
+      flightId,
       customerName: `${formData.get("firstName")} ${formData.get("lastName")}`,
       customerEmail: formData.get("customerEmail"),
       customerPhone: formData.get("customerPhone"),
-
       originCode,
       destinationCode,
       departureDate,
       returnDate,
       passengersCount,
-
       airlineName: airline,
       totalAmount: price,
-
       firstName: formData.get("firstName"),
       lastName: formData.get("lastName"),
       dateOfBirth: formData.get("dateOfBirth"),
@@ -58,57 +54,74 @@ export default function PassengersPage() {
     });
 
     const data = await response.json();
+    setLoading(false);
 
     if (response.ok) {
       router.push(`/checkout?bookingId=${data.data.id}`);
     } else {
       alert(data.message || "Failed to create booking");
     }
-
-    setLoading(false);
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-16">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-10">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-blue-700">
+    <main className="min-h-screen bg-slate-50 px-6 py-12">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8">
+          <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
             Passenger Details
           </p>
 
-          <h1 className="text-4xl font-bold tracking-tight text-slate-950">
+          <h1 className="mt-3 text-4xl font-bold text-slate-950">
             Enter Traveler Information
           </h1>
 
-          <p className="mt-4 max-w-2xl text-slate-600">
-            Review your selected flight and enter passenger details before
-            continuing to checkout.
+          <p className="mt-3 text-slate-600">
+            Enter passenger details exactly as shown on the travel document.
           </p>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm lg:col-span-2">
-            <h2 className="text-2xl font-bold text-slate-950">Passenger 1</h2>
+        <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <h2 className="text-2xl font-bold text-slate-950">
+              Passenger 1
+            </h2>
 
-            <form onSubmit={handleSubmit} className="mt-6 grid gap-6 md:grid-cols-2">
-              <input name="firstName" required placeholder="First Name" className="rounded-xl border border-slate-300 px-4 py-3" />
-              <input name="lastName" required placeholder="Last Name" className="rounded-xl border border-slate-300 px-4 py-3" />
+            <form
+              onSubmit={handleSubmit}
+              className="mt-6 grid gap-5 md:grid-cols-2"
+            >
+              <Input name="firstName" label="First Name" required />
+              <Input name="lastName" label="Last Name" required />
 
-              <input name="customerEmail" type="email" required placeholder="Customer Email" className="rounded-xl border border-slate-300 px-4 py-3" />
-              <input name="customerPhone" required placeholder="Customer Phone" className="rounded-xl border border-slate-300 px-4 py-3" />
+              <Input
+                name="customerEmail"
+                label="Customer Email"
+                type="email"
+                required
+              />
 
-              <input name="dateOfBirth" type="date" className="rounded-xl border border-slate-300 px-4 py-3" />
+              <Input name="customerPhone" label="Customer Phone" required />
 
-              <select name="gender" className="rounded-xl border border-slate-300 px-4 py-3">
-                <option value="">Gender</option>
-                <option value="MALE">Male</option>
-                <option value="FEMALE">Female</option>
-              </select>
+              <Input name="dateOfBirth" label="Date of Birth" type="date" />
 
-              <input name="nationality" placeholder="Nationality" className="rounded-xl border border-slate-300 px-4 py-3" />
-              <input name="passportNumber" placeholder="Passport Number" className="rounded-xl border border-slate-300 px-4 py-3" />
-              <input name="passportCountry" placeholder="Passport Country" className="rounded-xl border border-slate-300 px-4 py-3" />
-              <input name="passportExpiry" type="date" className="rounded-xl border border-slate-300 px-4 py-3" />
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Gender
+                </label>
+                <select
+                  name="gender"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                </select>
+              </div>
+
+              <Input name="nationality" label="Nationality" />
+              <Input name="passportNumber" label="Passport Number" />
+              <Input name="passportCountry" label="Passport Country" />
+              <Input name="passportExpiry" label="Passport Expiry" type="date" />
 
               <div className="md:col-span-2">
                 <button
@@ -122,37 +135,22 @@ export default function PassengersPage() {
             </form>
           </section>
 
-          <aside className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <aside className="h-fit rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
               Trip Summary
             </p>
 
-            <h2 className="mt-3 text-2xl font-bold text-slate-950">{airline}</h2>
+            <h2 className="mt-3 text-2xl font-bold text-slate-950">
+              {airline}
+            </h2>
 
             <div className="mt-6 space-y-4 text-sm">
-              <div>
-                <p className="text-slate-500">Route</p>
-                <p className="font-semibold text-slate-950">
-                  {originCode} → {destinationCode}
-                </p>
-              </div>
+              <Summary label="Route" value={`${originCode} → ${destinationCode}`} />
+              <Summary label="Departure" value={departureDate} />
 
-              <div>
-                <p className="text-slate-500">Departure</p>
-                <p className="font-semibold text-slate-950">{departureDate}</p>
-              </div>
+              {returnDate && <Summary label="Return" value={returnDate} />}
 
-              {returnDate && (
-                <div>
-                  <p className="text-slate-500">Return</p>
-                  <p className="font-semibold text-slate-950">{returnDate}</p>
-                </div>
-              )}
-
-              <div>
-                <p className="text-slate-500">Passengers</p>
-                <p className="font-semibold text-slate-950">{passengersCount}</p>
-              </div>
+              <Summary label="Passengers" value={passengersCount} />
 
               <div className="border-t border-slate-200 pt-4">
                 <p className="text-slate-500">Total</p>
@@ -163,5 +161,40 @@ export default function PassengersPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function Input({
+  name,
+  label,
+  type = "text",
+  required = false,
+}: {
+  name: string;
+  label: string;
+  type?: string;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-slate-700">
+        {label}
+      </label>
+      <input
+        name={name}
+        type={type}
+        required={required}
+        className="w-full rounded-xl border border-slate-300 px-4 py-3"
+      />
+    </div>
+  );
+}
+
+function Summary({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-slate-500">{label}</p>
+      <p className="font-semibold text-slate-950">{value || "N/A"}</p>
+    </div>
   );
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { CargoType } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 export async function GET() {
   try {
@@ -31,7 +33,26 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    if (!body.fullName || !body.email || !body.phone || !body.fromCity || !body.toCity || !body.description) {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user || !(session.user as any).id) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized",
+        },
+        { status: 401 }
+      );
+    }
+
+    if (
+      !body.fullName ||
+      !body.email ||
+      !body.phone ||
+      !body.fromCity ||
+      !body.toCity ||
+      !body.description
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -44,6 +65,8 @@ export async function POST(request: Request) {
     const cargoRequest = await prisma.cargoRequest.create({
       data: {
         requestCode: `CG-${Date.now()}`,
+
+        userId: session?.user ? (session.user as any).id : null,
 
         fullName: body.fullName,
         email: body.email,
@@ -84,7 +107,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to create cargo request",
+        message: "Failed to create cargo requests",
       },
       { status: 500 }
     );

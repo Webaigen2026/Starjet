@@ -1,5 +1,5 @@
 import { prisma } from "../../../lib/prisma";
-import StatusUpdateForm from "@/app/api/bookings/[id]/StatusUpdateForm";
+import StatusUpdateForm from "../../../api/bookings/[id]/StatusUpdateForm";
 
 type BookingDetailsPageProps = {
   params: Promise<{

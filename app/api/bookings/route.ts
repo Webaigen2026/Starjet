@@ -36,8 +36,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const session = await getServerSession(authOptions);
-    const userId = session?.user ? (session.user as any).id : null;
-
+ 
     const booking = await prisma.booking.create({
       data: {
         bookingCode: `BK-${Date.now()}`,

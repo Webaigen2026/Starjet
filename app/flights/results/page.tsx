@@ -83,7 +83,7 @@ export default async function FlightResultsPage({
                 </p>
 
                 <h1 className="text-4xl font-black tracking-tight text-white md:text-6xl">
-                  Available SkyBridge aircraft.
+                  Available StarJet aircraft.
                 </h1>
 
                 <p className="mt-5 text-lg leading-8 text-slate-300">
@@ -206,7 +206,7 @@ function FlightCard({
           <div>
             <p className="text-slate-500">Aircraft</p>
             <p className="font-semibold text-slate-950">
-              {flight.aircraftName || "SkyBridge Aircraft"}
+              {flight.aircraftName || "StarJet Aircraft"}
             </p>
           </div>
 

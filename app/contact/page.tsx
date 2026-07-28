@@ -65,7 +65,7 @@ export default function ContactPage() {
             <div>
               <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black uppercase tracking-[0.18em] text-cyan-200">
                 <Headphones className="h-4 w-4" />
-                Contact SkyBridge
+                Contact StarJet
               </p>
 
               <h1 className="mt-4 text-4xl font-black tracking-tight text-white md:text-6xl">

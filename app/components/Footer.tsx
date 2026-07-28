@@ -18,7 +18,7 @@ export default function Footer() {
           </div>
           <div>
             <p className="text-lg font-black tracking-tight text-slate-950">
-              SkyBridge
+              StarJet
             </p>
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-slate-500">
               Air & Cargo

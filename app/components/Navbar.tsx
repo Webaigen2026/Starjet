@@ -11,7 +11,7 @@ export default function Navbar() {
           </div>
           <div>
             <p className="text-lg font-black tracking-tight text-white">
-              SkyBridge
+              StarJet
             </p>
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-200">
               Air & Cargo

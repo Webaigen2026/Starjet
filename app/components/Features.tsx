@@ -52,14 +52,14 @@ export default function Features() {
         <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div>
             <p className="text-sm font-black uppercase tracking-[0.25em] text-cyan-700">
-              SkyBridge services
+              StarJet services
             </p>
             <h2 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">
               Built for passengers, shipments, and special missions.
             </h2>
             <p className="mt-5 text-lg leading-8 text-slate-600">
               For families, operators, and businesses that need dependable air
-              movement, SkyBridge keeps the most important travel paths close at
+              movement, StarJet keeps the most important travel paths close at
               hand.
             </p>
 

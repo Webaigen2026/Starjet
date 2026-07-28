@@ -64,7 +64,7 @@ export default function HeroSearch() {
 
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200">
                 Search flights, request cargo movement, and arrange private
-                charter travel through one polished SkyBridge experience.
+                charter travel through one polished StarJet experience.
               </p>
 
               <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">

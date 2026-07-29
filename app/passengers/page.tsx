@@ -9,7 +9,7 @@ export default function PassengersPage() {
   const [loading, setLoading] = useState(false);
 
   const flightId = searchParams.get("flightId") || "";
-  const airline = searchParams.get("airline") || "SkyBridge Air";
+  const airline = searchParams.get("airline") || "StarJet Air";
   const originCode = searchParams.get("originCode") || "";
   const destinationCode = searchParams.get("destinationCode") || "";
   const departureDate = searchParams.get("departureDate") || "";

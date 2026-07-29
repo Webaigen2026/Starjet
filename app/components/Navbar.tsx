@@ -1,52 +1,62 @@
 import Link from "next/link";
+import { Menu, Plane, Search, UserRound } from "lucide-react";
 
 export default function Navbar() {
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+    <header className="sticky top-0 z-50 border-b border-white/20 bg-slate-950/90 text-white backdrop-blur-xl">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-6">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white">
-            SB
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/25">
+            <Plane className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-lg font-black tracking-tight text-slate-950">
-              SkyBridge
+            <p className="text-lg font-black tracking-tight text-white">
+              StarJet
             </p>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-slate-500">
-              Travel
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-200">
+              Air & Cargo
             </p>
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-600 md:flex">
-          <Link href="/flights" className="hover:text-slate-950">
+        <nav className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 text-sm font-semibold text-slate-200 md:flex">
+          <Link href="/flights" className="rounded-full px-4 py-2 hover:bg-white/10 hover:text-white">
             Flights
           </Link>
-          <Link href="/cargo" className="hover:text-slate-950">
+          <Link href="/cargo" className="rounded-full px-4 py-2 hover:bg-white/10 hover:text-white">
             Cargo
           </Link>
-          <Link href="/charter" className="hover:text-slate-950">
+          <Link href="/charter" className="rounded-full px-4 py-2 hover:bg-white/10 hover:text-white">
             Charter
           </Link>
-          <Link href="/support" className="hover:text-slate-950">
-            Support
+          <Link href="/contact" className="rounded-full px-4 py-2 hover:bg-white/10 hover:text-white">
+            Contact
           </Link>
         </nav>
 
         <div className="flex items-center gap-3">
           <Link
             href="/login"
-            className="hidden rounded-full px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-100 sm:inline-flex"
+            className="hidden items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold text-slate-200 hover:bg-white/10 sm:inline-flex"
           >
+            <UserRound className="h-4 w-4" />
             Sign in
           </Link>
 
           <Link
             href="/flights"
-            className="rounded-full bg-slate-950 px-5 py-2.5 text-sm font-bold text-white hover:bg-slate-800"
+            className="hidden items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-black/20 hover:bg-cyan-100 sm:inline-flex"
           >
+            <Search className="h-4 w-4" />
             Search flights
           </Link>
+
+          <button
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 md:hidden"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
         </div>
       </div>
     </header>

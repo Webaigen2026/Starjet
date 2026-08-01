@@ -17,7 +17,7 @@ const leftImages = [
 
 const rightImages = [
   {
-    src: "/airplane/stubaileyphoto-plane-6511877_1920.jpg",
+    src: "/airplane/ornaw-flight-4516478_1920.jpg",
     alt: "Night landscape viewed from above",
   },
   {
@@ -32,52 +32,71 @@ const rightImages = [
 
 export default function TravelImageWall() {
   return (
-    <div className="relative p-8  w-full max-w-full ">
-      <div className="grid grid-cols-2 gap-5 sm:gap-6 ">
-        <div className="-translate-y-10 space-y-5 sm:space-y-6 lg:-translate-y-16">
-          {leftImages.map((image) => (
-            <TravelCircle
-              key={image.src}
-              src={image.src}
-              alt={image.alt}
-            />
-          ))}
-        </div>
+    <div className="relative mx-auto w-full max-w-3xl overflow-hidden px-2  sm:px-4  lg:px-2 xl:h-full xl:max-w-none ">
+      {/* Decorative background glow */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-3/4 w-3/4 -translate-x-1/2 -translate-y-1/2 "
+      />
 
-        <div className="-translate-y-24 space-y-5 sm:space-y-6 lg:-translate-y-32">
-          {rightImages.map((image) => (
-            <TravelCircle
-              key={image.src}
-              src={image.src}
-              alt={image.alt}
-            />
-          ))}
-        </div>
+      <div className="grid grid-cols-2 items-start gap-3 min-[400px]:gap-4 sm:gap-5 lg:gap-6">
+        <ImageColumn
+          images={leftImages}
+          className=""
+        />
+
+        <ImageColumn images={rightImages} />
       </div>
     </div>
   );
 }
 
-function TravelCircle({
-  src,
-  alt,
-}) {
+function ImageColumn({ images, className = "" }) {
   return (
-    <div className="group relative mx-auto aspect-square w-32 overflow-hidden rounded-full border border-white/15 shadow-2xl shadow-slate-950/30 sm:w-40 md:w-48 lg:w-52 xl:w-56">
-    <Image
-      src={src}
-      alt={alt}
-      fill
-      sizes="(max-width: 540px) 96px,
-             (max-width: 768px) 160px,
-             (max-width: 1024px) 176px,
-             (max-width: 1280px) 192px,
-             208px"
-        
-      className="object-cover transition-transform duration-500 group-hover:scale-110"
-    />
+    <div
+      className={`flex min-w-0 flex-col gap-3 min-[400px]:gap-4 sm:gap-5 lg:gap-6 ${className}`}
+    >
+      {images.map((image, index) => (
+        <TravelCircle
+          key={image.src}
+          src={image.src}
+          alt={image.alt}
+          priority={index === 0}
+        />
+      ))}
+    </div>
+  );
+}
 
-    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent" />
-  </div>
+function TravelCircle({ src, alt, priority = false }) {
+  return (
+    <div className="group relative mx-auto aspect-square w-full max-w-[clamp(8rem,40vw,14rem)] overflow-hidden rounded-full border border-white/60 shadow-[0_18px_45px_-20px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/5">
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        priority={priority}
+        sizes="
+          (max-width: 399px) calc(50vw - 22px),
+          (max-width: 639px) calc(50vw - 32px),
+          (max-width: 1023px) 224px,
+          (max-width: 1535px) 208px,
+          224px
+        "
+        className="object-cover transition-transform duration-700 ease-out motion-safe:group-hover:scale-105"
+      />
+
+      {/* Image treatment */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+      />
+
+      {/* Subtle inner border */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-1 rounded-full border border-white/20"
+      />
+    </div>
   );
 }

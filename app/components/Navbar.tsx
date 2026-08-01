@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import ThemeToggle from "./ThemeToggle";
+import { cn } from "@/app/lib/utils";
+
 const navigation = [
   {
     label: "Flights",
@@ -34,6 +37,15 @@ const navigation = [
 export default function Navbar() {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarPath, setSidebarPath] = useState(pathname);
+
+  // Close the drawer when the route changes (render-time sync, no effect).
+  if (sidebarPath !== pathname) {
+    setSidebarPath(pathname);
+    if (sidebarOpen) {
+      setSidebarOpen(false);
+    }
+  }
 
   const isActiveRoute = (href: string) => {
     return pathname === href || pathname.startsWith(`${href}/`);
@@ -42,10 +54,6 @@ export default function Navbar() {
   const closeSidebar = () => {
     setSidebarOpen(false);
   };
-
-  useEffect(() => {
-    closeSidebar();
-  }, [pathname]);
 
   useEffect(() => {
     if (!sidebarOpen) {
@@ -71,7 +79,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-white/95  backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-border/70 bg-background/95 backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] w-full max-w-full items-center justify-between px-4 sm:px-6 lg:h-20 lg:px-10 xl:px-16">
           {/* Brand */}
           <Link
@@ -79,7 +87,7 @@ export default function Navbar() {
             aria-label="StarJet home"
             className="group flex min-w-0 items-center gap-2.5 sm:gap-3"
           >
-            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-cyan-50 transition group-hover:border-cyan-300 sm:h-12 sm:w-12">
+            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-accent-muted transition group-hover:border-accent sm:h-12 sm:w-12">
               <Image
                 src="/favicon-pack/favicon-512x512.png"
                 alt=""
@@ -91,11 +99,11 @@ export default function Navbar() {
             </div>
 
             <div className="min-w-0">
-              <p className="truncate text-base font-black tracking-tight text-slate-950 sm:text-lg">
+              <p className="truncate text-base font-bold tracking-tight text-primary sm:text-lg">
                 StarJet
               </p>
 
-              <p className="truncate text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 sm:text-xs sm:tracking-[0.25em]">
+              <p className="caption truncate uppercase text-muted">
                 Air & Cargo
               </p>
             </div>
@@ -104,7 +112,7 @@ export default function Navbar() {
           {/* Desktop navigation */}
           <nav
             aria-label="Primary navigation"
-            className="hidden items-center gap-1 rounded-full border border-slate-200 bg-slate-50 p-1 lg:flex"
+            className="hidden items-center gap-1 rounded-full border border-border bg-surface-muted p-1 lg:flex"
           >
             {navigation.map((item) => {
               const active = isActiveRoute(item.href);
@@ -114,11 +122,12 @@ export default function Navbar() {
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 xl:px-5 ${
+                  className={cn(
+                    "nav-link rounded-full px-4 py-2 transition-all duration-200 xl:px-5",
                     active
-                      ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200"
-                      : "text-slate-600 hover:bg-white hover:text-slate-950"
-                  }`}
+                      ? "bg-surface text-primary shadow-sm ring-1 ring-border"
+                      : "text-secondary hover:bg-surface hover:text-primary",
+                  )}
                 >
                   {item.label}
                 </Link>
@@ -128,9 +137,11 @@ export default function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle className="hidden lg:inline-flex" />
+
             <Link
               href="/login"
-              className="hidden items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-950 lg:inline-flex"
+              className="button-text hidden items-center gap-2 rounded-full px-4 py-2.5 text-secondary transition hover:bg-surface-muted hover:text-primary lg:inline-flex"
             >
               <UserRound className="h-4 w-4" />
               Sign in
@@ -138,7 +149,7 @@ export default function Navbar() {
 
             <Link
               href="/flights"
-              className="hidden items-center gap-2 rounded-full bg-cyan-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-400 lg:inline-flex"
+              className="button-text hidden items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-accent-foreground shadow-lg shadow-[color:var(--shadow-color)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-accent-hover lg:inline-flex"
             >
               <Search className="h-4 w-4" />
               Search flights
@@ -151,7 +162,7 @@ export default function Navbar() {
               aria-label="Open navigation menu"
               aria-expanded={sidebarOpen}
               aria-controls="mobile-sidebar"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 lg:hidden"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-secondary shadow-sm transition hover:border-border-strong hover:bg-surface-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hidden"
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -164,11 +175,12 @@ export default function Navbar() {
         type="button"
         aria-label="Close navigation menu"
         onClick={closeSidebar}
-        className={`fixed inset-0 z-[60] bg-slate-950/40 backdrop-blur-[2px] transition-opacity duration-300 lg:hidden ${
+        className={cn(
+          "fixed inset-0 z-[60] bg-overlay backdrop-blur-[2px] transition-opacity duration-300 lg:hidden",
           sidebarOpen
             ? "pointer-events-auto opacity-100"
-            : "pointer-events-none opacity-0"
-        }`}
+            : "pointer-events-none opacity-0",
+        )}
       />
 
       {/* Mobile sidebar */}
@@ -177,18 +189,19 @@ export default function Navbar() {
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`fixed inset-y-0 right-0 z-[70] flex w-[88%] max-w-[380px] flex-col bg-white shadow-2xl shadow-slate-950/25 transition-transform duration-300 ease-out lg:hidden ${
-          sidebarOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={cn(
+          "fixed inset-y-0 right-0 z-[70] flex w-[88%] max-w-[380px] flex-col bg-surface shadow-2xl shadow-[color:var(--shadow-color)] transition-transform duration-300 ease-out lg:hidden",
+          sidebarOpen ? "translate-x-0" : "translate-x-full",
+        )}
       >
         {/* Sidebar header */}
-        <div className="flex h-[72px] items-center justify-between border-b border-slate-200 px-5 sm:px-6">
+        <div className="flex h-[72px] items-center justify-between border-b border-border px-5 sm:px-6">
           <Link
             href="/"
             onClick={closeSidebar}
             className="flex items-center gap-3"
           >
-            <div className="relative h-10 w-10 overflow-hidden rounded-full border border-slate-200 bg-cyan-50">
+            <div className="relative h-10 w-10 overflow-hidden rounded-full border border-border bg-accent-muted">
               <Image
                 src="/favicon-pack/favicon-512x512.png"
                 alt=""
@@ -199,30 +212,30 @@ export default function Navbar() {
             </div>
 
             <div>
-              <p className="text-base font-black tracking-tight text-slate-950">
+              <p className="text-base font-bold tracking-tight text-primary">
                 StarJet
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Air & Cargo
-              </p>
+              <p className="caption uppercase text-muted">Air & Cargo</p>
             </div>
           </Link>
 
-          <button
-            type="button"
-            onClick={closeSidebar}
-            aria-label="Close navigation menu"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle compact />
+
+            <button
+              type="button"
+              onClick={closeSidebar}
+              aria-label="Close navigation menu"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-secondary transition hover:bg-surface-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Sidebar content */}
         <div className="flex flex-1 flex-col overflow-y-auto px-5 py-6 sm:px-6">
-          <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-slate-400">
-            Navigation
-          </p>
+          <p className="caption mb-3 uppercase text-muted">Navigation</p>
 
           <nav aria-label="Mobile navigation" className="space-y-2">
             {navigation.map((item) => {
@@ -234,18 +247,20 @@ export default function Navbar() {
                   href={item.href}
                   onClick={closeSidebar}
                   aria-current={active ? "page" : undefined}
-                  className={`group flex min-h-14 items-center justify-between rounded-2xl px-4 py-3 text-base font-bold transition ${
+                  className={cn(
+                    "nav-link group flex min-h-14 items-center justify-between rounded-2xl px-4 py-3 text-base transition",
                     active
-                      ? "bg-cyan-50 text-cyan-900 ring-1 ring-cyan-200"
-                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"
-                  }`}
+                      ? "bg-accent-muted text-accent-muted-foreground ring-1 ring-accent/30"
+                      : "text-secondary hover:bg-surface-muted hover:text-primary",
+                  )}
                 >
                   <span>{item.label}</span>
 
                   <ChevronRight
-                    className={`h-5 w-5 transition-transform group-hover:translate-x-0.5 ${
-                      active ? "text-cyan-600" : "text-slate-400"
-                    }`}
+                    className={cn(
+                      "h-5 w-5 transition-transform group-hover:translate-x-0.5",
+                      active ? "text-accent" : "text-muted",
+                    )}
                   />
                 </Link>
               );
@@ -253,11 +268,11 @@ export default function Navbar() {
           </nav>
 
           {/* Mobile actions */}
-          <div className="mt-8 space-y-3 border-t border-slate-200 pt-6">
+          <div className="mt-8 space-y-3 border-t border-border pt-6">
             <Link
               href="/login"
               onClick={closeSidebar}
-              className="flex h-13 min-h-13 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
+              className="button-text flex h-13 min-h-13 items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-secondary transition hover:bg-surface-muted hover:text-primary"
             >
               <UserRound className="h-4 w-4" />
               Sign in
@@ -266,7 +281,7 @@ export default function Navbar() {
             <Link
               href="/flights"
               onClick={closeSidebar}
-              className="flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-400"
+              className="button-text flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-accent-foreground shadow-lg shadow-[color:var(--shadow-color)] transition hover:bg-accent-hover"
             >
               <Search className="h-4 w-4" />
               Search flights
@@ -275,18 +290,18 @@ export default function Navbar() {
 
           {/* Footer note */}
           <div className="mt-auto pt-8">
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-sm font-bold text-slate-950">
+            <div className="rounded-2xl bg-surface-muted p-4">
+              <p className="text-sm font-bold text-primary">
                 Need travel assistance?
               </p>
-              <p className="mt-1 text-sm leading-6 text-slate-500">
+              <p className="body-text mt-1 text-sm text-muted">
                 Contact the StarJet team for flight, cargo, and charter support.
               </p>
 
               <Link
                 href="/contact"
                 onClick={closeSidebar}
-                className="mt-3 inline-flex items-center gap-1 text-sm font-black text-cyan-700 hover:text-cyan-800"
+                className="button-text mt-3 inline-flex items-center gap-1 text-accent-muted-foreground hover:text-accent"
               >
                 Contact us
                 <ChevronRight className="h-4 w-4" />

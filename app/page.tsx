@@ -4,6 +4,9 @@ import Footer from "./components/Footer";
 import HeroSearch from "./components/home/HeroSearch";
 import PopularDestinations from "./components/home/PopularDestinations";
 import Features from "./components/Features";
+import TravelDealsCarousel from "./components/raveldealscarousel";
+import TravelToolsSection from "./components/TravelToolsSection";
+import FAQSection from "./components/FAQSection";
 export default function HomePage() {
   return (
     <>
@@ -11,10 +14,12 @@ export default function HomePage() {
 
       <HeroSearch />
 
-      <PopularDestinations />
+      <TravelDealsCarousel />
+      <TravelToolsSection />
+      {/* <PopularDestinations /> */}
 
       <Features />
-
+<FAQSection/>
       <Footer />
     </>
   );

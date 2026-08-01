@@ -54,7 +54,7 @@ export default function Features() {
             <p className="text-sm font-black uppercase tracking-[0.25em] text-cyan-700">
               StarJet services
             </p>
-            <h2 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">
+            <h2 className="section-title mt-4 md:text-[clamp(1.75rem,1.2rem+1.8vw,2.75rem)]">
               Built for passengers, shipments, and special missions.
             </h2>
             <p className="mt-5 text-lg leading-8 text-slate-600">
@@ -119,10 +119,10 @@ export default function Features() {
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-400 text-slate-950">
                 <Radar className="h-7 w-7" />
               </div>
-              <h2 className="mt-8 max-w-2xl text-4xl font-black tracking-tight md:text-5xl">
+              <h2 className="section-title mt-8 max-w-2xl md:text-[clamp(1.75rem,1.2rem+1.8vw,2.75rem)]">
                 A calmer control center for complicated travel.
               </h2>
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
+              <p className="body-text mt-5 max-w-2xl text-lg text-slate-300">
                 Compare routes, prepare shipment details, and request dedicated
                 aircraft support from one place before the trip gets
                 complicated.

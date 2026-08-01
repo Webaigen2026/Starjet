@@ -100,17 +100,17 @@ export default function TravelDealsCarousel() {
   }
 
   return (
-    <section className="overflow-hidden bg-white py-12 sm:py-16 lg:py-20">
+    <section className="overflow-hidden bg-background py-12 sm:py-16 lg:py-20">
       <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 xl:px-16">
         {/* Heading */}
         <div className="mb-7 flex flex-col gap-4 sm:mb-9 sm:flex-row sm:items-end sm:justify-between">
-          <h2 className="section-title text-slate-950 lg:text-[clamp(1.75rem,1.2rem+1.5vw,2.25rem)]">
+          <h2 className="section-title text-primary lg:text-[clamp(1.75rem,1.2rem+1.5vw,2.25rem)]">
             Travel deals under $192
           </h2>
 
           <Link
             href="/deals"
-            className="group inline-flex w-fit items-center gap-2 text-sm font-bold text-cyan-700 transition hover:text-cyan-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-4"
+            className="group inline-flex w-fit items-center gap-2 text-sm font-bold text-accent transition hover:text-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4"
           >
             Explore all deals
 
@@ -134,7 +134,7 @@ export default function TravelDealsCarousel() {
 
         {/* Controls */}
         <div className="mt-3 flex items-center justify-between">
-          <p className="hidden text-sm font-medium text-slate-500 sm:block">
+          <p className="hidden text-sm font-medium text-muted sm:block">
             Swipe or use the arrows to browse more destinations.
           </p>
 
@@ -159,10 +159,10 @@ export default function TravelDealsCarousel() {
 
 function DealCard({ deal }: { deal: TravelDeal }) {
   return (
-    <article className="group flex w-[88vw] max-w-[390px] shrink-0 snap-start flex-col overflow-hidden rounded-[30px]  bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-950/10 sm:w-[380px] sm:max-w-none lg:w-[410px] xl:w-[430px]">
+    <article className="group flex w-[88vw] max-w-[390px] shrink-0 snap-start flex-col overflow-hidden rounded-[30px] bg-surface shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-border-strong hover:shadow-xl hover:shadow-[color:var(--shadow-color)] sm:w-[380px] sm:max-w-none lg:w-[410px] xl:w-[430px]">
       {/* Image */}
       <div className="p-3 sm:p-4">
-        <div className="relative h-52 cursor-pointer overflow-hidden rounded-[24px] bg-slate-100 sm:h-56 lg:h-60">
+        <div className="relative h-52 cursor-pointer overflow-hidden rounded-[24px] bg-surface-muted sm:h-56 lg:h-60">
           <Image
             src={deal.imageUrl}
             alt={deal.imageAlt}
@@ -178,31 +178,31 @@ function DealCard({ deal }: { deal: TravelDeal }) {
       {/* Content */}
       <div className="flex flex-1 flex-col px-5 pb-6 pt-2 sm:px-6">
         <div>
-          <h3 className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+          <h3 className="text-xl font-black tracking-tight text-primary sm:text-2xl">
             {deal.city}
           </h3>
 
-          <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-500">
+          <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-muted">
             <Clock3
-              className="h-4 w-4 shrink-0 text-cyan-700"
+              className="h-4 w-4 shrink-0 text-accent"
               aria-hidden="true"
             />
 
             <span>{deal.duration}</span>
           </div>
 
-          <p className="mt-2 text-sm font-semibold text-slate-500">
+          <p className="mt-2 text-sm font-semibold text-muted">
             {deal.dateRange}
           </p>
         </div>
 
-        <div className="mt-6 flex items-end justify-between border-t border-slate-100 pt-5">
+        <div className="mt-6 flex items-end justify-between border-t border-border pt-5">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted">
               Round-trip from
             </p>
 
-            <p className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">
+            <p className="mt-1 text-2xl font-black text-primary sm:text-3xl">
               ${deal.priceFrom}
             </p>
           </div>
@@ -210,7 +210,7 @@ function DealCard({ deal }: { deal: TravelDeal }) {
           <Link
             href={`/flights?destination=${encodeURIComponent(deal.city)}`}
             aria-label={`View flights to ${deal.city}`}
-            className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-cyan-600 text-white transition hover:bg-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground transition hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
           </Link>
@@ -237,7 +237,7 @@ function NavButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={direction === "prev" ? "Previous deals" : "Next deals"}
-      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-950 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-300 disabled:opacity-70"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-secondary shadow-sm transition-all duration-200 hover:border-border-strong hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-muted disabled:opacity-70"
     >
       <Icon className="h-5 w-5" aria-hidden="true" />
     </button>

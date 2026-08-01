@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import {
   ChevronRight,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Search,
   UserRound,
   X,
@@ -13,6 +15,7 @@ import {
 import { useEffect, useState } from "react";
 
 import ThemeToggle from "./ThemeToggle";
+import { useSidebar } from "./SidebarContext";
 import { cn } from "@/app/lib/utils";
 
 const navigation = [
@@ -38,6 +41,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarPath, setSidebarPath] = useState(pathname);
+  const { collapsed, toggleSidebar } = useSidebar();
 
   // Close the drawer when the route changes (render-time sync, no effect).
   if (sidebarPath !== pathname) {
@@ -81,33 +85,50 @@ export default function Navbar() {
     <>
       <header className="sticky top-0 z-50 border-b border-border/70 bg-background/95 backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] w-full max-w-full items-center justify-between px-4 sm:px-6 lg:h-20 lg:px-10 xl:px-16">
-          {/* Brand */}
-          <Link
-            href="/"
-            aria-label="StarJet home"
-            className="group flex min-w-0 items-center gap-2.5 sm:gap-3"
-          >
-            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-accent-muted transition group-hover:border-accent sm:h-12 sm:w-12">
-              <Image
-                src="/favicon-pack/favicon-512x512.png"
-                alt=""
-                width={48}
-                height={48}
-                priority
-                className="h-full w-full object-contain"
-              />
-            </div>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            {/* Desktop sidebar toggle */}
+            {/* <button
+              type="button"
+              onClick={toggleSidebar}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-pressed={!collapsed}
+              className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-secondary shadow-sm transition hover:border-border-strong hover:bg-surface-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:inline-flex"
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <PanelLeftClose className="h-5 w-5" aria-hidden="true" />
+              )}
+            </button> */}
 
-            <div className="min-w-0">
-              <p className="truncate text-base font-bold tracking-tight text-primary sm:text-lg">
-                StarJet
-              </p>
+            {/* Brand */}
+            <Link
+              href="/"
+              aria-label="StarJet home"
+              className="group flex min-w-0 items-center gap-2.5 sm:gap-3"
+            >
+              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-accent-muted transition group-hover:border-accent sm:h-12 sm:w-12">
+                <Image
+                  src="/favicon-pack/favicon-512x512.png"
+                  alt=""
+                  width={48}
+                  height={48}
+                  priority
+                  className="h-full w-full object-contain"
+                />
+              </div>
 
-              <p className="caption truncate uppercase text-muted">
-                Air & Cargo
-              </p>
-            </div>
-          </Link>
+              <div className="min-w-0">
+                <p className="truncate text-base font-bold tracking-tight text-primary sm:text-lg">
+                  StarJet
+                </p>
+
+                <p className="caption truncate uppercase text-muted">
+                  Air & Cargo
+                </p>
+              </div>
+            </Link>
+          </div>
 
           {/* Desktop navigation */}
           <nav
@@ -155,7 +176,7 @@ export default function Navbar() {
               Search flights
             </Link>
 
-            {/* Hamburger */}
+            {/* Hamburger (mobile drawer — unrelated to the desktop sidebar) */}
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}

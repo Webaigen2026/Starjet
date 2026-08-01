@@ -7,6 +7,7 @@ import Features from "./components/Features";
 import TravelDealsCarousel from "./components/raveldealscarousel";
 import TravelToolsSection from "./components/TravelToolsSection";
 import FAQSection from "./components/FAQSection";
+import TravelPromoSection from "./components/TravelPromoSection";
 export default function HomePage() {
   return (
     <>
@@ -18,7 +19,9 @@ export default function HomePage() {
       <TravelToolsSection />
       {/* <PopularDestinations /> */}
 
-      <Features />
+      {/* <Features /> */}
+
+      <TravelPromoSection/>
 <FAQSection/>
       <Footer />
     </>

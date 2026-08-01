@@ -2,12 +2,32 @@ import Link from "next/link";
 import { prisma } from "../../lib/prisma";
 
 export default async function AdminBookingsPage() {
-  const bookings = await prisma.booking.findMany({
+  const bookings: Array<{
+    id: string;
+    bookingCode: string;
+    customerName: string;
+    customerEmail: string;
+    originCode: string;
+    destinationCode: string;
+    airlineName: string | null;
+    status: string;
+    paymentStatus: string;
+    totalAmount: string | number | null;
+  }> = await prisma.booking.findMany({
     orderBy: {
       createdAt: "desc",
     },
-    include: {
-      passengers: true,
+    select: {
+      id: true,
+      bookingCode: true,
+      customerName: true,
+      customerEmail: true,
+      originCode: true,
+      destinationCode: true,
+      airlineName: true,
+      status: true,
+      paymentStatus: true,
+      totalAmount: true,
     },
   });
 

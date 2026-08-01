@@ -36,5 +36,19 @@
     "tailwindcss": "^4",
     "tsx": "^4.22.4",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-android-arm64": "4.3.0",
+    "@tailwindcss/oxide-darwin-arm64": "4.3.0",
+    "@tailwindcss/oxide-darwin-x64": "4.3.0",
+    "@tailwindcss/oxide-freebsd-x64": "4.3.0",
+    "@tailwindcss/oxide-linux-arm-gnueabihf": "4.3.0",
+    "@tailwindcss/oxide-linux-arm64-gnu": "4.3.0",
+    "@tailwindcss/oxide-linux-arm64-musl": "4.3.0",
+    "@tailwindcss/oxide-linux-x64-gnu": "4.3.0",
+    "@tailwindcss/oxide-linux-x64-musl": "4.3.0",
+    "@tailwindcss/oxide-wasm32-wasi": "4.3.0",
+    "@tailwindcss/oxide-win32-arm64-msvc": "4.3.0",
+    "@tailwindcss/oxide-win32-x64-msvc": "4.3.0"
   }
 }

@@ -1,3 +1,4 @@
+import type { Booking } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../api/auth/[...nextauth]/route";
@@ -12,7 +13,7 @@ export default async function MyTripsPage() {
 
   const userId = (session.user as any).id;
 
-  const bookings = await prisma.booking.findMany({
+  const bookings: Booking[] = await prisma.booking.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
     include: { passengers: true },

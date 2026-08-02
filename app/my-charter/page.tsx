@@ -1,3 +1,4 @@
+import type { CharterRequest } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../api/auth/[...nextauth]/route";
@@ -12,7 +13,7 @@ export default async function MyCharterPage() {
 
   const userId = (session.user as any).id;
 
-  const charterRequests = await prisma.charterRequest.findMany({
+  const charterRequests: CharterRequest[] = await prisma.charterRequest.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
   });

@@ -1,8 +1,14 @@
+import type {
+  Booking,
+  CargoRequest,
+  CharterRequest,
+  Passenger,
+} from "@prisma/client";
 import { prisma } from "../lib/prisma";
 
 export default async function AdminPage() {
   const [bookings, cargoRequests, charterRequests, passengers] =
-    await Promise.all([
+    (await Promise.all([
       prisma.booking.findMany({
         orderBy: { createdAt: "desc" },
         include: { passengers: true },
@@ -20,7 +26,7 @@ export default async function AdminPage() {
         orderBy: { createdAt: "desc" },
         take: 5,
       }),
-    ]);
+    ])) as [Booking[], CargoRequest[], CharterRequest[], Passenger[]];
 
   const totalBookings = await prisma.booking.count();
   const totalCargo = await prisma.cargoRequest.count();

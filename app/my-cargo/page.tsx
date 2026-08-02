@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+import type { CargoRequest } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../api/auth/[...nextauth]/route";
@@ -13,7 +14,7 @@ export default async function MyCargoPage() {
 
   const userId = (session.user as any).id;
 
-  const cargoRequests = await prisma.cargoRequest.findMany({
+  const cargoRequests: CargoRequest[] = await prisma.cargoRequest.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
   });

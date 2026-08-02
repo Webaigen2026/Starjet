@@ -17,7 +17,7 @@ export default function HeroSearch() {
             <div className="relative isolate overflow-hidden rounded-[clamp(1.25rem,2.2vw,1.75rem)] bg-slate-950 shadow-[0_24px_80px_-28px_rgba(2,6,23,0.55)] dark:shadow-[0_24px_80px_-28px_rgba(0,0,0,0.75)]">
               {/* Background image */}
               <Image
-                src="/airplane/airplane1.jpg"
+                src="/airplane/Hero_Image.png"
                 alt="Coastal destination along the Haitian shoreline"
                 fill
                 priority

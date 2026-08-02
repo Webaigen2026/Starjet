@@ -1,7 +1,25 @@
 import { prisma } from "../../lib/prisma";
 
+type CargoRequestStatus =
+  | "NEW"
+  | "CONTACTED"
+  | "QUOTED"
+  | "CLOSED"
+  | "IN_REVIEW"
+  | "ACCEPTED"
+  | "CANCELLED";
+
+interface CargoRequestItem {
+  id: string;
+  requestCode: string;
+  fullName: string;
+  fromCity: string;
+  toCity: string;
+  status: CargoRequestStatus;
+}
+
 export default async function AdminCargoPage() {
-  const cargoRequests = await prisma.cargoRequest.findMany({
+  const cargoRequests: CargoRequestItem[] = await prisma.cargoRequest.findMany({
     orderBy: {
       createdAt: "desc",
     },

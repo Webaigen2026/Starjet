@@ -1,35 +1,50 @@
 import Link from "next/link";
 import { prisma } from "../../lib/prisma";
 
+interface BookingSummary {
+  id: string;
+  bookingCode: string;
+  customerName: string;
+  customerEmail: string;
+  originCode: string;
+  destinationCode: string;
+  airlineName: string | null;
+  status: string;
+  paymentStatus: string;
+  totalAmount: string | number | null;
+}
+
 export default async function AdminBookingsPage() {
-  const bookings: Array<{
-    id: string;
-    bookingCode: string;
-    customerName: string;
-    customerEmail: string;
-    originCode: string;
-    destinationCode: string;
-    airlineName: string | null;
-    status: string;
-    paymentStatus: string;
-    totalAmount: string | number | null;
-  }> = await prisma.booking.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
-    select: {
-      id: true,
-      bookingCode: true,
-      customerName: true,
-      customerEmail: true,
-      originCode: true,
-      destinationCode: true,
-      airlineName: true,
-      status: true,
-      paymentStatus: true,
-      totalAmount: true,
-    },
-  });
+  const bookings: BookingSummary[] = (
+    await prisma.booking.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        bookingCode: true,
+        customerName: true,
+        customerEmail: true,
+        originCode: true,
+        destinationCode: true,
+        airlineName: true,
+        status: true,
+        paymentStatus: true,
+        totalAmount: true,
+      },
+    })
+  ).map((booking) => ({
+    id: booking.id,
+    bookingCode: booking.bookingCode,
+    customerName: booking.customerName,
+    customerEmail: booking.customerEmail,
+    originCode: booking.originCode,
+    destinationCode: booking.destinationCode,
+    airlineName: booking.airlineName,
+    status: booking.status.toString(),
+    paymentStatus: booking.paymentStatus.toString(),
+    totalAmount: booking.totalAmount ? Number(booking.totalAmount) : null,
+  }));
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10">

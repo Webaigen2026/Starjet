@@ -37,6 +37,36 @@ const navigation = [
   },
 ];
 
+/**
+ * Theme-aware brand mark.
+ * Light mode -> favicon-512x512.png
+ * Dark mode  -> favicon-512x512-white.png
+ * Swapped purely via CSS (`dark:`), so there's no flash-of-wrong-logo on
+ * load and no dependency on the theme hook being mounted client-side.
+ */
+function BrandLogo({ size = 48 }: { size?: number }) {
+  return (
+    <>
+      <Image
+        src="/favicon-pack/favicon-512x512.png"
+        alt=""
+        width={size}
+        height={size}
+        priority
+        className="h-full w-full object-contain dark:hidden"
+      />
+      <Image
+        src="/favicon-pack/favicon-512x512-white.png"
+        alt=""
+        width={size}
+        height={size}
+        priority
+        className="hidden h-full w-full object-contain dark:block"
+      />
+    </>
+  );
+}
+
 export default function Navbar() {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -108,19 +138,12 @@ export default function Navbar() {
               className="group flex min-w-0 items-center gap-2.5 sm:gap-3"
             >
               <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-accent-muted transition group-hover:border-accent sm:h-12 sm:w-12">
-                <Image
-                  src="/favicon-pack/favicon-512x512.png"
-                  alt=""
-                  width={48}
-                  height={48}
-                  priority
-                  className="h-full w-full object-contain"
-                />
+                <BrandLogo size={48} />
               </div>
 
               <div className="min-w-0">
                 <p className="truncate text-base font-bold tracking-tight text-primary sm:text-lg">
-                  StarJet
+                  StarJet.
                 </p>
 
                 <p className="caption truncate uppercase text-muted">
@@ -223,13 +246,7 @@ export default function Navbar() {
             className="flex items-center gap-3"
           >
             <div className="relative h-10 w-10 overflow-hidden rounded-full border border-border bg-accent-muted">
-              <Image
-                src="/favicon-pack/favicon-512x512.png"
-                alt=""
-                fill
-                sizes="40px"
-                className="object-contain"
-              />
+              <BrandLogo size={40} />
             </div>
 
             <div>

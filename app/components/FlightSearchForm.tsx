@@ -105,8 +105,11 @@ export default function FlightSearchForm() {
           "Round-trip ⌄  ·  0 bags ⌄" line — same trip-type control, quieter style. */}
       <TripTypeInlineControl value={tripType} onChange={setTripType} />
 
-      {/* The single pill-shaped bar */}
-      <div className="overflow-hidden rounded-full border border-border/70 bg-surface shadow-2xl shadow-[color:var(--shadow-color)]">
+      {/* The bar: a rounded rectangle on mobile (fields stack vertically),
+          becoming the full pill shape once it lays out horizontally at sm+.
+          Applying rounded-full unconditionally here was clipping the first
+          and last stacked fields into an oval on small screens. */}
+      <div className="overflow-hidden rounded-md border border-border/70 bg-surface shadow-2xl shadow-[color:var(--shadow-color)] sm:rounded-full">
         <div className="flex flex-col divide-y divide-border sm:flex-row sm:items-stretch sm:divide-x sm:divide-y-0">
           <div className="flex flex-1 items-stretch sm:min-w-0">
             <AirportField
@@ -129,8 +132,9 @@ export default function FlightSearchForm() {
               onClearChip={() => setOriginCode("")}
             />
 
-            <SwapButton onClick={handleSwapAirports} />
+          
           </div>
+         <div className ="flex justify-center  p-4">     <SwapButton onClick={handleSwapAirports} /></div>
 
           <AirportField
             name="destinationCode"

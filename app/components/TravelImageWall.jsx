@@ -39,6 +39,14 @@ const FLOAT_VARIANTS = [
   { duration: "8.4s", amplitude: "12px" },
 ];
 
+// Airplane-window silhouette: much rounder at the top than the bottom.
+// Expressed as horizontal/vertical corner radii (border-radius shorthand
+// with a "/" split) — something plain rounded-t-*/rounded-b-* utilities
+// can't express, since those only take one radius per corner, not
+// independent horizontal and vertical values. Kept as a shared constant
+// so the outer shape and the inner hairline ring always stay in sync.
+const WINDOW_RADIUS = "50% 50% 42% 42% / 64% 64% 28% 28%";
+
 export default function TravelImageWall() {
   return (
     <div className="relative   mx-auto w-full max-w-3xl overflow-hidden px-2  sm:px-4  lg:px-2 xl:h-full xl:max-w-none ">
@@ -122,12 +130,13 @@ function TravelCircle({ src, alt, priority = false, orderIndex = 0 }) {
 
   return (
     <div
-      className="tiw-circle group relative mx-auto aspect-square w-full max-w-[clamp(8rem,40vw,14rem)] overflow-hidden rounded-full border border-white/60 shadow-[0_18px_45px_-20px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/5"
+      className="tiw-circle group relative mx-auto aspect-square w-full max-w-[clamp(8rem,40vw,14rem)] overflow-hidden border border-white/60 shadow-[0_18px_45px_-20px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/5"
       style={{
         // @ts-expect-error -- CSS custom properties aren't in the style typings
         "--tiw-rise-delay": `${orderIndex * 0.1}s`,
         "--tiw-duration": duration,
         "--tiw-amplitude": amplitude,
+        borderRadius: WINDOW_RADIUS,
       }}
     >
       <Image
@@ -151,10 +160,12 @@ function TravelCircle({ src, alt, priority = false, orderIndex = 0 }) {
         className="pointer-events-none absolute inset-0"
       />
 
-      {/* Subtle inner border */}
+      {/* Subtle inner border — matches the outer window silhouette so the
+          hairline ring reads as one continuous shape, not a mismatched oval. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-1 rounded-full border border-white/20"
+        className="pointer-events-none absolute inset-1 border border-white/20"
+        style={{ borderRadius: WINDOW_RADIUS }}
       />
     </div>
   );

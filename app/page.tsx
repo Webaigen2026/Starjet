@@ -8,6 +8,7 @@ import TravelDealsCarousel from "./components/raveldealscarousel";
 import TravelToolsSection from "./components/TravelToolsSection";
 import FAQSection from "./components/FAQSection";
 import TravelPromoSection from "./components/TravelPromoSection";
+import RouteMap from "./components/RouteMap";
 export default function HomePage() {
   return (
     <>
@@ -22,6 +23,7 @@ export default function HomePage() {
       {/* <Features /> */}
 
       <TravelPromoSection/>
+      <RouteMap />
 <FAQSection/>
       <Footer />
     </>

@@ -51,48 +51,56 @@ export default function ContactPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-slate-950 text-white">
+      {/* Fully theme-aware page — no fixed dark backdrop, so every color
+          here follows light/dark mode via tokens. */}
+      <main className="min-h-screen bg-background text-primary">
         <section className="relative overflow-hidden px-4 py-12 sm:px-6 lg:py-16">
-          <div
-            className="absolute inset-0 scale-110 bg-cover bg-center opacity-[0.24] blur-md"
-            style={{ backgroundImage: "url('/image/hero-bck.jpeg')" }}
+          <Plane
+            className="pointer-events-none absolute right-8 top-24 h-56 w-56 -rotate-12 text-primary/5"
+            aria-hidden="true"
           />
-          <div className="absolute inset-0 bg-slate-950/82" />
-          <div className="absolute inset-x-0 top-0 h-56 bg-cyan-400/10 blur-3xl" />
-          <Plane className="pointer-events-none absolute right-8 top-24 h-56 w-56 -rotate-12 text-white/5" />
 
           <div className="relative mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
             <div>
-              <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black uppercase tracking-[0.18em] text-cyan-200">
-                <Headphones className="h-4 w-4" />
+              <p className="inline-flex items-center gap-2 rounded-full bg-accent-muted px-4 py-2 text-sm font-black uppercase tracking-[0.18em] text-accent-muted-foreground ring-1 ring-accent/30">
+                <Headphones className="h-4 w-4" aria-hidden="true" />
                 Contact StarJet
               </p>
 
-              <h1 className="mt-4 text-4xl font-black tracking-tight text-white md:text-6xl">
+              <h1 className="section-title mt-4 text-primary lg:text-[clamp(1.75rem,1.2rem+1.5vw,2.25rem)]">
                 Talk to the team before takeoff.
               </h1>
 
-              <p className="mt-5 text-lg leading-8 text-slate-300">
+              <p className="mt-5 text-lg leading-8 text-secondary">
                 Send a message about flights, cargo, charter travel, or a
                 custom route. The team will get back to you shortly.
               </p>
 
               <div className="mt-8 grid gap-3">
-                <InfoPill icon={<Mail className="h-5 w-5" />} text="Flight and booking questions" />
-                <InfoPill icon={<Phone className="h-5 w-5" />} text="Cargo or charter follow-up" />
-                <InfoPill icon={<MessageSquareText className="h-5 w-5" />} text="Route support and special requests" />
+                <InfoPill
+                  icon={<Mail className="h-5 w-5" aria-hidden="true" />}
+                  text="Flight and booking questions"
+                />
+                <InfoPill
+                  icon={<Phone className="h-5 w-5" aria-hidden="true" />}
+                  text="Cargo or charter follow-up"
+                />
+                <InfoPill
+                  icon={<MessageSquareText className="h-5 w-5" aria-hidden="true" />}
+                  text="Route support and special requests"
+                />
               </div>
             </div>
 
             <form
               onSubmit={handleSubmit}
-              className="overflow-hidden rounded-[28px] border border-white/15 bg-white text-slate-950 shadow-2xl shadow-slate-950/40"
+              className="overflow-hidden rounded-[28px] border border-border bg-surface text-primary shadow-2xl shadow-[color:var(--shadow-color)]"
             >
-              <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-8">
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-700">
+              <div className="border-b border-border bg-surface-muted px-5 py-4 sm:px-8">
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-accent">
                   Message center
                 </p>
-                <h2 className="mt-1 text-2xl font-black tracking-tight">
+                <h2 className="mt-1 text-2xl font-black tracking-tight text-primary">
                   How can we help?
                 </h2>
               </div>
@@ -109,20 +117,20 @@ export default function ContactPage() {
                   name="message"
                   required
                   placeholder="Message"
-                  className="mt-4 min-h-40 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-950 shadow-sm outline-none placeholder:text-slate-400 focus:border-cyan-600"
+                  className="mt-4 min-h-40 w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-bold text-primary shadow-sm outline-none placeholder:text-muted focus:border-accent"
                 />
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="mt-6 inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-8 text-sm font-black text-slate-950 shadow-lg shadow-cyan-500/25 hover:bg-cyan-400 disabled:opacity-60"
+                  className="mt-6 inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-accent px-8 text-sm font-black text-accent-foreground shadow-lg shadow-[color:var(--shadow-color)] transition hover:bg-accent-hover disabled:opacity-60"
                 >
-                  <Send className="h-5 w-5" />
+                  <Send className="h-5 w-5" aria-hidden="true" />
                   {loading ? "Sending..." : "Send Message"}
                 </button>
 
                 {success && (
-                  <p className="mt-4 rounded-2xl bg-green-50 px-4 py-3 text-sm font-bold text-green-700">
+                  <p className="mt-4 rounded-2xl border border-success/30 bg-success-muted px-4 py-3 text-sm font-bold text-success-foreground">
                     Message sent successfully.
                   </p>
                 )}
@@ -153,15 +161,15 @@ function TextField({
       type={type}
       required={required}
       placeholder={placeholder}
-      className="h-[54px] rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-950 shadow-sm outline-none placeholder:text-slate-400 focus:border-cyan-600"
+      className="h-[54px] rounded-2xl border border-border bg-surface px-4 text-sm font-bold text-primary shadow-sm outline-none placeholder:text-muted focus:border-accent"
     />
   );
 }
 
 function InfoPill({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white backdrop-blur">
-      <span className="text-cyan-200">{icon}</span>
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface-muted px-4 py-3 text-sm font-bold text-primary">
+      <span className="text-accent">{icon}</span>
       {text}
     </div>
   );

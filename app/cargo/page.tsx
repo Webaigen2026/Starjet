@@ -20,11 +20,11 @@ export default function CargoPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-const form = event.currentTarget;
-const formData = new FormData(form);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
-setLoading(true);
-setSuccess(false);
+    setLoading(true);
+    setSuccess(false);
 
     const payload = {
       fullName: formData.get("fullName"),
@@ -61,48 +61,56 @@ setSuccess(false);
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-slate-950 text-white">
+      {/* Fully theme-aware page — no fixed dark backdrop, so every color
+          here follows light/dark mode via tokens. */}
+      <main className="min-h-screen bg-background text-primary">
         <section className="relative overflow-hidden px-4 py-12 sm:px-6 lg:py-16">
-          <div
-            className="absolute inset-0 scale-110 bg-cover bg-center opacity-[0.24] blur-md"
-            style={{ backgroundImage: "url('/image/back.jpeg')" }}
+          <PlaneTakeoff
+            className="pointer-events-none absolute right-6 top-28 h-56 w-56 -rotate-12 text-primary/5"
+            aria-hidden="true"
           />
-          <div className="absolute inset-0 bg-slate-950/82" />
-          <div className="absolute inset-x-0 top-0 h-56 bg-cyan-400/10 blur-3xl" />
-          <PlaneTakeoff className="pointer-events-none absolute right-6 top-28 h-56 w-56 -rotate-12 text-white/5" />
 
           <div className="relative mx-auto max-w-6xl">
             <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
               <div>
-                <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black uppercase tracking-[0.18em] text-cyan-200">
-                  <PackageCheck className="h-4 w-4" />
+                <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-accent-muted px-4 py-2 text-sm font-black uppercase tracking-[0.18em] text-accent-muted-foreground ring-1 ring-accent/30">
+                  <PackageCheck className="h-4 w-4" aria-hidden="true" />
                   StarJet cargo
                 </p>
-                <h1 className="text-4xl font-black tracking-tight text-white md:text-6xl">
+                <h1 className="section-title text-primary lg:text-[clamp(1.75rem,1.2rem+1.5vw,2.25rem)]">
                   Air cargo requests with route clarity.
                 </h1>
-                <p className="mt-5 text-lg leading-8 text-slate-300">
+                <p className="mt-5 text-lg leading-8 text-secondary">
                   Send packages, boxes, documents, barrels, and business
                   shipments between the USA and Haiti. Share the shipment
                   details and the team will respond with pricing and next steps.
                 </p>
 
                 <div className="mt-8 grid gap-3">
-                  <InfoPill icon={<MapPin className="h-5 w-5" />} text="Pickup and delivery city details" />
-                  <InfoPill icon={<Scale className="h-5 w-5" />} text="Weight, dimensions, and cargo type" />
-                  <InfoPill icon={<ShieldCheck className="h-5 w-5" />} text="Dedicated request review" />
+                  <InfoPill
+                    icon={<MapPin className="h-5 w-5" aria-hidden="true" />}
+                    text="Pickup and delivery city details"
+                  />
+                  <InfoPill
+                    icon={<Scale className="h-5 w-5" aria-hidden="true" />}
+                    text="Weight, dimensions, and cargo type"
+                  />
+                  <InfoPill
+                    icon={<ShieldCheck className="h-5 w-5" aria-hidden="true" />}
+                    text="Dedicated request review"
+                  />
                 </div>
               </div>
 
               <form
                 onSubmit={handleSubmit}
-                className="overflow-hidden rounded-[28px] border border-white/15 bg-white text-slate-950 shadow-2xl shadow-slate-950/40"
+                className="overflow-hidden rounded-[28px] border border-border bg-surface text-primary shadow-2xl shadow-[color:var(--shadow-color)]"
               >
-                <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-8">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-700">
+                <div className="border-b border-border bg-surface-muted px-5 py-4 sm:px-8">
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-accent">
                     Shipment intake
                   </p>
-                  <h2 className="mt-1 text-2xl font-black tracking-tight">
+                  <h2 className="mt-1 text-2xl font-black tracking-tight text-primary">
                     Tell us what is flying.
                   </h2>
                 </div>
@@ -115,7 +123,7 @@ setSuccess(false);
 
                     <select
                       name="cargoType"
-                      className="h-[54px] rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-950 shadow-sm outline-none focus:border-cyan-600"
+                      className="h-[54px] rounded-2xl border border-border bg-surface px-4 text-sm font-bold text-primary shadow-sm outline-none focus:border-accent"
                     >
                       <option value="OTHER">Cargo Type</option>
                       <option value="DOCUMENTS">Documents</option>
@@ -133,8 +141,8 @@ setSuccess(false);
                     <TextField name="dimensions" placeholder="Dimensions" />
                     <TextField name="estimatedValue" type="number" step="0.01" placeholder="Estimated Value" />
 
-                    <div className="flex h-[54px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 text-slate-950 shadow-sm focus-within:border-cyan-600">
-                      <CalendarDays className="h-5 w-5 text-cyan-700" />
+                    <div className="flex h-[54px] items-center gap-3 rounded-2xl border border-border bg-surface px-4 text-primary shadow-sm focus-within:border-accent">
+                      <CalendarDays className="h-5 w-5 text-accent" aria-hidden="true" />
                       <input
                         name="preferredDate"
                         type="date"
@@ -147,20 +155,20 @@ setSuccess(false);
                     name="description"
                     required
                     placeholder="Describe what you are shipping"
-                    className="mt-4 min-h-36 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-950 shadow-sm outline-none focus:border-cyan-600"
+                    className="mt-4 min-h-36 w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-bold text-primary shadow-sm outline-none placeholder:text-muted focus:border-accent"
                   />
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="mt-6 inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-8 text-sm font-black text-slate-950 shadow-lg shadow-cyan-500/25 hover:bg-cyan-400 disabled:opacity-60"
+                    className="mt-6 inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-accent px-8 text-sm font-black text-accent-foreground shadow-lg shadow-[color:var(--shadow-color)] transition hover:bg-accent-hover disabled:opacity-60"
                   >
-                    <Send className="h-5 w-5" />
+                    <Send className="h-5 w-5" aria-hidden="true" />
                     {loading ? "Submitting Request..." : "Submit Cargo Request"}
                   </button>
 
                   {success && (
-                    <p className="mt-4 rounded-2xl bg-green-50 px-4 py-3 text-sm font-bold text-green-700">
+                    <p className="mt-4 rounded-2xl border border-success/30 bg-success-muted px-4 py-3 text-sm font-bold text-success-foreground">
                       Cargo request submitted successfully. Our team will contact you soon.
                     </p>
                   )}
@@ -195,15 +203,15 @@ function TextField({
       required={required}
       step={step}
       placeholder={placeholder}
-      className="h-[54px] rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-950 shadow-sm outline-none placeholder:text-slate-400 focus:border-cyan-600"
+      className="h-[54px] rounded-2xl border border-border bg-surface px-4 text-sm font-bold text-primary shadow-sm outline-none placeholder:text-muted focus:border-accent"
     />
   );
 }
 
 function InfoPill({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white backdrop-blur">
-      <span className="text-cyan-200">{icon}</span>
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface-muted px-4 py-3 text-sm font-bold text-primary">
+      <span className="text-accent">{icon}</span>
       {text}
     </div>
   );

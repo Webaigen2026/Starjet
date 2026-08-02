@@ -34,16 +34,16 @@ export default async function AdminPage() {
   const totalPassengers = await prisma.passenger.count();
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10">
+    <main className="min-h-screen bg-background px-6 py-10">
       <div className="mx-auto max-w-7xl">
         <div className="mb-10">
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
+          <p className="text-sm font-semibold uppercase tracking-wide text-accent-muted-foreground">
             StarJet Admin
           </p>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-slate-950">
+          <h1 className="mt-2 text-4xl font-bold tracking-tight text-primary">
             Operations Dashboard
           </h1>
-          <p className="mt-3 text-slate-600">
+          <p className="mt-3 text-secondary">
             Manage bookings, passengers, cargo requests, and charter requests.
           </p>
         </div>
@@ -60,16 +60,16 @@ export default async function AdminPage() {
             {bookings.map((booking) => (
               <div
                 key={booking.id}
-                className="border-b border-slate-100 py-4 last:border-0"
+                className="border-b border-border py-4 last:border-0"
               >
-                <p className="font-semibold text-slate-950">
+                <p className="font-semibold text-primary">
                   {booking.bookingCode}
                 </p>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-secondary">
                   {booking.originCode} → {booking.destinationCode} •{" "}
                   {booking.customerName}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-muted">
                   {booking.status} / {booking.paymentStatus}
                 </p>
               </div>
@@ -80,15 +80,15 @@ export default async function AdminPage() {
             {cargoRequests.map((request) => (
               <div
                 key={request.id}
-                className="border-b border-slate-100 py-4 last:border-0"
+                className="border-b border-border py-4 last:border-0"
               >
-                <p className="font-semibold text-slate-950">
+                <p className="font-semibold text-primary">
                   {request.requestCode}
                 </p>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-secondary">
                   {request.fromCity} → {request.toCity} • {request.fullName}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">{request.status}</p>
+                <p className="mt-1 text-xs text-muted">{request.status}</p>
               </div>
             ))}
           </Panel>
@@ -97,16 +97,16 @@ export default async function AdminPage() {
             {charterRequests.map((request) => (
               <div
                 key={request.id}
-                className="border-b border-slate-100 py-4 last:border-0"
+                className="border-b border-border py-4 last:border-0"
               >
-                <p className="font-semibold text-slate-950">
+                <p className="font-semibold text-primary">
                   {request.requestCode}
                 </p>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-secondary">
                   {request.departureCity} → {request.destinationCity} •{" "}
                   {request.fullName}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">{request.status}</p>
+                <p className="mt-1 text-xs text-muted">{request.status}</p>
               </div>
             ))}
           </Panel>
@@ -115,12 +115,12 @@ export default async function AdminPage() {
             {passengers.map((passenger) => (
               <div
                 key={passenger.id}
-                className="border-b border-slate-100 py-4 last:border-0"
+                className="border-b border-border py-4 last:border-0"
               >
-                <p className="font-semibold text-slate-950">
+                <p className="font-semibold text-primary">
                   {passenger.firstName} {passenger.lastName}
                 </p>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-secondary">
                   Passport: {passenger.passportNumber || "Not provided"}
                 </p>
               </div>
@@ -140,9 +140,9 @@ function DashboardCard({
   value: number;
 }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-sm font-medium text-slate-500">{title}</p>
-      <p className="mt-3 text-4xl font-bold text-slate-950">{value}</p>
+    <div className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
+      <p className="text-sm font-medium text-muted">{title}</p>
+      <p className="mt-3 text-4xl font-bold text-primary">{value}</p>
     </div>
   );
 }
@@ -155,8 +155,8 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-bold text-slate-950">{title}</h2>
+    <div className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
+      <h2 className="text-xl font-bold text-primary">{title}</h2>
       <div className="mt-4">{children}</div>
     </div>
   );

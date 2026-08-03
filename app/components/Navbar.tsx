@@ -132,25 +132,29 @@ export default function Navbar() {
             </button> */}
 
             {/* Brand */}
-            <Link
-              href="/"
-              aria-label="StarJet home"
-              className="group flex min-w-0 items-center gap-2.5 sm:gap-3"
-            >
-         <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full transition group-hover:border-accent sm:h-24 sm:w-24">
-  <BrandLogo size={96} />
-</div>
+          {/* Brand */}
+{/* Brand */}
+<Link
+  href="/"
+  aria-label="StarJet home"
+  className="group flex min-w-0 items-center gap-3 sm:gap-4"
+>
+  <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full transition-transform duration-300 group-hover:scale-105 sm:h-24 sm:w-24">
+    <BrandLogo size={96} />
+  </div>
 
-              <div className="min-w-0">
-                <p className="truncate text-base font-bold tracking-tight text-primary sm:text-lg">
-                  StarJet.
-                </p>
+  <div className="min-w-0 flex flex-col justify-center">
+    {/* Uniform Color Title with Elegant Typography */}
+    <span className="truncate text-2xl font-black italic tracking-wider text-primary drop-shadow-sm transition-opacity duration-300 group-hover:opacity-80 sm:text-3xl">
+      StarJet<span className="not-italic text-accent">.</span>
+    </span>
 
-                {/* <p className="caption truncate uppercase text-muted">
-                  Air & Cargo
-                </p> */}
-              </div>
-            </Link>
+    {/* Uniform Subtext with Aviation Letter-Spacing */}
+    <span className="truncate text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground transition-colors duration-300 group-hover:text-primary sm:text-xs">
+      Air &amp; Cargo
+    </span>
+  </div>
+</Link>
           </div>
 
           {/* Desktop navigation */}

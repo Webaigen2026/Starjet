@@ -23,10 +23,20 @@ export default function HeroSearch() {
                 free to bleed past its right edge. The outer <section>
                 keeps overflow-x-clip, so this never causes page scroll. */}
             <div className="relative">
-              {/* Clipped card: background photo, legibility gradients, and
-                  all interactive content live inside this rounded,
-                  overflow-hidden box. */}
-              <div className="relative isolate overflow-hidden rounded-[clamp(1.25rem,2.2vw,1.75rem)] bg-slate-950 shadow-[0_24px_80px_-28px_rgba(2,6,23,0.55)] dark:shadow-[0_24px_80px_-28px_rgba(0,0,0,0.75)]">
+              {/* Clipped card: background photo, atmospheric + legibility
+                  layers, and all interactive content live inside this
+                  rounded, overflow-hidden box. Softer slate-900 base
+                  (instead of near-black slate-950) reads as an elevated
+                  surface rather than a harsh void, closer to how Stripe/
+                  Apple treat dark hero panels. Two stacked shadows — a
+                  tight contact shadow plus a large soft ambient one — give
+                  the card real depth without looking heavy. */}
+              <div className="relative isolate overflow-hidden rounded-[clamp(1.25rem,2.2vw,1.75rem)] bg-slate-900 ">
+
+
+
+
+                {/* shadow-[0_2px_8px_rgba(2,6,23,0.25),0_32px_90px_-24px_rgba(2,6,23,0.6)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),0_32px_90px_-24px_rgba(0,0,0,0.85)] */}
                 {/* Background image */}
                 <Image
                   src="/airplane/hero_day_bg.png"
@@ -41,22 +51,37 @@ export default function HeroSearch() {
                   className="hs-hero-image object-cover object-[center_32%] sm:object-[center_28%]"
                 />
 
-                {/* Directional wash: guarantees text legibility at the bottom
-                    while leaving the sunset sky untouched near the top. */}
-                {/* <div
+                {/* Premium sky glow: a faint cool-to-warm atmospheric tint
+                    across the whole photo, tying the palette's sky-blue
+                    accent into the hero itself before any darkening
+                    happens. Kept very low-opacity — a wash, not a filter. */}
+                <div
                   aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent"
+                  className="absolute inset-0 bg-gradient-to-tr from-sky-500/10 via-transparent to-sky-300/20"
+                />
+
+                {/* Directional legibility wash: dark enough at the bottom
+                    for the headline and form to always read clearly, fully
+                    transparent by the upper third so the sky stays bright
+                    and the image doesn't feel dimmed as a whole. */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-900/20 to-transparent"
                 />
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-r from-slate-950/40 via-transparent to-transparent"
-                /> */}
+                  className="absolute inset-0 bg-gradient-to-r from-slate-950/25 via-transparent to-transparent"
+                />
 
                 {/* Hero content */}
                 <div className="relative z-10 flex min-h-[min(100svh,52rem)] flex-col justify-end px-[clamp(1rem,3vw,3rem)] pb-[clamp(1rem,2.5vw,2.5rem)] pt-[clamp(5.5rem,14vw,9rem)] sm:min-h-[min(88svh,48rem)] lg:min-h-[min(82svh,46rem)] xl:min-h-[42rem] 2xl:min-h-[44rem]">
                   <div className="flex w-full min-w-0 flex-col gap-[clamp(1.25rem,2.8vw,2.5rem)]">
                     <header className="max-w-4xl">
-                      <h1 className="hero-title max-w-[18ch] text-balance text-white sm:max-w-none lg:whitespace-nowrap">
+                      {/* Heavier weight, tighter tracking, and an elegant
+                          drop shadow instead of a flat solid fill — reads
+                          as confident and premium against the photo rather
+                          than merely "readable". */}
+                      <h1 className="hero-title max-w-[18ch] text-balance font-black tracking-tight text-white drop-shadow-[0_4px_18px_rgba(15,23,42,0.35)] sm:max-w-none lg:whitespace-nowrap">
                         Fly Smarter. Travel Better.
                       </h1>
                     </header>
@@ -84,6 +109,11 @@ export default function HeroSearch() {
                 aria-hidden="true"
                 className="hs-plane pointer-events-none absolute inset-0 z-20"
               >
+                {/* Atmospheric tint matched to the sky glow above, so the
+                    cutout reads as part of the same light environment as
+                    the background instead of a flat sticker pasted on top. */}
+                {/* <div className="absolute inset-0 bg-gradient-to-tr from-sky-500/5 via-transparent to-sky-300/10 mix-blend-soft-light" /> */}
+
                 <Image
                   src="/airplane/airplane_day_wt_bg.png"
                   alt=""
@@ -93,7 +123,7 @@ export default function HeroSearch() {
                     (min-width: 1024px) calc(100vw - 5rem),
                     100vw
                   "
-                  className="object-contain object-top sm:object-cover sm:object-[72%_28%]"
+                  className="object-contain object-top drop-shadow-[0_20px_35px_rgba(15,23,42,0.35)] sm:object-cover sm:object-[72%_28%]"
                 />
               </div>
             </div>

@@ -161,14 +161,7 @@ export default function Navbar() {
               Sign in
             </Link>
 
-            <Link
-              href="/flights"
-              className="button-text rounded-full flex shrink-0 cursor-pointer items-center justify-center gap-2 bg-accent px-8 py-4 text-accent-foreground transition-all duration-200 hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus-ring active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 "
-      
-            >
-              <Search className="h-4 w-4" />
-              Search flights
-            </Link>
+          
 
             {/* Hamburger (mobile drawer — unrelated to the desktop sidebar) */}
             <button

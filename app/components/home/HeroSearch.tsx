@@ -16,7 +16,7 @@ export default function HeroSearch() {
           From md to 2xl it appears below the hero. At 2xl it becomes a
           side column.
         */}
-        <div className="grid min-w-0 grid-cols-1 gap-[clamp(1.25rem,2.5vw,2.75rem)] rounded-3xl bg-surface p-10 2xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28vw)] 2xl:items-stretch 2xl:gap-10">
+        <div className="grid min-w-0 grid-cols-1 gap-[clamp(1.25rem,2.5vw,2.75rem)] rounded-3xl bg-surface sm:p-10 2xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28vw)] 2xl:items-stretch 2xl:gap-10">
           {/* Main hero */}
           <div className="min-w-0">
             <div className="relative">
@@ -27,7 +27,7 @@ export default function HeroSearch() {
               />
 
               {/* Floating hero card */}
-              <div className="hs-hero-card relative isolate overflow-hidden sm:rounded-[clamp(0.5rem,1vw,1rem)]">
+              <div className="hs-hero-card relative isolate overflow-hidden sm:rounded-[clamp(1rem,2vw,1.5rem)]">
          
                 <HeroBackground />
 

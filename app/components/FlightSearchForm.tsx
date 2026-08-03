@@ -108,33 +108,34 @@ export default function FlightSearchForm() {
       {/* The bar: a rounded rectangle on mobile (fields stack vertically),
           becoming the full pill shape once it lays out horizontally at sm+.
           Applying rounded-full unconditionally here was clipping the first
-          and last stacked fields into an oval on small screens. */}
-      <div className="overflow-hidden rounded-md border border-border/70 bg-surface shadow-2xl shadow-[color:var(--shadow-color)] sm:rounded-full">
+          and last stacked fields into an oval on small screens.
+          Shadow uses the theme's --shadow-color directly (it already swaps
+          between a soft light-mode tint and a deeper dark-mode tint), so a
+          single arbitrary shadow replaces the old shadow-2xl + shadow-color
+          combo, which was setting size/color twice. */}
+      <div className="overflow-hidden rounded-md border border-border/70 bg-surface shadow-[0_25px_50px_-12px_var(--shadow-color)] sm:rounded-full">
         <div className="flex flex-col divide-y divide-border sm:flex-row sm:items-stretch sm:divide-x sm:divide-y-0">
-          <div className="flex flex-1 items-stretch sm:min-w-0">
-            <AirportField
-              name="originCode"
-              value={originCode}
-              onChange={setOriginCode}
-              airports={originAirports}
-              placeholder="From?"
-              icon={
-                <PlaneTakeoff
-                  className="h-[18px] w-[18px] shrink-0 text-primary"
-                  aria-hidden="true"
-                />
-              }
-              chipLabel={
-                originAirport
-                  ? `${originAirport.name} (${originAirport.code})`
-                  : null
-              }
-              onClearChip={() => setOriginCode("")}
-            />
+          <AirportField
+            name="originCode"
+            value={originCode}
+            onChange={setOriginCode}
+            airports={originAirports}
+            placeholder="From?"
+            icon={
+              <PlaneTakeoff
+                className="h-[18px] w-[18px] shrink-0 text-primary"
+                aria-hidden="true"
+              />
+            }
+            chipLabel={
+              originAirport
+                ? `${originAirport.name} (${originAirport.code})`
+                : null
+            }
+            onClearChip={() => setOriginCode("")}
+          />
 
-          
-          </div>
-         <div className ="flex justify-center  p-4">     <SwapButton onClick={handleSwapAirports} /></div>
+          <SwapButton onClick={handleSwapAirports} />
 
           <AirportField
             name="destinationCode"
@@ -175,16 +176,17 @@ export default function FlightSearchForm() {
         </p>
       )}
 
-      <div className="body-text mt-4 hidden items-center gap-3 rounded-2xl bg-primary-muted px-4 py-3 text-sm font-medium text-primary dark:text-primary sm:flex">
-        <Ticket className="h-5 w-5 shrink-0 text-background dark:text-white" aria-hidden="true" />
-        <span className="text-background dark:text-white">Passenger booking, route search, and aircraft details.</span>
+      {/* bg-primary-muted / text-background aren't defined tokens — they were
+          silently no-op-ing, leaving this bar unstyled and the text
+          effectively invisible against the page. Swapped to real tokens
+          (surface-muted / secondary) so it renders correctly in both themes. */}
+      <div className="body-text mt-4 hidden items-center gap-3 rounded-2xl bg-surface-muted px-4 py-3 text-sm font-medium text-secondary sm:flex">
+        <Ticket className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+        <span>Passenger booking, route search, and aircraft details.</span>
       </div>
     </form>
   );
 }
-
-
-
 
 function TripTypeInlineControl({
   value,
@@ -210,7 +212,7 @@ function TripTypeInlineControl({
             aria-selected={active}
             onClick={() => onChange(type)}
             className={cn(
-              "button-text flex cursor-pointer items-center gap-1.5 rounded-full px-1 py-1 text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              "button-text flex cursor-pointer items-center gap-1.5 rounded-full px-1 py-1 text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring",
               active
                 ? "font-semibold text-white"
                 : "text-white/70 hover:text-white",
@@ -251,7 +253,7 @@ function AirportField({
       {icon}
 
       {chipLabel && onClearChip ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-sm font-medium text-secondary">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-muted px-3 py-1 text-sm font-medium text-accent-muted-foreground">
           {chipLabel}
           <button
             type="button"
@@ -260,7 +262,7 @@ function AirportField({
               onClearChip();
             }}
             aria-label="Clear selection"
-            className="cursor-pointer rounded-full p-0.5 text-primary/70 hover:text-primary"
+            className="cursor-pointer rounded-full p-0.5 text-accent-muted-foreground/70 hover:text-accent-muted-foreground"
           >
             <X className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
@@ -291,7 +293,7 @@ function DateRangeField({ tripType }: { tripType: TripType }) {
   return (
     <div className={cn(SEGMENT, "gap-2")}>
       <CalendarDays
-            className="h-[18px] w-[18px] shrink-0 text-primary"
+        className="h-[18px] w-[18px] shrink-0 text-primary"
         aria-hidden="true"
       />
 
@@ -302,7 +304,10 @@ function DateRangeField({ tripType }: { tripType: TripType }) {
           type="date"
           required
           aria-label="Departure"
-          className={SEGMENT_INPUT}
+          // Native date-picker icon is painted by the browser using the
+          // input's color-scheme; without this it renders as a near-black
+          // icon that disappears against a dark surface in dark mode.
+          className={cn(SEGMENT_INPUT, "[color-scheme:light] dark:[color-scheme:dark]")}
         />
 
         {tripType === "ROUND_TRIP" && (
@@ -313,7 +318,7 @@ function DateRangeField({ tripType }: { tripType: TripType }) {
               name="returnDate"
               type="date"
               aria-label="Return"
-              className={SEGMENT_INPUT}
+              className={cn(SEGMENT_INPUT, "[color-scheme:light] dark:[color-scheme:dark]")}
             />
           </>
         )}
@@ -350,7 +355,7 @@ function SwapButton({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       aria-label="Swap departure and destination airports"
-      className="group flex shrink-0 cursor-pointer items-center justify-center px-1 text-primary transition-colors duration-200 hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="group flex shrink-0 cursor-pointer items-center justify-center border-y border-border px-3 py-3 text-primary transition-colors duration-200 hover:bg-surface-muted/60 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:border-x sm:border-y-0"
     >
       <ArrowRightLeft
         className="h-4 w-4 rotate-0 transition-transform duration-300 group-hover:rotate-180"

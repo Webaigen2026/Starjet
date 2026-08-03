@@ -249,7 +249,7 @@ export default function Navbar() {
             onClick={closeSidebar}
             className="flex items-center gap-3"
           >
-            <div className="relative h-10 w-10 overflow-hidden rounded-full border border-border bg-accent-muted">
+            <div className="relative h-10 w-10 overflow-hidden ">
               <BrandLogo size={40} />
             </div>
 

@@ -78,7 +78,15 @@ export default function SidebarNav() {
             href="/"
             className="button-text truncate text-lg font-black tracking-tight text-primary"
           >
-            StarJet
+            {/* StarJet */}
+            <div className="min-w-0 flex flex-col justify-center">
+    {/* Uniform Color Title with Elegant Typography */}
+    <span className="truncate text-xl font-black italic tracking-wider text-primary drop-shadow-sm transition-opacity duration-300 group-hover:opacity-80 sm:text-2xl">
+      StarJet<span className="not-italic text-accent">.</span>
+    </span>
+
+  
+  </div>
           </Link>
         )}
       </div>

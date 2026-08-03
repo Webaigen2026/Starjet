@@ -12,6 +12,8 @@ import {
   PlaneTakeoff,
 } from "lucide-react";
 
+import { useIsMounted } from "@/app/lib/useIsMounted";
+
 interface TravelTool {
   title: string;
   description: string;
@@ -62,6 +64,7 @@ const travelTools: TravelTool[] = [
 
 export default function TravelToolsSection() {
   const trackRef = useRef<HTMLDivElement>(null);
+  const mounted = useIsMounted();
 
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
@@ -150,13 +153,13 @@ export default function TravelToolsSection() {
           <div className="ml-auto flex gap-2">
             <NavigationButton
               direction="previous"
-              disabled={atStart}
+              disabled={mounted && atStart}
               onClick={() => scrollCards("previous")}
             />
 
             <NavigationButton
               direction="next"
-              disabled={atEnd}
+              disabled={mounted && atEnd}
               onClick={() => scrollCards("next")}
             />
           </div>

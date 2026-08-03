@@ -1,155 +1,174 @@
-import Image from "next/image";
-
 import TravelImageWall from "../TravelImageWall";
 import FlightSearchForm from "../FlightSearchForm";
+import HeroAirplaneCutout from "./HeroAirplaneCutout";
+import HeroBackground from "./HeroBackground";
 
 export default function HeroSearch() {
   return (
     <section className="relative w-full overflow-x-clip bg-background">
-      <div className="mx-auto w-full max-w-[1800px]   sm:px-[clamp(0.875rem,2.5vw,2.5rem)] sm:py-[clamp(0.75rem,1.8vw,2rem)] ">
-        {/* px-[clamp(0.875rem,2.5vw,2.5rem)] py-[clamp(0.75rem,1.8vw,2rem)] */}
+      <div className="mx-auto w-full max-w-[1800px] sm:px-[clamp(0.875rem,2.5vw,2.5rem)] sm:py-[clamp(0.75rem,1.8vw,2rem)]">
         {/*
-          Image wall is dropped entirely below md (not just visually hidden)
-          so phones get a single-focus hero with no reserved empty space.
-          It reappears stacked below the hero from md to 2xl, then becomes
-          a side-by-side sidebar at 2xl so FlightSearchForm keeps a
-          full-width desktop grid on laptops.
+          The travel image wall is removed below md so mobile receives a
+          focused, single-column hero without reserved sidebar space.
+
+          From md to 2xl it appears below the hero. At 2xl it becomes a
+          side column.
         */}
         <div className="grid min-w-0 grid-cols-1 gap-[clamp(1.25rem,2.5vw,2.75rem)] 2xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28vw)] 2xl:items-stretch 2xl:gap-10">
           {/* Main hero */}
           <div className="min-w-0">
-            {/* Outer wrapper has no overflow-hidden of its own — it exists
-                so the foreground plane cutout below can be positioned
-                against the same box as the clipped card, while still being
-                free to bleed past its right edge. The outer <section>
-                keeps overflow-x-clip, so this never causes page scroll. */}
             <div className="relative">
-              {/* Clipped card: background photo, atmospheric + legibility
-                  layers, and all interactive content live inside this
-                  rounded, overflow-hidden box. Softer slate-900 base
-                  (instead of near-black slate-950) reads as an elevated
-                  surface rather than a harsh void, closer to how Stripe/
-                  Apple treat dark hero panels. Two stacked shadows — a
-                  tight contact shadow plus a large soft ambient one — give
-                  the card real depth without looking heavy. */}
-              <div className="relative isolate overflow-hidden  sm:rounded-[clamp(1.25rem,2.2vw,1.75rem)]   ">
+              {/* Soft ambient glow behind the hero card */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -inset-3 -z-10 rounded-[clamp(2rem,3.5vw,2.75rem)] bg-sky-200/40 blur-3xl dark:bg-cyan-400/10 sm:-inset-5"
+              />
 
-{/* rounded-[clamp(1.25rem,2.2vw,1.75rem)] bg-slate-900  */}
+              {/* Floating hero card */}
+              <div className="hs-hero-card relative isolate overflow-hidden sm:rounded-[clamp(1.5rem,2.8vw,2.25rem)]">
+                <HeroBackground />
 
-
-                {/* shadow-[0_2px_8px_rgba(2,6,23,0.25),0_32px_90px_-24px_rgba(2,6,23,0.6)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),0_32px_90px_-24px_rgba(0,0,0,0.85)] */}
-                {/* Background image */}
-                <Image
-                  src="/airplane/hero_day_bg.png"
-                  alt="A StarJet aircraft cruising above the clouds at sunset"
-                  fill
-                  priority
-                  sizes="
-                    (min-width: 1536px) min(1800px - 28vw - 5rem, calc(100vw - 28vw - 5rem)),
-                    (min-width: 1024px) calc(100vw - 5rem),
-                    100vw
-                  "
-                  className="hs-hero-image object-cover object-[center_32%] sm:object-[center_28%]"
-                />
-
-                {/* Premium sky glow: a faint cool-to-warm atmospheric tint
-                    across the whole photo, tying the palette's sky-blue
-                    accent into the hero itself before any darkening
-                    happens. Kept very low-opacity — a wash, not a filter. */}
+                {/* Soft atmospheric sky tint */}
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-tr from-sky-500/10 via-transparent to-sky-300/20"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-sky-500/[0.06] via-transparent to-sky-300/[0.14] dark:from-sky-950/[0.14] dark:to-indigo-400/[0.07]"
                 />
 
-                {/* Directional legibility wash: dark enough at the bottom
-                    for the headline and form to always read clearly, fully
-                    transparent by the upper third so the sky stays bright
-                    and the image doesn't feel dimmed as a whole. */}
+                {/* Bottom readability fade */}
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-900/20 to-transparent"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/35 via-slate-900/[0.08] to-transparent dark:from-black/50 dark:via-slate-950/[0.13]"
                 />
+
+                {/* Gentle left-side readability fade */}
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-r from-slate-950/25 via-transparent to-transparent"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950/[0.12] via-transparent to-transparent dark:from-black/20"
+                />
+
+                {/* Soft perimeter dissolve into the page background */}
+                <div
+                  aria-hidden="true"
+                  className="hs-hero-edge-fade pointer-events-none absolute inset-0"
+                />
+
+                {/* Faint highlight along the top rim */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/20 to-transparent dark:from-white/[0.06]"
                 />
 
                 {/* Hero content */}
-                <div className="relative z-10 flex min-h-[min(100svh,52rem)] flex-col justify-end px-[clamp(1rem,3vw,3rem)] pb-[clamp(1rem,2.5vw,2.5rem)] pt-[clamp(5.5rem,14vw,9rem)] sm:min-h-[min(88svh,48rem)] lg:min-h-[min(82svh,46rem)] xl:min-h-[42rem] 2xl:min-h-[44rem]">
-                  <div className="flex w-full min-w-0 flex-col gap-[clamp(1.25rem,2.8vw,2.5rem)]">
-                    <header className="max-w-4xl">
-                      {/* Heavier weight, tighter tracking, and an elegant
-                          drop shadow instead of a flat solid fill — reads
-                          as confident and premium against the photo rather
-                          than merely "readable". */}
-                      <h1 className="hero-title max-w-[18ch] text-balance font-black tracking-tight text-white drop-shadow-[0_4px_18px_rgba(15,23,42,0.35)] sm:max-w-none lg:whitespace-nowrap">
-                        Fly Smarter. Travel Better.
-                      </h1>
+                <div
+                  className="
+                    relative z-10
+                    flex min-h-[36rem] flex-col justify-end
+                    px-5 pb-5 pt-40
+
+                    sm:min-h-[min(72svh,39rem)]
+                    sm:px-[clamp(1.5rem,3vw,3rem)]
+                    sm:pb-[clamp(1.5rem,2.5vw,2.25rem)]
+                    sm:pt-[clamp(4rem,10vw,7rem)]
+
+                    lg:min-h-[min(72svh,40rem)]
+                    xl:min-h-[36rem]
+                    2xl:min-h-[44rem]
+                  "
+                >
+
+
+
+           
+                  <div className="flex w-full max-w-5xl flex-col gap-6 sm:gap-8">
+                    {/* Hero heading — tablet and desktop only */}
+                    <header className="hidden sm:block">
+                      <h2 className="hero-title max-w-3xl font-heading text-[clamp(2rem,4vw,3.25rem)] font-extrabold leading-[0.94] tracking-[-0.045em] text-white drop-shadow-[0_4px_20px_rgba(15,23,42,0.28)]">
+                        Fly Smarter.
+                        <br className="lg:hidden" />
+                        <span className="lg:ml-2">Travel Better.</span>
+                      </h2>
                     </header>
 
-                    {/* Form placement only — component logic untouched */}
-                    <div className="w-full min-w-0 max-w-full">
+                    {/* Search form */}
+                    <div className="relative z-30 w-full">
                       <FlightSearchForm />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Foreground plane cutout — layered on top of the card.
-                  All positioning/sizing math (shift, vertical nudge, scale)
-                  lives in the .hs-plane rule in the <style> block below —
-                  not here as utility classes — because the mobile values
-                  need to be fluid (a calc()-based linear interpolation
-                  across the 320–639px range), which is awkward and hard to
-                  read as a Tailwind arbitrary-value class. Everything is
-                  still funneled through the same --hs-plane-* custom
-                  properties consumed inside the animation keyframes, so
-                  nothing here fights with the entrance/float animation's
-                  own `transform` writes. */}
-              <div
-                aria-hidden="true"
-                className="hs-plane pointer-events-none absolute inset-0 z-20"
-              >
-                {/* Atmospheric tint matched to the sky glow above, so the
-                    cutout reads as part of the same light environment as
-                    the background instead of a flat sticker pasted on top. */}
-                {/* <div className="absolute inset-0 bg-gradient-to-tr from-sky-500/5 via-transparent to-sky-300/10 mix-blend-soft-light" /> */}
-
-                <Image
-                  src="/airplane/airplane_day_wt_bg.png"
-                  alt=""
-                  fill
-                  sizes="
-                    (min-width: 1536px) min(1800px - 28vw - 5rem, calc(100vw - 28vw - 5rem)),
-                    (min-width: 1024px) calc(100vw - 5rem),
-                    100vw
-                  "
-                  className="object-contain object-top drop-shadow-[0_20px_35px_rgba(15,23,42,0.35)] sm:object-cover sm:object-[72%_28%]"
-                />
-              </div>
+              {/* Foreground airplane */}
+              <HeroAirplaneCutout />
             </div>
           </div>
 
-          {/* Travel image wall — hidden entirely below md */}
+          {/* Travel image wall — stretches to match the adjacent hero card */}
           <aside className="hidden min-w-0 self-stretch md:block">
-            <div className="mx-auto flex h-full w-full max-w-xl items-center justify-center overflow-hidden rounded-[clamp(1.25rem,2.2vw,1.75rem)] px-2 py-[clamp(1rem,3vw,1.75rem)] sm:max-w-2xl sm:px-4 md:max-w-3xl 2xl:max-w-none 2xl:px-1 2xl:py-2">
-              {/* Top padding offsets TravelImageWall’s upward translates without editing it */}
-              <div className="w-full">
-                <TravelImageWall />
-              </div>
+            <div className="mx-auto h-full w-full max-w-xl overflow-hidden px-2 py-[clamp(1rem,3vw,1.75rem)] sm:max-w-2xl sm:rounded-[clamp(1.25rem,2.2vw,1.75rem)] sm:px-4 md:max-w-3xl 2xl:max-w-none 2xl:px-1 2xl:py-2">
+              <TravelImageWall />
             </div>
           </aside>
         </div>
       </div>
 
-      {/* Scoped hero-only animations, mirroring the naming convention used
-          in TravelImageWall (prefixed to avoid colliding with other
-          components' global styles). */}
       <style>{`
+        .hs-hero-card {
+          border: 0;
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.42),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+            0 2px 6px rgba(148, 163, 184, 0.1),
+            0 18px 48px -12px rgba(125, 211, 252, 0.38),
+            0 40px 90px -28px rgba(148, 163, 184, 0.24);
+        }
+
+        .dark .hs-hero-card {
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.09),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+            0 2px 8px rgba(0, 0, 0, 0.32),
+            0 18px 48px -12px rgba(34, 211, 238, 0.12),
+            0 40px 90px -24px rgba(0, 0, 0, 0.5);
+        }
+
+        /*
+          Fade the outer edge of the background media while keeping the
+          center fully visible and sharp.
+        */
+        .hs-hero-media {
+          -webkit-mask-image: radial-gradient(
+            ellipse 96% 92% at 50% 42%,
+            #000 60%,
+            rgba(0, 0, 0, 0.94) 74%,
+            rgba(0, 0, 0, 0.58) 87%,
+            transparent 100%
+          );
+          mask-image: radial-gradient(
+            ellipse 96% 92% at 50% 42%,
+            #000 60%,
+            rgba(0, 0, 0, 0.94) 74%,
+            rgba(0, 0, 0, 0.58) 87%,
+            transparent 100%
+          );
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+          -webkit-mask-size: 100% 100%;
+          mask-size: 100% 100%;
+        }
+
+        .hs-hero-edge-fade {
+          background: radial-gradient(
+            ellipse 100% 100% at 50% 50%,
+            transparent 64%,
+            color-mix(in srgb, var(--background) 48%, transparent) 100%
+          );
+        }
+
         @keyframes hs-ken-burns {
           from {
-            transform: scale(1.08);
+            transform: scale(1.07);
           }
+
           to {
             transform: scale(1);
           }
@@ -159,18 +178,9 @@ export default function HeroSearch() {
           animation: hs-ken-burns 14s ease-out forwards;
         }
 
-        /* --hs-plane-shift / --hs-plane-y / --hs-plane-scale drive the
-           plane cutout's position and size. Below 640px they're fluid,
-           linearly interpolated across a 320–639px reference range using
-           calc()'s length-divided-by-length trick to get a unitless
-           multiplier (100vw - 320px) / 319px goes from 0 at a 320px-wide
-           phone to 1 at a 639px-wide one) — so the plane scales and nudges
-           smoothly across small phones, large phones, and phablets alike,
-           instead of jumping straight from one fixed mobile value to the
-           sm+ desktop value. clamp() guards both ends for anything
-           narrower than 320px or briefly wider than 639px.
-           Tune the two endpoint numbers in each clamp() (not the vw math)
-           if the fit needs adjusting on a real device. */
+        /*
+          Foreground airplane positioning and scale.
+        */
         .hs-plane {
           --hs-plane-shift: 0px;
           --hs-plane-y: clamp(
@@ -205,20 +215,19 @@ export default function HeroSearch() {
           }
         }
 
-        /* Plane cutout: rises/fades in on load, holding at its responsive
-           --hs-plane-shift / --hs-plane-y / --hs-plane-scale values, then
-           settles into a slow, gentle float — same entrance-then-drift
-           language as TravelImageWall's circles. */
         @keyframes hs-plane-enter {
           from {
             opacity: 0;
-            transform: translateX(calc(var(--hs-plane-shift, 0px) - 1.5rem))
+            transform:
+              translateX(calc(var(--hs-plane-shift, 0px) - 1.5rem))
               translateY(calc(var(--hs-plane-y, 0px) + 16px))
               scale(calc(var(--hs-plane-scale, 1) * 0.96));
           }
+
           to {
             opacity: 1;
-            transform: translateX(var(--hs-plane-shift, 0px))
+            transform:
+              translateX(var(--hs-plane-shift, 0px))
               translateY(var(--hs-plane-y, 0px))
               scale(var(--hs-plane-scale, 1));
           }
@@ -227,12 +236,15 @@ export default function HeroSearch() {
         @keyframes hs-plane-float {
           0%,
           100% {
-            transform: translateX(var(--hs-plane-shift, 0px))
+            transform:
+              translateX(var(--hs-plane-shift, 0px))
               translateY(var(--hs-plane-y, 0px))
               scale(var(--hs-plane-scale, 1));
           }
+
           50% {
-            transform: translateX(var(--hs-plane-shift, 0px))
+            transform:
+              translateX(var(--hs-plane-shift, 0px))
               translateY(calc(var(--hs-plane-y, 0px) - 10px))
               scale(var(--hs-plane-scale, 1));
           }
@@ -254,7 +266,8 @@ export default function HeroSearch() {
           .hs-plane {
             opacity: 1;
             animation: none;
-            transform: translateX(var(--hs-plane-shift, 0px))
+            transform:
+              translateX(var(--hs-plane-shift, 0px))
               translateY(var(--hs-plane-y, 0px))
               scale(var(--hs-plane-scale, 1));
           }

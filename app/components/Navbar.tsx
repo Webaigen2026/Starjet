@@ -1,21 +1,18 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ChevronRight,
   Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
   Search,
   UserRound,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import BrandLogo from "./BrandLogo";
 import ThemeToggle from "./ThemeToggle";
-import { useSidebar } from "./SidebarContext";
 import { cn } from "@/app/lib/utils";
 
 const navigation = [
@@ -37,41 +34,10 @@ const navigation = [
   },
 ];
 
-/**
- * Theme-aware brand mark.
- * Light mode -> favicon-512x512.png
- * Dark mode  -> favicon-512x512-white.png
- * Swapped purely via CSS (`dark:`), so there's no flash-of-wrong-logo on
- * load and no dependency on the theme hook being mounted client-side.
- */
-function BrandLogo({ size = 58 }: { size?: number }) {
-  return (
-    <>
-      <Image
-        src="/airplane/logo_blue_upgrade.png"
-        alt=""
-        width={size}
-        height={size}
-        priority
-        className="h-full w-full object-contain dark:hidden"
-      />
-      <Image
-        src="/airplane/logo_blue_upgrade.png"
-        alt=""
-        width={size}
-        height={size}
-        priority
-        className="hidden h-full w-full object-contain dark:block"
-      />
-    </>
-  );
-}
-
 export default function Navbar() {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarPath, setSidebarPath] = useState(pathname);
-  const { collapsed, toggleSidebar } = useSidebar();
 
   // Close the drawer when the route changes (render-time sync, no effect).
   if (sidebarPath !== pathname) {
@@ -113,7 +79,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border/70 bg-background/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-50  bg-background/95 backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] w-full max-w-full items-center justify-between px-4 sm:px-6 lg:h-20 lg:px-10 xl:px-16">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             {/* Desktop sidebar toggle */}
@@ -185,7 +151,7 @@ export default function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <ThemeToggle className="hidden lg:inline-flex" />
+            <ThemeToggle className="hidden lg:inline-flex cursor-pointer" />
 
             <Link
               href="/login"
@@ -262,7 +228,7 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <ThemeToggle compact />
+            <ThemeToggle compact className="cursor-pointer" />
 
             <button
               type="button"

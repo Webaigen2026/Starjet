@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent, type ReactNode } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   Check,
@@ -13,6 +12,8 @@ import {
   Send,
   X,
 } from "lucide-react";
+
+import BrandLogo from "./BrandLogo";
 
 interface FooterLink {
   label: string;
@@ -201,17 +202,10 @@ export default function SiteFooter() {
               aria-label="StarJet home"
               className="inline-flex items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-surface"
             >
-              <Image
-                src="/favicon-pack/favicon-512x512.png"
-                alt=""
-                width={66}
-                height={66}
-                className="h-22 w-22 object-contain sm:h-24 sm:w-24"
-              />
-
-              <div />
+              <div className="relative h-22 w-22 sm:h-24 sm:w-24">
+                <BrandLogo size={96} />
+              </div>
             </Link>
-
             <p className="body-text mt-5 max-w-md text-sm text-secondary sm:text-base">
               Connecting Boston, New York, and South Florida to Cap-Haïtien and
               Port-au-Prince with dependable, nonstop service.

@@ -1,5 +1,4 @@
 import Image from "next/image";
-import ThemeProvider from "./ThemeProvider";
 
 const leftImages = [
   {
@@ -41,27 +40,23 @@ const WINDOW_RADIUS = "50% 50% 42% 42% / 64% 64% 28% 28%";
 
 export default function TravelImageWall() {
   return (
-    <div className="relative   mx-auto w-full max-w-3xl overflow-hidden py-10 px-2  sm:px-4  lg:px-2 xl:h-full xl:max-w-none ">
-      {/* Decorative background glow */}
-      {/* <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-3/4 w-3/4 -translate-x-1/2 -translate-y-1/2 "
-      /> */}
+    <div className="relative mx-auto flex h-full w-full max-w-3xl items-center overflow-hidden px-2 sm:px-4 lg:px-2 xl:max-w-none">
+      <div className="grid w-full grid-cols-2 items-start gap-3 min-[400px]:gap-4 sm:gap-5 lg:gap-6">
+        {/*
+          Stagger without negative margin: pad the left column from the top
+          and the right from the bottom by the same clamp. Both columns keep
+          identical total height while the windows fall out of row-lock —
+          brick/masonry instead of a perfect grid. The clamp mirrors roughly
+          half a window's sizing so the offset scales with the windows.
+        */}
+        <ImageColumn
+          images={leftImages}
+          className="pt-[clamp(2.5rem,4vw,6.5rem)]"
+        />
 
-      <div className="grid grid-cols-2 items-start gap-3 min-[400px]:gap-4 sm:gap-5 lg:gap-6">
-        <ImageColumn images={leftImages} className="" />
-
-        {/* Offset upward by roughly half a window's height so the two
-            columns fall out of row-lock with each other — a brick/masonry
-            stagger instead of a perfect grid. The clamp mirrors half of
-            each circle's own clamp(8rem,40vw,14rem) sizing, so the offset
-            scales in step with the windows themselves at every breakpoint.
-            Negative margin pushes the column above the wrapper's top edge;
-            the wrapper's own overflow-hidden (set on the outermost div
-            above) clips that excess cleanly instead of spilling out. */}
         <ImageColumn
           images={rightImages}
-          className="-mt-[clamp(2.5rem,4vw,6.5rem)]"
+          className="pb-[clamp(2.5rem,4vw,6.5rem)]"
         />
       </div>
     </div>

@@ -10,6 +10,8 @@ import {
   Clock3,
 } from "lucide-react";
 
+import { useIsMounted } from "@/app/lib/useIsMounted";
+
 interface TravelDeal {
   city: string;
   duration: string;
@@ -56,6 +58,7 @@ const deals: TravelDeal[] = [
 
 export default function TravelDealsCarousel() {
   const trackRef = useRef<HTMLDivElement>(null);
+  const mounted = useIsMounted();
 
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
@@ -141,13 +144,13 @@ export default function TravelDealsCarousel() {
           <div className="ml-auto flex gap-2">
             <NavButton
               direction="prev"
-              disabled={atStart}
+              disabled={mounted && atStart}
               onClick={() => scrollByCard("prev")}
             />
 
             <NavButton
               direction="next"
-              disabled={atEnd}
+              disabled={mounted && atEnd}
               onClick={() => scrollByCard("next")}
             />
           </div>

@@ -41,12 +41,12 @@ const WINDOW_RADIUS = "50% 50% 42% 42% / 64% 64% 28% 28%";
 
 export default function TravelImageWall() {
   return (
-    <div className="relative   mx-auto w-full max-w-3xl overflow-hidden px-2  sm:px-4  lg:px-2 xl:h-full xl:max-w-none ">
+    <div className="relative   mx-auto w-full max-w-3xl overflow-hidden py-10 px-2  sm:px-4  lg:px-2 xl:h-full xl:max-w-none ">
       {/* Decorative background glow */}
-      <div
+      {/* <div
         aria-hidden="true"
         className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-3/4 w-3/4 -translate-x-1/2 -translate-y-1/2 "
-      />
+      /> */}
 
       <div className="grid grid-cols-2 items-start gap-3 min-[400px]:gap-4 sm:gap-5 lg:gap-6">
         <ImageColumn images={leftImages} className="" />
@@ -61,7 +61,7 @@ export default function TravelImageWall() {
             above) clips that excess cleanly instead of spilling out. */}
         <ImageColumn
           images={rightImages}
-          className="-mt-[clamp(3.5rem,18vw,6.5rem)]"
+          className="-mt-[clamp(2.5rem,4vw,6.5rem)]"
         />
       </div>
     </div>
@@ -88,7 +88,7 @@ function ImageColumn({ images, className = "" }) {
 function TravelCircle({ src, alt, priority = false }) {
   return (
     <div
-      className="group relative mx-auto aspect-square w-full max-w-[clamp(8rem,40vw,14rem)] overflow-hidden border border-white/60 shadow-[0_18px_45px_-20px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/5"
+      className="group relative mx-auto aspect-square w-full max-w-[clamp(7rem,34vw,12rem)] overflow-hidden border border-white/60 shadow-[0_2px_8px_rgba(0,0,0,0.06),_0_16px_32px_-8px_rgba(0,0,0,0.12)] ring-1 ring-slate-900/5"
       style={{ borderRadius: WINDOW_RADIUS }}
     >
       <Image

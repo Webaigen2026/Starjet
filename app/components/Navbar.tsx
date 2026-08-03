@@ -44,11 +44,11 @@ const navigation = [
  * Swapped purely via CSS (`dark:`), so there's no flash-of-wrong-logo on
  * load and no dependency on the theme hook being mounted client-side.
  */
-function BrandLogo({ size = 48 }: { size?: number }) {
+function BrandLogo({ size = 58 }: { size?: number }) {
   return (
     <>
       <Image
-        src="/favicon-pack/favicon-512x512.png"
+        src="/airplane/logo_blue_upgrade.png"
         alt=""
         width={size}
         height={size}
@@ -56,7 +56,7 @@ function BrandLogo({ size = 48 }: { size?: number }) {
         className="h-full w-full object-contain dark:hidden"
       />
       <Image
-        src="/favicon-pack/favicon-512x512-white.png"
+        src="/airplane/logo_white_upgrade.png"
         alt=""
         width={size}
         height={size}
@@ -137,18 +137,18 @@ export default function Navbar() {
               aria-label="StarJet home"
               className="group flex min-w-0 items-center gap-2.5 sm:gap-3"
             >
-              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-accent-muted transition group-hover:border-accent sm:h-12 sm:w-12">
-                <BrandLogo size={48} />
-              </div>
+         <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full transition group-hover:border-accent sm:h-24 sm:w-24">
+  <BrandLogo size={96} />
+</div>
 
               <div className="min-w-0">
                 <p className="truncate text-base font-bold tracking-tight text-primary sm:text-lg">
                   StarJet.
                 </p>
 
-                <p className="caption truncate uppercase text-muted">
+                {/* <p className="caption truncate uppercase text-muted">
                   Air & Cargo
-                </p>
+                </p> */}
               </div>
             </Link>
           </div>

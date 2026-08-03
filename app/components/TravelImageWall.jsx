@@ -44,27 +44,23 @@ const GLASS_RADIUS = "50% 50% 40% 40% / 62% 62% 26% 26%";
 
 export default function TravelImageWall() {
   return (
-    // Hidden below sm (this whole decorative wall is skipped on small
-    // screens), then switches back to flex at sm+ — hidden alone only
-    // toggles display:none on/off, it doesn't restore the original flex
-    // layout, so the sm: variant has to explicitly say "flex" again.
-    <div className="relative mx-auto hidden h-full w-full max-w-3xl items-center overflow-hidden px-2 sm:flex sm:px-4 lg:px-2 xl:max-w-none">
+    // overflow-hidden → overflow-visible: the right column is now pulled up
+    // past the top of this container via negative margin, so clipping it
+    // here would just cut the overflowing part off instead of letting it
+    // spill upward the way the stagger is meant to look.
+    <div className="relative mx-auto hidden h-full w-full max-w-3xl items-center overflow-visible px-2 sm:flex sm:px-4 lg:px-2 xl:max-w-none">
       <div className="grid w-full grid-cols-2 items-start gap-3 min-[400px]:gap-4 sm:gap-5 lg:gap-6">
         {/*
-          Stagger without negative margin: pad the left column from the top
-          and the right from the bottom by the same clamp. Both columns keep
-          identical total height while the windows fall out of row-lock —
-          brick/masonry instead of a perfect grid. The clamp mirrors roughly
-          half a window's sizing so the offset scales with the windows.
+          Left column stays put; right column is pulled upward with a
+          negative top margin so its rows sit higher than the left
+          column's — the two grids fall out of row-lock the opposite
+          direction from before (right rises instead of dropping).
         */}
-        <ImageColumn
-          images={leftImages}
-          className="pt-[clamp(2.5rem,4vw,6.5rem)]"
-        />
+        <ImageColumn images={leftImages} />
 
         <ImageColumn
           images={rightImages}
-          className="pb-[clamp(2.5rem,4vw,6.5rem)]"
+          className="-mt-[clamp(2.5rem,4vw,1.5rem)]"
         />
       </div>
     </div>
@@ -91,13 +87,16 @@ function ImageColumn({ images, className = "" }) {
 function TravelCircle({ src, alt, priority = false }) {
   return (
     // Outer plastic bezel: a thick painted rim (gradient, not a photo) that
-    // reads as the window's molded frame. Neumorphic drop shadow lifts the
-    // whole assembly off the page — moved from inline `style` to a Tailwind
-    // arbitrary `shadow-[...]` class specifically so it can be overridden by
-    // `dark:max-[639px]:shadow-none` below; an inline style would always
-    // beat a class on specificity, so the toggle couldn't win against it.
+    // reads as the window's molded frame. Shadow now uses the shared
+    // --neu-highlight / --neu-shadow tokens (same spec as the navbar and
+    // hero card: -20/-20px highlight + 20/20px shadow, 28px blur, scaled
+    // down to suit this control's small size — offset ≈ blur × 0.35,
+    // matching the ratio used for the navbar's NEU_RAISED buttons). These
+    // tokens already flip automatically between light and dark mode via
+    // globals.css, so the old dark:max-[639px]:shadow-none /
+    // dark:min-[640px]:shadow-[...] overrides are no longer needed.
     <div
-      className="group relative mx-auto aspect-square w-full max-w-[clamp(7rem,34vw,12rem)] p-[clamp(0.4rem,1.4vw,0.65rem)] shadow-[6px_6px_12px_rgba(209,217,230,0.9),-6px_-6px_12px_rgba(255,255,255,0.9)] dark:max-[639px]:shadow-none dark:min-[640px]:shadow-[0_8px_20px_var(--shadow-color)]"
+      className="group relative mx-auto aspect-square w-full max-w-[clamp(7rem,34vw,12rem)] p-[clamp(0.4rem,1.4vw,0.65rem)] shadow-[-3px_-3px_7px_var(--color-neu-highlight),3px_3px_7px_var(--color-neu-shadow)]"
       style={{
         borderRadius: WINDOW_RADIUS,
         // background:

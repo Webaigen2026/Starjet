@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ChevronRight,
+  Home,
   Menu,
   Search,
   UserRound,
@@ -16,30 +17,32 @@ import ThemeToggle from "./ThemeToggle";
 import { cn } from "@/app/lib/utils";
 
 const navigation = [
-  {
-    label: "Flights",
-    href: "/flights",
-  },
-  {
-    label: "Cargo",
-    href: "/cargo",
-  },
-  {
-    label: "Charter",
-    href: "/charter",
-  },
-  {
-    label: "Contact",
-    href: "/contact",
-  },
+  { label: "Home", href: "/" },
+  { label: "Flights", href: "/flights" },
+  { label: "Cargo", href: "/cargo" },
+  { label: "Charter", href: "/charter" },
+  { label: "Contact", href: "/contact" },
 ];
+
+// Neumorphic shadow tokens, scaled down from the -20/20px, 28px-blur source
+// spec (sized for ~230px cards) to fit navbar-scale controls (~44px buttons,
+// ~48px pill). Ratio kept roughly consistent (offset ≈ blur × 0.7).
+// "Raised" = Shadow 1 (drop shadow duo): reads as sitting above the surface.
+const NEU_RAISED =
+  "shadow-[-4px_-4px_8px_var(--color-neu-highlight),4px_4px_8px_var(--color-neu-shadow)]";
+// "Pressed" = Shadow 2 (inner shadow duo): reads as sunken into the surface —
+// used for the active/selected nav tab, like a pressed toggle.
+const NEU_PRESSED =
+  "shadow-[inset_-3px_-3px_6px_var(--color-neu-highlight),inset_3px_3px_6px_var(--color-neu-shadow)]";
+// Larger raised variant for bigger surfaces (the desktop nav pill container).
+const NEU_RAISED_LG =
+  "shadow-[-6px_-6px_14px_var(--color-neu-highlight),6px_6px_14px_var(--color-neu-shadow)]";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarPath, setSidebarPath] = useState(pathname);
 
-  // Close the drawer when the route changes (render-time sync, no effect).
   if (sidebarPath !== pathname) {
     setSidebarPath(pathname);
     if (sidebarOpen) {
@@ -47,7 +50,13 @@ export default function Navbar() {
     }
   }
 
+  // Home needs an exact match — with the startsWith() rule alone, "/" would
+  // match every route in the app (everything starts with "/"), lighting up
+  // Home on every single page instead of just the homepage.
   const isActiveRoute = (href: string) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
@@ -79,54 +88,40 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50  bg-background/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] w-full max-w-full items-center justify-between px-4 sm:px-6 lg:h-20 lg:px-10 xl:px-16">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            {/* Desktop sidebar toggle */}
-            {/* <button
-              type="button"
-              onClick={toggleSidebar}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              aria-pressed={!collapsed}
-              className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-secondary shadow-sm transition hover:border-border-strong hover:bg-surface-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:inline-flex"
+            <Link
+              href="/"
+              aria-label="StarJet home"
+              className="group flex min-w-0 items-center gap-3 sm:gap-4"
             >
-              {collapsed ? (
-                <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
-              ) : (
-                <PanelLeftClose className="h-5 w-5" aria-hidden="true" />
-              )}
-            </button> */}
+              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full transition-transform duration-300 group-hover:scale-105 sm:h-24 sm:w-24">
+                <BrandLogo size={96} />
+              </div>
 
-            {/* Brand */}
-          {/* Brand */}
-{/* Brand */}
-<Link
-  href="/"
-  aria-label="StarJet home"
-  className="group flex min-w-0 items-center gap-3 sm:gap-4"
->
-  <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full transition-transform duration-300 group-hover:scale-105 sm:h-24 sm:w-24">
-    <BrandLogo size={96} />
-  </div>
+              <div className="min-w-0 flex flex-col justify-center">
+                <span className="truncate text-2xl font-black italic tracking-wider text-primary drop-shadow-sm transition-opacity duration-300 group-hover:opacity-80 sm:text-3xl">
+                  StarJet<span className="not-italic text-accent">.</span>
+                </span>
 
-  <div className="min-w-0 flex flex-col justify-center">
-    {/* Uniform Color Title with Elegant Typography */}
-    <span className="truncate text-2xl font-black italic tracking-wider text-primary drop-shadow-sm transition-opacity duration-300 group-hover:opacity-80 sm:text-3xl">
-      StarJet<span className="not-italic text-accent">.</span>
-    </span>
-
-    {/* Uniform Subtext with Aviation Letter-Spacing */}
-    <span className="truncate text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground transition-colors duration-300 group-hover:text-primary sm:text-xs">
-      Air &amp; Cargo
-    </span>
-  </div>
-</Link>
+                <span className="truncate text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground transition-colors duration-300 group-hover:text-primary sm:text-xs">
+                  Air &amp; Cargo
+                </span>
+              </div>
+            </Link>
           </div>
 
-          {/* Desktop navigation */}
+          {/* Desktop navigation — the pill itself is a raised neumorphic
+              surface; the border is dropped since the dual-shadow already
+              reads as an edge, and a hard border on top of it fights the
+              soft-embossed look. */}
           <nav
             aria-label="Primary navigation"
-            className="hidden items-center gap-1 rounded-full border border-border bg-surface-muted p-1 lg:flex"
+            className={cn(
+              "hidden items-center gap-1 rounded-full bg-surface-muted p-1 lg:flex",
+              NEU_RAISED_LG,
+            )}
           >
             {navigation.map((item) => {
               const active = isActiveRoute(item.href);
@@ -139,8 +134,8 @@ export default function Navbar() {
                   className={cn(
                     "nav-link rounded-full px-4 py-2 transition-all duration-200 xl:px-5",
                     active
-                      ? "bg-surface text-primary shadow-sm ring-1 ring-border"
-                      : "text-secondary hover:bg-surface hover:text-primary",
+                      ? cn("bg-surface text-primary ", NEU_PRESSED)
+                      : "text-primary  hover:bg-surface hover:text-primary",
                   )}
                 >
                   {item.label}
@@ -161,16 +156,18 @@ export default function Navbar() {
               Sign in
             </Link>
 
-          
-
-            {/* Hamburger (mobile drawer — unrelated to the desktop sidebar) */}
+            {/* Hamburger — same raised treatment, border removed for the
+                same reason as the nav pill above. */}
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
               aria-label="Open navigation menu"
               aria-expanded={sidebarOpen}
               aria-controls="mobile-sidebar"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-secondary shadow-sm transition hover:border-border-strong hover:bg-surface-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hidden"
+              className={cn(
+                "inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface text-secondary transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background active:shadow-[inset_-2px_-2px_5px_var(--color-neu-highlight),inset_2px_2px_5px_var(--color-neu-shadow)] lg:hidden",
+                NEU_RAISED,
+              )}
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -202,14 +199,13 @@ export default function Navbar() {
           sidebarOpen ? "translate-x-0" : "translate-x-full",
         )}
       >
-        {/* Sidebar header */}
         <div className="flex h-[72px] items-center justify-between border-b border-border px-5 sm:px-6">
           <Link
             href="/"
             onClick={closeSidebar}
             className="flex items-center gap-3"
           >
-            <div className="relative h-10 w-10 overflow-hidden ">
+            <div className="relative h-10 w-10 overflow-hidden">
               <BrandLogo size={40} />
             </div>
 
@@ -228,14 +224,16 @@ export default function Navbar() {
               type="button"
               onClick={closeSidebar}
               aria-label="Close navigation menu"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-secondary transition hover:bg-surface-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className={cn(
+                "inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface text-secondary transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                NEU_RAISED,
+              )}
             >
               <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
-        {/* Sidebar content */}
         <div className="flex flex-1 flex-col overflow-y-auto px-5 py-6 sm:px-6">
           <p className="caption mb-3 uppercase text-muted">Navigation</p>
 
@@ -252,7 +250,7 @@ export default function Navbar() {
                   className={cn(
                     "nav-link group flex min-h-14 items-center justify-between rounded-2xl px-4 py-3 text-base transition",
                     active
-                      ? "bg-accent-muted text-accent-muted-foreground ring-1 ring-accent/30"
+                      ? cn("bg-surface-muted dark:bg-surface-muted text-accent-muted-foreground", NEU_PRESSED)
                       : "text-secondary hover:bg-surface-muted hover:text-primary",
                   )}
                 >
@@ -269,12 +267,14 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Mobile actions */}
           <div className="mt-8 space-y-3 border-t border-border pt-6">
             <Link
               href="/login"
               onClick={closeSidebar}
-              className="button-text flex h-13 min-h-13 items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-secondary transition hover:bg-surface-muted hover:text-primary"
+              className={cn(
+                "button-text flex h-13 min-h-13 items-center justify-center gap-2 rounded-2xl bg-surface px-4 py-3 text-secondary transition hover:text-primary",
+                NEU_RAISED,
+              )}
             >
               <UserRound className="h-4 w-4" />
               Sign in
@@ -290,7 +290,6 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Footer note */}
           <div className="mt-auto pt-8">
             <div className="rounded-2xl bg-surface-muted p-4">
               <p className="text-sm font-bold text-primary">

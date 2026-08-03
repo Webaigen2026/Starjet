@@ -15,8 +15,15 @@ export default function HeroSearch() {
 
           From md to 2xl it appears below the hero. At 2xl it becomes a
           side column.
+
+          bg-surface -> bg-[#EDF1F4] in light mode: this is the neumorphic
+          BG Color from the shadow spec, applied behind both the hero card
+          and the travel image wall so the raised/inset shadows (which are
+          calibrated against this exact background) read correctly. Dark
+          mode keeps the existing bg-surface since the neumorphic palette
+          is light-only per the spec.
         */}
-        <div className="grid min-w-0 grid-cols-1 gap-[clamp(1.25rem,2.5vw,2.75rem)] rounded-3xl bg-surface sm:p-10 2xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28vw)] 2xl:items-stretch 2xl:gap-10">
+        <div className="grid min-w-0 grid-cols-1 gap-[clamp(1.25rem,2.5vw,2.75rem)] rounded-3xl bg-[#EDF1F4] dark:bg-surface sm:p-10 2xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28vw)] 2xl:items-stretch 2xl:gap-10">
           {/* Main hero */}
           <div className="min-w-0">
             <div className="relative">
@@ -73,9 +80,9 @@ export default function HeroSearch() {
                     sm:pb-[clamp(1.5rem,2.5vw,2.25rem)]
                     sm:pt-[clamp(4rem,10vw,7rem)]
 
-                    lg:min-h-[min(72svh,40rem)]
+                    lg:min-h-[38rem]
                     xl:min-h-[36rem]
-                    2xl:min-h-[44rem]
+                    2xl:min-h-[40rem]
                   "
                 >
 
@@ -117,21 +124,20 @@ export default function HeroSearch() {
       <style>{`
         .hs-hero-card {
           border: 0;
+          /*
+            Neumorphic dual-shadow (drop-shadow flavor from the spec):
+            a white highlight offset up-left and a tinted dark shadow
+            offset down-right, both at the same blur. Uses the same
+            --neu-highlight / --neu-shadow tokens as the navbar, so light
+            and dark mode swap automatically without a separate .dark rule
+            here — the CSS variables already flip in globals.css.
+            Offsets/blur are kept close to the source spec (20px/28px)
+            since this card is large-format, unlike the scaled-down
+            navbar controls.
+          */
           box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.42),
-            inset 0 0 0 1px rgba(255, 255, 255, 0.16),
-            0 2px 6px rgba(148, 163, 184, 0.1),
-            0 18px 48px -12px rgba(125, 211, 252, 0.38),
-            0 40px 90px -28px rgba(148, 163, 184, 0.24);
-        }
-
-        .dark .hs-hero-card {
-          box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.08),
-            inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-            0 4px 10px rgba(0, 0, 0, 0.35),
-            0 18px 48px -12px rgba(168, 85, 247, 0.20),
-            0 42px 100px -24px rgba(34, 211, 238, 0.10);
+            -20px -20px 28px var(--neu-highlight),
+            20px 20px 28px var(--neu-shadow);
         }
 
         /*

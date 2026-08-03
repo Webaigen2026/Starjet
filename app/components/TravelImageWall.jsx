@@ -31,14 +31,6 @@ const rightImages = [
   },
 ];
 
-// Three subtly different float rhythms so the circles drift out of sync
-// with each other instead of bobbing like a single mechanical unit.
-const FLOAT_VARIANTS = [
-  { duration: "7.5s", amplitude: "10px" },
-  { duration: "6.2s", amplitude: "7px" },
-  { duration: "8.4s", amplitude: "12px" },
-];
-
 // Airplane-window silhouette: much rounder at the top than the bottom.
 // Expressed as horizontal/vertical corner radii (border-radius shorthand
 // with a "/" split) — something plain rounded-t-*/rounded-b-* utilities
@@ -57,55 +49,26 @@ export default function TravelImageWall() {
       />
 
       <div className="grid grid-cols-2 items-start gap-3 min-[400px]:gap-4 sm:gap-5 lg:gap-6">
-        <ImageColumn images={leftImages} columnIndex={0} className="" />
+        <ImageColumn images={leftImages} className="" />
 
-        <ImageColumn images={rightImages} columnIndex={1} />
+        {/* Offset upward by roughly half a window's height so the two
+            columns fall out of row-lock with each other — a brick/masonry
+            stagger instead of a perfect grid. The clamp mirrors half of
+            each circle's own clamp(8rem,40vw,14rem) sizing, so the offset
+            scales in step with the windows themselves at every breakpoint.
+            Negative margin pushes the column above the wrapper's top edge;
+            the wrapper's own overflow-hidden (set on the outermost div
+            above) clips that excess cleanly instead of spilling out. */}
+        <ImageColumn
+          images={rightImages}
+          className="-mt-[clamp(3.5rem,18vw,6.5rem)]"
+        />
       </div>
-
-      {/* Entrance + float keyframes, scoped with a unique prefix to avoid
-          colliding with any other component's global styles. */}
-      <style>{`
-        @keyframes tiw-rise-in {
-          from {
-            opacity: 0;
-            transform: translateY(22px) scale(0.92);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        @keyframes tiw-float {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(calc(var(--tiw-amplitude, 8px) * -1));
-          }
-        }
-
-        .tiw-circle {
-          opacity: 0;
-          animation:
-            tiw-rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards,
-            tiw-float var(--tiw-duration, 7s) ease-in-out infinite;
-          animation-delay: var(--tiw-rise-delay, 0s), calc(var(--tiw-rise-delay, 0s) + 0.7s);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .tiw-circle {
-            opacity: 1;
-            animation: none;
-            transform: none;
-          }
-        }
-      `}</style>
     </div>
   );
 }
 
-function ImageColumn({ images, columnIndex, className = "" }) {
+function ImageColumn({ images, className = "" }) {
   return (
     <div
       className={`flex min-w-0 flex-col gap-3 min-[400px]:gap-4 sm:gap-5 lg:gap-6 ${className}`}
@@ -116,28 +79,17 @@ function ImageColumn({ images, columnIndex, className = "" }) {
           src={image.src}
           alt={image.alt}
           priority={rowIndex === 0}
-          // Interleave left/right so the reveal reads left-right-left-right
-          // down the wall, rather than one column finishing before the next starts.
-          orderIndex={rowIndex * 2 + columnIndex}
         />
       ))}
     </div>
   );
 }
 
-function TravelCircle({ src, alt, priority = false, orderIndex = 0 }) {
-  const { duration, amplitude } = FLOAT_VARIANTS[orderIndex % FLOAT_VARIANTS.length];
-
+function TravelCircle({ src, alt, priority = false }) {
   return (
     <div
-      className="tiw-circle group relative mx-auto aspect-square w-full max-w-[clamp(8rem,40vw,14rem)] overflow-hidden border border-white/60 shadow-[0_18px_45px_-20px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/5"
-      style={{
-        // @ts-expect-error -- CSS custom properties aren't in the style typings
-        "--tiw-rise-delay": `${orderIndex * 0.1}s`,
-        "--tiw-duration": duration,
-        "--tiw-amplitude": amplitude,
-        borderRadius: WINDOW_RADIUS,
-      }}
+      className="group relative mx-auto aspect-square w-full max-w-[clamp(8rem,40vw,14rem)] overflow-hidden border border-white/60 shadow-[0_18px_45px_-20px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/5"
+      style={{ borderRadius: WINDOW_RADIUS }}
     >
       <Image
         src={src}

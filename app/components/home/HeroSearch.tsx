@@ -69,23 +69,20 @@ export default function HeroSearch() {
                 </div>
               </div>
 
-              {/* Foreground plane cutout — layered on top of the card and
-                  shifted right so it bleeds past the rounded frame's edge.
-                  Kept outside the overflow-hidden wrapper above (that's
-                  what actually lets it exceed to the right — with it
-                  inside, overflow-hidden would just clip the offset away).
-
-                  The horizontal offset lives in --hs-plane-shift (a CSS
-                  custom property, responsive per breakpoint) instead of a
-                  translate-x utility class, because the entrance + float
-                  animation below also writes to `transform`. Keeping both
-                  on separate mechanisms would have the animation silently
-                  overwrite the static offset; folding the offset into the
-                  keyframes themselves via the custom property keeps both
-                  working together. */}
+              {/* Foreground plane cutout — layered on top of the card.
+                  All positioning/sizing math (shift, vertical nudge, scale)
+                  lives in the .hs-plane rule in the <style> block below —
+                  not here as utility classes — because the mobile values
+                  need to be fluid (a calc()-based linear interpolation
+                  across the 320–639px range), which is awkward and hard to
+                  read as a Tailwind arbitrary-value class. Everything is
+                  still funneled through the same --hs-plane-* custom
+                  properties consumed inside the animation keyframes, so
+                  nothing here fights with the entrance/float animation's
+                  own `transform` writes. */}
               <div
                 aria-hidden="true"
-                className="hs-plane pointer-events-none absolute inset-0 z-20 [--hs-plane-shift:2.5rem] sm:[--hs-plane-shift:4rem] lg:[--hs-plane-shift:6rem] xl:[--hs-plane-shift:8rem]"
+                className="hs-plane pointer-events-none absolute inset-0 z-20"
               >
                 <Image
                   src="/airplane/airplane_wt_bg.png"
@@ -96,7 +93,7 @@ export default function HeroSearch() {
                     (min-width: 1024px) calc(100vw - 5rem),
                     100vw
                   "
-                  className="object-cover object-[center_32%] sm:object-[center_28%] mt-[-80px]"
+                  className="object-contain object-top sm:object-cover sm:object-[72%_28%]"
                 />
               </div>
             </div>
@@ -131,29 +128,82 @@ export default function HeroSearch() {
           animation: hs-ken-burns 14s ease-out forwards;
         }
 
+        /* --hs-plane-shift / --hs-plane-y / --hs-plane-scale drive the
+           plane cutout's position and size. Below 640px they're fluid,
+           linearly interpolated across a 320–639px reference range using
+           calc()'s length-divided-by-length trick to get a unitless
+           multiplier (100vw - 320px) / 319px goes from 0 at a 320px-wide
+           phone to 1 at a 639px-wide one) — so the plane scales and nudges
+           smoothly across small phones, large phones, and phablets alike,
+           instead of jumping straight from one fixed mobile value to the
+           sm+ desktop value. clamp() guards both ends for anything
+           narrower than 320px or briefly wider than 639px.
+           Tune the two endpoint numbers in each clamp() (not the vw math)
+           if the fit needs adjusting on a real device. */
+        .hs-plane {
+          --hs-plane-shift: 0px;
+          --hs-plane-y: clamp(
+            -56px,
+            calc(-32px - 24px * ((100vw - 320px) / 319px)),
+            -20px
+          );
+          --hs-plane-scale: clamp(
+            0.85,
+            calc(0.85 + 0.25 * ((100vw - 320px) / 319px)),
+            1.1
+          );
+        }
+
+        @media (min-width: 640px) {
+          .hs-plane {
+            --hs-plane-shift: 4rem;
+            --hs-plane-y: -80px;
+            --hs-plane-scale: 1;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .hs-plane {
+            --hs-plane-shift: 6rem;
+          }
+        }
+
+        @media (min-width: 1280px) {
+          .hs-plane {
+            --hs-plane-shift: 8rem;
+          }
+        }
+
         /* Plane cutout: rises/fades in on load, holding at its responsive
-           --hs-plane-shift offset, then settles into a slow, gentle float —
-           same entrance-then-drift language as TravelImageWall's circles. */
+           --hs-plane-shift / --hs-plane-y / --hs-plane-scale values, then
+           settles into a slow, gentle float — same entrance-then-drift
+           language as TravelImageWall's circles. */
         @keyframes hs-plane-enter {
           from {
             opacity: 0;
             transform: translateX(calc(var(--hs-plane-shift, 0px) - 1.5rem))
-              translateY(16px) scale(0.96);
+              translateY(calc(var(--hs-plane-y, 0px) + 16px))
+              scale(calc(var(--hs-plane-scale, 1) * 0.96));
           }
           to {
             opacity: 1;
-            transform: translateX(var(--hs-plane-shift, 0px)) translateY(0)
-              scale(1);
+            transform: translateX(var(--hs-plane-shift, 0px))
+              translateY(var(--hs-plane-y, 0px))
+              scale(var(--hs-plane-scale, 1));
           }
         }
 
         @keyframes hs-plane-float {
           0%,
           100% {
-            transform: translateX(var(--hs-plane-shift, 0px)) translateY(0);
+            transform: translateX(var(--hs-plane-shift, 0px))
+              translateY(var(--hs-plane-y, 0px))
+              scale(var(--hs-plane-scale, 1));
           }
           50% {
-            transform: translateX(var(--hs-plane-shift, 0px)) translateY(-10px);
+            transform: translateX(var(--hs-plane-shift, 0px))
+              translateY(calc(var(--hs-plane-y, 0px) - 10px))
+              scale(var(--hs-plane-scale, 1));
           }
         }
 
@@ -173,7 +223,9 @@ export default function HeroSearch() {
           .hs-plane {
             opacity: 1;
             animation: none;
-            transform: translateX(var(--hs-plane-shift, 0px));
+            transform: translateX(var(--hs-plane-shift, 0px))
+              translateY(var(--hs-plane-y, 0px))
+              scale(var(--hs-plane-scale, 1));
           }
         }
       `}</style>

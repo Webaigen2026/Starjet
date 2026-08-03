@@ -29,7 +29,7 @@ export default function HeroSearch() {
               <div className="relative isolate overflow-hidden rounded-[clamp(1.25rem,2.2vw,1.75rem)] bg-slate-950 shadow-[0_24px_80px_-28px_rgba(2,6,23,0.55)] dark:shadow-[0_24px_80px_-28px_rgba(0,0,0,0.75)]">
                 {/* Background image */}
                 <Image
-                  src="/airplane/hero_bg.png"
+                  src="/airplane/hero_day_bg.png"
                   alt="A StarJet aircraft cruising above the clouds at sunset"
                   fill
                   priority
@@ -43,14 +43,14 @@ export default function HeroSearch() {
 
                 {/* Directional wash: guarantees text legibility at the bottom
                     while leaving the sunset sky untouched near the top. */}
-                <div
+                {/* <div
                   aria-hidden="true"
                   className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent"
                 />
                 <div
                   aria-hidden="true"
                   className="absolute inset-0 bg-gradient-to-r from-slate-950/40 via-transparent to-transparent"
-                />
+                /> */}
 
                 {/* Hero content */}
                 <div className="relative z-10 flex min-h-[min(100svh,52rem)] flex-col justify-end px-[clamp(1rem,3vw,3rem)] pb-[clamp(1rem,2.5vw,2.5rem)] pt-[clamp(5.5rem,14vw,9rem)] sm:min-h-[min(88svh,48rem)] lg:min-h-[min(82svh,46rem)] xl:min-h-[42rem] 2xl:min-h-[44rem]">
@@ -85,7 +85,7 @@ export default function HeroSearch() {
                 className="hs-plane pointer-events-none absolute inset-0 z-20"
               >
                 <Image
-                  src="/airplane/airplane_wt_bg.png"
+                  src="/airplane/airplane_day_wt_bg.png"
                   alt=""
                   fill
                   sizes="

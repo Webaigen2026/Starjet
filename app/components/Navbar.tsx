@@ -56,7 +56,7 @@ function BrandLogo({ size = 58 }: { size?: number }) {
         className="h-full w-full object-contain dark:hidden"
       />
       <Image
-        src="/airplane/logo_white_upgrade.png"
+        src="/airplane/logo_blue_upgrade.png"
         alt=""
         width={size}
         height={size}

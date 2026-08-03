@@ -5,8 +5,10 @@ import HeroBackground from "./HeroBackground";
 
 export default function HeroSearch() {
   return (
-    <section className="relative w-full overflow-x-clip bg-background">
-      <div className="mx-auto w-full max-w-[1800px] sm:px-[clamp(0.875rem,2.5vw,2.5rem)] sm:py-[clamp(0.75rem,1.8vw,2rem)]">
+    <section className="relative w-full overflow-x-clip bg-background ">
+      <div className="mx-auto w-full max-w-[1800px] sm:px-[clamp(0.5rem,1vw,1rem)] sm:py-[clamp(0.75rem,1.8vw,2rem)]">
+ 
+
         {/*
           The travel image wall is removed below md so mobile receives a
           focused, single-column hero without reserved sidebar space.
@@ -14,7 +16,7 @@ export default function HeroSearch() {
           From md to 2xl it appears below the hero. At 2xl it becomes a
           side column.
         */}
-        <div className="grid min-w-0 grid-cols-1 gap-[clamp(1.25rem,2.5vw,2.75rem)] 2xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28vw)] 2xl:items-stretch 2xl:gap-10">
+        <div className="grid min-w-0 grid-cols-1 gap-[clamp(1.25rem,2.5vw,2.75rem)] rounded-3xl bg-surface p-10 2xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28vw)] 2xl:items-stretch 2xl:gap-10">
           {/* Main hero */}
           <div className="min-w-0">
             <div className="relative">
@@ -31,19 +33,19 @@ export default function HeroSearch() {
                 {/* Soft atmospheric sky tint */}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-sky-500/[0.06] via-transparent to-sky-300/[0.14] dark:from-sky-950/[0.14] dark:to-indigo-400/[0.07]"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-sky-500/[0.06] via-transparent to-sky-300/[0.14] dark:from-fuchsia-950/20 dark:via-purple-950/10 dark:to-cyan-400/10"
                 />
 
                 {/* Bottom readability fade */}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/35 via-slate-900/[0.08] to-transparent dark:from-black/50 dark:via-slate-950/[0.13]"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/35 via-slate-900/[0.08] to-transparent dark:from-[#210340]/70 dark:via-[#210340]/30 dark:to-transparent"
                 />
 
                 {/* Gentle left-side readability fade */}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950/[0.12] via-transparent to-transparent dark:from-black/20"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950/[0.12] via-transparent to-transparent dark:from-[#210340]/35"
                 />
 
                 {/* Soft perimeter dissolve into the page background */}
@@ -124,11 +126,11 @@ export default function HeroSearch() {
 
         .dark .hs-hero-card {
           box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.09),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
             inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-            0 2px 8px rgba(0, 0, 0, 0.32),
-            0 18px 48px -12px rgba(34, 211, 238, 0.12),
-            0 40px 90px -24px rgba(0, 0, 0, 0.5);
+            0 4px 10px rgba(0, 0, 0, 0.35),
+            0 18px 48px -12px rgba(168, 85, 247, 0.20),
+            0 42px 100px -24px rgba(34, 211, 238, 0.10);
         }
 
         /*

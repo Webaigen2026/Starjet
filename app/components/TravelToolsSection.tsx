@@ -110,7 +110,7 @@ export default function TravelToolsSection() {
   }
 
   return (
-    <section className="overflow-hidden bg-background py-14 sm:py-16 lg:py-20">
+    <section className="overflow-hidden bg-background dark:bg-[#140227] py-14 sm:py-16 lg:py-20">
       <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 xl:px-16">
         {/* Heading */}
         <div className="mb-8 flex flex-col gap-5 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
@@ -137,7 +137,7 @@ export default function TravelToolsSection() {
         <div
           ref={trackRef}
           onScroll={updateNavigationState}
-          className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-6 scroll-smooth [scrollbar-width:none] sm:-mx-6 sm:gap-6 sm:px-6 lg:mx-0 lg:px-0 [&::-webkit-scrollbar]:hidden"
+          className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 py-6 pb-6 scroll-smooth [scrollbar-width:none] sm:-mx-6 sm:gap-6 sm:px-6 lg:mx-0 lg:px-0 [&::-webkit-scrollbar]:hidden"
         >
           {travelTools.map((tool) => (
             <TravelToolCard key={tool.title} tool={tool} />
@@ -173,7 +173,7 @@ function TravelToolCard({ tool }: { tool: TravelTool }) {
   return (
     <Link
       href={tool.href}
-      className="group flex w-[88vw] max-w-[390px] shrink-0 snap-start flex-col overflow-hidden rounded-[30px] border border-border bg-surface text-primary shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-accent/40 hover:shadow-2xl hover:shadow-[color:var(--shadow-color)] sm:w-[360px] sm:max-w-none lg:w-[380px] xl:w-[400px]"
+      className="group flex w-[88vw] max-w-[390px] shrink-0 snap-start flex-col overflow-hidden rounded-[30px] border border-border bg-white text-primary shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-accent/40 hover:shadow-2xl hover:shadow-[color:var(--shadow-color)] sm:w-[360px] sm:max-w-none lg:w-[380px] xl:w-[400px]"
     >
       {/* Image */}
       <div className="relative h-56 overflow-hidden bg-surface-muted sm:h-60 lg:h-64">
@@ -189,41 +189,41 @@ function TravelToolCard({ tool }: { tool: TravelTool }) {
             badge below stays legible against any image. */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-slate-950/10 to-transparent" />
 
-        <div className="absolute bottom-5 left-5 inline-flex items-center rounded-full border border-white/25 bg-white/90 px-3 py-1.5 text-xs font-black uppercase tracking-[0.15em] text-slate-950 shadow-sm backdrop-blur">
+        {/* <div className="absolute bottom-5 left-5 inline-flex items-center rounded-full border border-white/25 bg-white/90 px-3 py-1.5 text-xs font-black uppercase tracking-[0.15em] text-slate-950 shadow-sm backdrop-blur">
           StarJet
-        </div>
+        </div> */}
       </div>
 
       {/* Content */}
       <div className="relative flex flex-1 flex-col px-5 pb-5 pt-9 sm:px-6 sm:pb-6">
         {/* Floating icon — border matches the card surface so it still
             reads as "cut into" the card in both themes. */}
-        <div className="absolute -top-7 left-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl border-4 border-surface bg-accent text-accent-foreground shadow-lg shadow-[color:var(--shadow-color)] transition duration-300 group-hover:bg-accent-hover sm:left-6">
+        {/* <div className="absolute -top-7 left-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl border-4 border-surface bg-accent text-accent-foreground shadow-lg shadow-[color:var(--shadow-color)] transition duration-300 group-hover:bg-accent-hover sm:left-6">
           {tool.icon}
-        </div>
+        </div> */}
 
         <div>
-          <h3 className="text-2xl font-black tracking-tight text-primary">
+          <h3 className="text-2xl font-black tracking-tight text-primary dark:text-black">
             {tool.title}
           </h3>
 
-          <p className="mt-3 text-sm font-medium leading-6 text-secondary sm:text-base">
+          <p className="mt-3 text-sm font-medium leading-6 text-secondary dark:text-black sm:text-base">
             {tool.description}
           </p>
         </div>
 
-        <div className="mt-7 flex items-center justify-between border-t border-border pt-5">
-          <span className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-black text-accent-foreground transition duration-300 group-hover:bg-accent-hover">
-            Explore
+        <div className="mt-7 flex items-center justify-between  pt-5">
+        <span className="text-2xl inline-flex items-center gap-2 font-black tracking-tight text-primary dark:text-black">
+        Explore
             <ChevronRight
               className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1"
               aria-hidden="true"
             />
           </span>
 
-          <span className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+          {/* <span className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
             Learn more
-          </span>
+          </span> */}
         </div>
       </div>
     </Link>

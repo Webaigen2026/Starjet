@@ -163,7 +163,8 @@ export default function Navbar() {
 
             <Link
               href="/flights"
-              className="button-text hidden items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-accent-foreground shadow-lg shadow-[color:var(--shadow-color)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-accent-hover lg:inline-flex"
+              className="button-text rounded-full flex shrink-0 cursor-pointer items-center justify-center gap-2 bg-accent px-8 py-4 text-accent-foreground transition-all duration-200 hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus-ring active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 "
+      
             >
               <Search className="h-4 w-4" />
               Search flights

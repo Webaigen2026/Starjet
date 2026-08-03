@@ -120,7 +120,7 @@ export default function FlightSearchForm() {
               placeholder="From?"
               icon={
                 <PlaneTakeoff
-                  className="h-[18px] w-[18px] shrink-0 text-accent"
+                  className="h-[18px] w-[18px] shrink-0 text-primary"
                   aria-hidden="true"
                 />
               }
@@ -144,7 +144,7 @@ export default function FlightSearchForm() {
             placeholder="To?"
             icon={
               <PlaneLanding
-                className="h-[18px] w-[18px] shrink-0 text-accent"
+                className="h-[18px] w-[18px] shrink-0 text-primary"
                 aria-hidden="true"
               />
             }
@@ -175,13 +175,16 @@ export default function FlightSearchForm() {
         </p>
       )}
 
-      <div className="body-text mt-4 hidden items-center gap-3 rounded-2xl bg-accent-muted px-4 py-3 text-sm font-medium text-secondary sm:flex">
-        <Ticket className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
-        <span>Passenger booking, route search, and aircraft details.</span>
+      <div className="body-text mt-4 hidden items-center gap-3 rounded-2xl bg-primary-muted px-4 py-3 text-sm font-medium text-primary dark:text-primary sm:flex">
+        <Ticket className="h-5 w-5 shrink-0 text-background dark:text-white" aria-hidden="true" />
+        <span className="text-background dark:text-white">Passenger booking, route search, and aircraft details.</span>
       </div>
     </form>
   );
 }
+
+
+
 
 function TripTypeInlineControl({
   value,
@@ -207,7 +210,7 @@ function TripTypeInlineControl({
             aria-selected={active}
             onClick={() => onChange(type)}
             className={cn(
-              "button-text flex cursor-pointer items-center gap-1.5 rounded-full px-1 py-1 text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+              "button-text flex cursor-pointer items-center gap-1.5 rounded-full px-1 py-1 text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
               active
                 ? "font-semibold text-white"
                 : "text-white/70 hover:text-white",
@@ -248,7 +251,7 @@ function AirportField({
       {icon}
 
       {chipLabel && onClearChip ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-muted px-3 py-1 text-sm font-medium text-secondary">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-sm font-medium text-secondary">
           {chipLabel}
           <button
             type="button"
@@ -257,7 +260,7 @@ function AirportField({
               onClearChip();
             }}
             aria-label="Clear selection"
-            className="cursor-pointer rounded-full p-0.5 text-secondary/70 hover:text-secondary"
+            className="cursor-pointer rounded-full p-0.5 text-primary/70 hover:text-primary"
           >
             <X className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
@@ -288,7 +291,7 @@ function DateRangeField({ tripType }: { tripType: TripType }) {
   return (
     <div className={cn(SEGMENT, "gap-2")}>
       <CalendarDays
-        className="h-[18px] w-[18px] shrink-0 text-accent"
+            className="h-[18px] w-[18px] shrink-0 text-primary"
         aria-hidden="true"
       />
 
@@ -323,7 +326,7 @@ function PassengerField() {
   return (
     <label htmlFor="field-passengersCount" className={SEGMENT}>
       <UsersRound
-        className="h-[18px] w-[18px] shrink-0 text-accent"
+        className="h-[18px] w-[18px] shrink-0 text-primary"
         aria-hidden="true"
       />
 
@@ -347,7 +350,7 @@ function SwapButton({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       aria-label="Swap departure and destination airports"
-      className="group flex shrink-0 cursor-pointer items-center justify-center px-1 text-accent transition-colors duration-200 hover:text-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      className="group flex shrink-0 cursor-pointer items-center justify-center px-1 text-primary transition-colors duration-200 hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <ArrowRightLeft
         className="h-4 w-4 rotate-0 transition-transform duration-300 group-hover:rotate-180"

@@ -53,14 +53,14 @@ export default function SidebarNav() {
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-screen shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-300 ease-in-out lg:flex",
+        "sticky top-0 hidden h-screen shrink-0 flex-col  bg-background transition-[width] duration-300 ease-in-out lg:flex",
         collapsed ? "w-[76px]" : "w-64",
       )}
     >
       {/* Header: menu toggle + wordmark */}
       <div
         className={cn(
-          "flex h-20 items-center gap-3 border-b border-border px-4",
+          "flex h-20 items-center gap-3  px-4",
           collapsed && "justify-center px-0",
         )}
       >
@@ -127,7 +127,7 @@ export default function SidebarNav() {
         </nav>
 
         {/* Footer: locale, currency, feedback, theme */}
-        <div className="flex flex-col gap-1 border-t border-border px-3 pt-3">
+        <div className="flex flex-col gap-1 px-3 pt-3">
           <SidebarLink
             item={{ label: "English", href: "/settings/language", icon: Globe }}
             active={pathname === "/settings/language"}
@@ -197,14 +197,14 @@ function SidebarLink({
         "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
         collapsed && "justify-center px-0 py-3",
         active
-          ? "bg-accent-muted text-accent"
+          ? "bg-accent-gradient text-primary"
           : "text-secondary hover:bg-surface-muted hover:text-primary",
       )}
     >
       <Icon
         className={cn(
           "h-5 w-5 shrink-0",
-          active ? "text-accent" : "text-secondary group-hover:text-primary",
+          active ? "text-primary" : "text-secondary group-hover:text-primary",
         )}
         aria-hidden="true"
       />

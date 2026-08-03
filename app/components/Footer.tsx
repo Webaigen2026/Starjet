@@ -180,7 +180,7 @@ export default function SiteFooter() {
   }
 
   return (
-    <footer className="relative overflow-hidden border-t border-border bg-surface text-secondary">
+    <footer className="relative overflow-hidden border-t border-border bg-background text-secondary">
       {/* Decorative background accents */}
       <div
         className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-accent-muted blur-3xl"

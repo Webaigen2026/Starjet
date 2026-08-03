@@ -27,7 +27,8 @@ export default function HeroSearch() {
               />
 
               {/* Floating hero card */}
-              <div className="hs-hero-card relative isolate overflow-hidden sm:rounded-[clamp(1.5rem,2.8vw,2.25rem)]">
+              <div className="hs-hero-card relative isolate overflow-hidden sm:rounded-[clamp(0.5rem,1vw,1rem)]">
+         
                 <HeroBackground />
 
                 {/* Soft atmospheric sky tint */}

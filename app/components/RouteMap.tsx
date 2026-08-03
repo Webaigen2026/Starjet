@@ -48,99 +48,93 @@ export default function RouteMap() {
         </p>
 
         <div className="route-map mt-10 overflow-x-auto">
-          <svg
-            viewBox="0 0 1000 560"
-            className="mx-auto w-full min-w-[720px] max-w-4xl"
-            role="img"
-            aria-label="Map showing StarJet flight routes from cities across the United States to Cap-Haïtien and Port-au-Prince, Haiti"
-          >
-            {/* Stylized U.S. silhouette — simplified, not cartographically precise */}
-            <path
-              d="M 90 120
-                 L 200 80 L 320 70 L 460 75 L 560 60 L 660 75
-                 L 740 90 Q 800 100 790 140
-                 L 770 190 Q 800 210 780 240
-                 L 700 260 L 690 300 Q 720 330 690 360
-                 L 640 420 L 600 400 L 560 430
-                 L 480 410 L 420 440 L 360 400
-                 L 300 420 L 220 380 L 160 360
-                 L 110 300 L 95 220 L 80 170 Z"
-              className="fill-surface-muted stroke-border"
-              strokeWidth="2"
-            />
+        <svg
+  viewBox="0 0 1000 560"
+  className="mx-auto w-full min-w-[720px] max-w-4xl"
+  role="img"
+  aria-label="Map showing StarJet flight routes from cities across the United States to Cap-Haïtien and Port-au-Prince, Haiti"
+>
+  {/* Real USA map image */}
+  <image
+    href="/maps/usa-map.svg"
+    x="70"
+    y="55"
+    width="730"
+    height="410"
+    preserveAspectRatio="xMidYMid meet"
+    className="opacity-80"
+  />
 
-            {/* Flight paths */}
-            {originCities.map((origin) => {
-              const via = destinationCities[0];
+  {/* Flight paths */}
+  {originCities.flatMap((origin) =>
+    destinationCities.map((destination) => {
+      const midX = (origin.x + destination.x) / 2;
+      const midY = Math.min(origin.y, destination.y) - 60;
 
-              return (
-                <g key={origin.code}>
-                  {destinationCities.map((destination) => {
-                    const midX = (origin.x + destination.x) / 2;
-                    const midY = Math.min(origin.y, destination.y) - 60;
+      return (
+        <path
+          key={`${origin.code}-${destination.code}`}
+          d={`M ${origin.x} ${origin.y} Q ${midX} ${midY} ${destination.x} ${destination.y}`}
+          className="route-path fill-none stroke-accent/40"
+          strokeWidth="1.25"
+        />
+      );
+    }),
+  )}
 
-                    return (
-                      <path
-                        key={`${origin.code}-${destination.code}`}
-                        d={`M ${origin.x} ${origin.y} Q ${midX} ${midY} ${destination.x} ${destination.y}`}
-                        className="route-path fill-none stroke-accent/40"
-                        strokeWidth="1.25"
-                      />
-                    );
-                  })}
-                </g>
-              );
-            })}
+  {/* Origin markers */}
+  {originCities.map((city) => (
+    <g key={city.code}>
+      <circle
+        cx={city.x}
+        cy={city.y}
+        r={city.emphasis ? 5 : 3.5}
+        className={city.emphasis ? "fill-accent" : "fill-secondary"}
+      />
 
-            {/* Origin city markers + labels */}
-            {originCities.map((city) => (
-              <g key={city.code}>
-                <circle
-                  cx={city.x}
-                  cy={city.y}
-                  r={city.emphasis ? 5 : 3.5}
-                  className={
-                    city.emphasis
-                      ? "fill-accent"
-                      : "fill-secondary"
-                  }
-                />
-                <text
-                  x={city.x}
-                  y={city.y - 12}
-                  textAnchor="middle"
-                  className={
-                    city.emphasis
-                      ? "fill-primary text-[13px] font-black"
-                      : "fill-secondary text-[11px] font-semibold"
-                  }
-                >
-                  {city.label}
-                </text>
-              </g>
-            ))}
+      <text
+        x={city.x}
+        y={city.y - 12}
+        textAnchor="middle"
+        className={
+          city.emphasis
+            ? "fill-primary text-[13px] font-black"
+            : "fill-secondary text-[11px] font-semibold"
+        }
+      >
+        {city.label}
+      </text>
+    </g>
+  ))}
 
-            {/* Destination markers + labels */}
-            {destinationCities.map((city) => (
-              <g key={city.code}>
-                <circle cx={city.x} cy={city.y} r={6} className="fill-accent" />
-                <circle
-                  cx={city.x}
-                  cy={city.y}
-                  r={10}
-                  className="fill-none stroke-accent/40"
-                  strokeWidth="1.5"
-                />
-                <text
-                  x={city.x + 16}
-                  y={city.y + 4}
-                  className="fill-primary text-[13px] font-black"
-                >
-                  {city.label}
-                </text>
-              </g>
-            ))}
-          </svg>
+  {/* Haiti destinations */}
+  {destinationCities.map((city) => (
+    <g key={city.code}>
+      <circle
+        cx={city.x}
+        cy={city.y}
+        r={6}
+        className="fill-accent"
+      />
+
+      <circle
+        cx={city.x}
+        cy={city.y}
+        r={10}
+        className="fill-none stroke-accent/40"
+        strokeWidth="1.5"
+      />
+
+      <text
+        x={city.x + 16}
+        y={city.y + 4}
+        className="fill-primary text-[13px] font-black"
+      >
+        {city.label}
+      </text>
+    </g>
+  ))}
+</svg>
         </div>
       </div>
 

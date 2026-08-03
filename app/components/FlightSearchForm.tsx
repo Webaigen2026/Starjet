@@ -298,17 +298,18 @@ function DateRangeField({ tripType }: { tripType: TripType }) {
       />
 
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <input
-          id="field-departureDate"
-          name="departureDate"
-          type="date"
-          required
-          aria-label="Departure"
-          // Native date-picker icon is painted by the browser using the
-          // input's color-scheme; without this it renders as a near-black
-          // icon that disappears against a dark surface in dark mode.
-          className={cn(SEGMENT_INPUT, "[color-scheme:light] dark:[color-scheme:dark]")}
-        />
+   <input
+  id="field-departureDate"
+  name="departureDate"
+  type="date"
+  required
+  aria-label="Departure"
+  className={cn(
+    SEGMENT_INPUT,
+    "text-white [color-scheme:light] dark:text-white dark:[color-scheme:dark]",
+  )}
+  style={{ colorScheme: "dark" }}
+/>
 
         {tripType === "ROUND_TRIP" && (
           <>
@@ -318,7 +319,11 @@ function DateRangeField({ tripType }: { tripType: TripType }) {
               name="returnDate"
               type="date"
               aria-label="Return"
-              className={cn(SEGMENT_INPUT, "[color-scheme:light] dark:[color-scheme:dark]")}
+            className={cn(
+    SEGMENT_INPUT,
+    "text-white [color-scheme:light] dark:text-white dark:[color-scheme:dark]",
+  )}
+  style={{ colorScheme: "dark" }}
             />
           </>
         )}

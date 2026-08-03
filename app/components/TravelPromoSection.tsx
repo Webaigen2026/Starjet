@@ -79,7 +79,14 @@ function PromoCard() {
       </span>
 
       <div className="flex flex-col items-center gap-6 lg:flex-row lg:gap-10">
-        <PromoIllustration />
+        {/* <PromoIllustration /> */}
+        <video src="/videos/airplane.mp4" autoPlay muted loop 
+        
+        className="rounded-3xl border border-border bg-surface object-cover"
+        width={500}
+        height={500}
+      
+        />
 
         <div className="flex-1">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-accent-muted px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-accent">

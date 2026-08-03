@@ -58,7 +58,7 @@ export default function FAQSection() {
 
   return (
     <section className="bg-background py-16 sm:py-20 lg:py-24">
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto w-full max-w-full px-4 sm:px-6 lg:px-20">
         <div className="mb-10 sm:mb-12">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>

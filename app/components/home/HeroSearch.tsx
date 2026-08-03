@@ -6,7 +6,8 @@ import FlightSearchForm from "../FlightSearchForm";
 export default function HeroSearch() {
   return (
     <section className="relative w-full overflow-x-clip bg-background">
-      <div className="mx-auto w-full max-w-[1800px] px-[clamp(0.875rem,2.5vw,2.5rem)] py-[clamp(0.75rem,1.8vw,2rem)]">
+      <div className="mx-auto w-full max-w-[1800px]   sm:px-[clamp(0.875rem,2.5vw,2.5rem)] sm:py-[clamp(0.75rem,1.8vw,2rem)] ">
+        {/* px-[clamp(0.875rem,2.5vw,2.5rem)] py-[clamp(0.75rem,1.8vw,2rem)] */}
         {/*
           Image wall is dropped entirely below md (not just visually hidden)
           so phones get a single-focus hero with no reserved empty space.
@@ -31,9 +32,9 @@ export default function HeroSearch() {
                   Apple treat dark hero panels. Two stacked shadows — a
                   tight contact shadow plus a large soft ambient one — give
                   the card real depth without looking heavy. */}
-              <div className="relative isolate overflow-hidden rounded-[clamp(1.25rem,2.2vw,1.75rem)] bg-slate-900 ">
+              <div className="relative isolate overflow-hidden  sm:rounded-[clamp(1.25rem,2.2vw,1.75rem)]   ">
 
-
+{/* rounded-[clamp(1.25rem,2.2vw,1.75rem)] bg-slate-900  */}
 
 
                 {/* shadow-[0_2px_8px_rgba(2,6,23,0.25),0_32px_90px_-24px_rgba(2,6,23,0.6)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),0_32px_90px_-24px_rgba(0,0,0,0.85)] */}

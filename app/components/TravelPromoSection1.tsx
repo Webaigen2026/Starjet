@@ -37,7 +37,7 @@ function PromoCard() {
     // Dark mode falls back to bg-surface, same reasoning as the hero
     // section — the neumorphic palette is calibrated for a light bg only.
     <div className="relative overflow-hidden rounded-[32px] bg-[#ECF0F3] p-4 shadow-[-18px_-18px_30px_var(--color-neu-highlight),18px_18px_30px_var(--color-neu-shadow)] dark:bg-surface sm:p-6 lg:p-8">
-      <span className="absolute right-4 top-4 rounded-md border border-border bg-surface-muted px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-muted">
+      <span className="absolute right-4 top-4 rounded-md  px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-muted">
         Featured
       </span>
 
@@ -45,17 +45,17 @@ function PromoCard() {
         {/* <PromoIllustration /> */}
         <video src="/videos/airplane.mp4" autoPlay muted loop 
         
-        className="rounded-3xl border border-border bg-surface object-cover"
+        className="rounded-3xl  bg-surface object-cover"
         width={500}
         height={500}
       
         />
 
         <div className="flex-1">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-accent-muted px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-accent">
+          {/* <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-accent-muted px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-accent">
             <Bell className="h-3.5 w-3.5" aria-hidden="true" />
             Flight Alerts
-          </div>
+          </div> */}
 
           <h2 className="text-2xl font-black tracking-tight text-primary sm:text-3xl">
             Missed the fare drop again?

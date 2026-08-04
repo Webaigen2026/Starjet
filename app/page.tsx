@@ -15,14 +15,17 @@ export default function HomePage() {
       <Navbar />
 
       <HeroSearch />
+   <TravelPromoSection/>
 
+
+   
       <TravelDealsCarousel />
       <TravelToolsSection />
       {/* <PopularDestinations /> */}
 
       {/* <Features /> */}
 
-      <TravelPromoSection/>
+   
       <RouteMap />
 <FAQSection/>
       <Footer />

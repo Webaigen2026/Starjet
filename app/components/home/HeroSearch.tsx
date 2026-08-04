@@ -92,7 +92,7 @@ export default function HeroSearch() {
                   <div className="flex w-full max-w-5xl flex-col gap-6 sm:gap-8">
                     {/* Hero heading — tablet and desktop only */}
                     <header className="hidden sm:block">
-                      <h2 className="hero-title max-w-3xl font-heading text-[clamp(2rem,4vw,3.25rem)] font-extrabold leading-[0.94] tracking-[-0.045em]  dark:text-white  drop-shadow-[0_4px_20px_rgba(15,23,42,0.28)]">
+                      <h2 className="hero-title max-w-3xl font-heading text-[clamp(2rem,4vw,3.25rem)] font-extrabold leading-[0.94] tracking-[-0.045em] text-white  dark:text-white  drop-shadow-[0_4px_20px_rgba(15,23,42,0.28)]">
                         Fly Smarter.
                         <br className="lg:hidden" />
                         <span className="lg:ml-2">Travel Better.</span>

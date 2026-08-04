@@ -6,8 +6,12 @@ import PopularDestinations from "./components/home/PopularDestinations";
 import Features from "./components/Features";
 import TravelDealsCarousel from "./components/raveldealscarousel";
 import TravelToolsSection from "./components/TravelToolsSection";
+
 import FAQSection from "./components/FAQSection";
 import TravelPromoSection from "./components/TravelPromoSection";
+
+import TravelPromoSection1 from "./components/TravelPromoSection1";
+
 import RouteMap from "./components/RouteMap";
 export default function HomePage() {
   return (
@@ -15,16 +19,16 @@ export default function HomePage() {
       <Navbar />
 
       <HeroSearch />
-   <TravelPromoSection/>
+   <TravelPromoSection1/>
 
 
-   
+
       <TravelDealsCarousel />
       <TravelToolsSection />
       {/* <PopularDestinations /> */}
 
       {/* <Features /> */}
-
+<TravelPromoSection/>
    
       <RouteMap />
 <FAQSection/>

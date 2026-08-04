@@ -1,5 +1,3 @@
-"use client";
-
 import type { CSSProperties } from "react";
 
 interface RouteCity {
@@ -161,6 +159,12 @@ const HAITI_MAP = {
   height: 102,
 };
 
+// Small typed helper so custom-property style objects (--route-delay,
+// --pulse-delay) don't each need their own "as CSSProperties" cast.
+function cssVars(vars: Record<string, string>): CSSProperties {
+  return vars as CSSProperties;
+}
+
 function createRoutePath(
   origin: RouteCity,
   destination: RouteCity,
@@ -300,41 +304,32 @@ export default function RouteMap() {
             </g>
 
             {/* Flight routes */}
-            <g
-              aria-hidden="true"
-              className="text-accent"
-            >
+            <g aria-hidden="true" className="text-accent">
               {originCities.flatMap((origin, originIndex) =>
                 destinationCities.map((destination, destinationIndex) => (
                   <path
                     key={`${origin.code}-${destination.code}`}
-                    d={createRoutePath(
-                      origin,
-                      destination,
-                      destinationIndex,
-                    )}
+                    d={createRoutePath(origin, destination, destinationIndex)}
                     pathLength="1"
                     className="route-path fill-none"
                     stroke="url(#route-line-gradient)"
                     strokeWidth={origin.emphasis ? 1.7 : 1.2}
                     strokeLinecap="round"
                     vectorEffect="non-scaling-stroke"
-                    style={
-                      {
-                        "--route-delay": `${
-                          0.12 +
-                          originIndex * 0.045 +
-                          destinationIndex * 0.025
-                        }s`,
-                      } as CSSProperties
-                    }
+                    style={cssVars({
+                      "--route-delay": `${
+                        0.12 + originIndex * 0.045 + destinationIndex * 0.025
+                      }s`,
+                    })}
                   />
                 )),
               )}
             </g>
 
-            {/* Origin city markers */}
-            <g aria-label="United States departure cities">
+            {/* Origin city markers. The svg above already carries a
+                title/desc pair for the whole graphic, so these inner
+                groups are purely structural — no aria-label needed. */}
+            <g>
               {originCities.map((city) => (
                 <g key={city.code}>
                   {city.emphasis && (
@@ -372,7 +367,7 @@ export default function RouteMap() {
             </g>
 
             {/* Haiti destination markers */}
-            <g aria-label="Haiti destination cities">
+            <g>
               {destinationCities.map((city, index) => (
                 <g key={city.code}>
                   <circle
@@ -380,11 +375,7 @@ export default function RouteMap() {
                     cy={city.y}
                     r="15"
                     className="destination-pulse fill-accent/15"
-                    style={
-                      {
-                        "--pulse-delay": `${index * 0.35}s`,
-                      } as CSSProperties
-                    }
+                    style={cssVars({ "--pulse-delay": `${index * 0.35}s` })}
                   />
 
                   <circle
@@ -416,16 +407,19 @@ export default function RouteMap() {
               ))}
             </g>
 
-            {/* Small Haiti destination label */}
+            {/* Small Haiti inset label */}
             <g aria-hidden="true">
               <text
-                x="822"
-                y="405"
+                x={822}
+                y={405}
                 className="fill-secondary text-[10px] font-semibold uppercase tracking-[0.18em]"
               >
                 Haiti
               </text>
             </g>
+
+
+            
           </svg>
         </div>
       </div>

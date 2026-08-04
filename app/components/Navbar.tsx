@@ -195,11 +195,11 @@ export default function Navbar() {
         aria-modal="true"
         aria-label="Mobile navigation"
         className={cn(
-          "fixed inset-y-0 right-0 z-[70] flex w-[88%] max-w-[380px] flex-col bg-surface shadow-2xl shadow-[color:var(--shadow-color)] transition-transform duration-300 ease-out lg:hidden",
+          "fixed inset-y-0 right-0 z-[70] flex w-[88%] max-w-[380px] flex-col bg-white dark:bg-[#140227] shadow-2xl shadow-[color:var(--shadow-color)] transition-transform duration-300 ease-out lg:hidden",
           sidebarOpen ? "translate-x-0" : "translate-x-full",
         )}
       >
-        <div className="flex h-[72px] items-center justify-between border-b border-border px-5 sm:px-6">
+        <div className="flex h-[72px] items-center justify-between  px-5 sm:px-6">
           <Link
             href="/"
             onClick={closeSidebar}
@@ -259,7 +259,7 @@ export default function Navbar() {
                   <ChevronRight
                     className={cn(
                       "h-5 w-5 transition-transform group-hover:translate-x-0.5",
-                      active ? "text-accent" : "text-muted",
+                      active ? "text-primary" : "text-muted",
                     )}
                   />
                 </Link>
@@ -267,7 +267,7 @@ export default function Navbar() {
             })}
           </nav>
 
-          <div className="mt-8 space-y-3 border-t border-border pt-6">
+          <div className="mt-8 space-y-3  pt-6">
             <Link
               href="/login"
               onClick={closeSidebar}

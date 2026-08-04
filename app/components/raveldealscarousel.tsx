@@ -159,74 +159,68 @@ export default function TravelDealsCarousel() {
     </section>
   );
 }
-
 function DealCard({ deal }: { deal: TravelDeal }) {
-  return (
-    // Neumorphic raised card — same pattern as TravelToolCard: this card
-    // sits on the flat page background (bg-background), so the full dual
-    // highlight+shadow spec applies. bg-white -> bg-[#ECF0F3], border +
-    // shadow-sm -> dual-shadow tokens, hover deepens the same shadow pair
-    // instead of switching to an unrelated shadow-xl.
-    <article className="group flex w-[88vw] max-w-[390px] shrink-0 snap-start flex-col overflow-hidden rounded-[30px] bg-[#ECF0F3] shadow-[-14px_-14px_26px_var(--color-neu-highlight),14px_14px_26px_var(--color-neu-shadow)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[-18px_-18px_32px_var(--color-neu-highlight),18px_18px_32px_var(--color-neu-shadow)] dark:bg-surface dark:shadow-sm dark:hover:shadow-xl dark:hover:shadow-[color:var(--shadow-color)] sm:w-[380px] sm:max-w-none lg:w-[410px] xl:w-[430px]">
-      {/* Image */}
-      <div className="p-3 sm:p-4">
-        <div className="relative h-52 cursor-pointer overflow-hidden rounded-[24px] bg-primary-muted sm:h-56 lg:h-60">
-          <Image
-            src={deal.imageUrl}
-            alt={deal.imageAlt}
-            fill
-            sizes="(min-width: 1280px) 430px, (min-width: 1024px) 410px, (min-width: 640px) 380px, 88vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-transparent" />
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex flex-1 flex-col px-5 pb-6 pt-2 sm:px-6">
-        <div>
-          <h3 className="text-xl font-black tracking-tight text-primary dark:text-black sm:text-2xl">
-            {deal.city}
-          </h3>
-
-          <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-muted dark:text-black">
-            <Clock3
-              className="h-4 w-4 shrink-0 text-primary dark:text-black"
-              aria-hidden="true"
+    return (
+      <article className="group flex w-[88vw] max-w-[390px] shrink-0 snap-start flex-col overflow-hidden rounded-[30px] bg-white shadow-[-14px_-14px_26px_var(--color-neu-highlight),14px_14px_26px_var(--color-neu-shadow)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[-18px_-18px_32px_var(--color-neu-highlight),18px_18px_32px_var(--color-neu-shadow)] dark:bg-white dark:shadow-sm dark:hover:shadow-xl dark:hover:shadow-[color:var(--shadow-color)] sm:w-[380px] sm:max-w-none lg:w-[410px] xl:w-[430px]">
+        {/* Image */}
+        <div className="p-3 sm:p-4">
+          <div className="relative h-52 cursor-pointer overflow-hidden rounded-[24px] bg-primary-muted sm:h-56 lg:h-60">
+            <Image
+              src={deal.imageUrl}
+              alt={deal.imageAlt}
+              fill
+              sizes="(min-width: 1280px) 430px, (min-width: 1024px) 410px, (min-width: 640px) 380px, 88vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
-
-            <span>{deal.duration}</span>
+  
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-transparent" />
           </div>
-
-          <p className="mt-2 text-sm font-semibold text-muted dark:text-black">
-            {deal.dateRange}
-          </p>
         </div>
-
-        <div className="mt-6 flex items-end justify-between  pt-5">
+  
+        {/* Content */}
+        <div className="flex flex-1 flex-col px-5 pb-6 pt-2 sm:px-6">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-muted dark:text-black">
-              Round-trip from
-            </p>
-
-            <p className="mt-1 text-2xl font-black text-primary dark:text-black sm:text-3xl">
-              ${deal.priceFrom}
+            <h3 className="text-xl font-black tracking-tight text-primary dark:text-black sm:text-2xl">
+              {deal.city}
+            </h3>
+  
+            <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-muted dark:text-black">
+              <Clock3
+                className="h-4 w-4 shrink-0 text-primary dark:text-black"
+                aria-hidden="true"
+              />
+  
+              <span>{deal.duration}</span>
+            </div>
+  
+            <p className="mt-2 text-sm font-semibold text-muted dark:text-black">
+              {deal.dateRange}
             </p>
           </div>
-
-          <Link
-            href={`/flights?destination=${encodeURIComponent(deal.city)}`}
-            aria-label={`View flights to ${deal.city}`}
-            className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground transition hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-          >
-            <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
-          </Link>
+  
+          <div className="mt-6 flex items-end justify-between  pt-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted dark:text-black">
+                Round-trip from
+              </p>
+  
+              <p className="mt-1 text-2xl font-black text-primary dark:text-black sm:text-3xl">
+                ${deal.priceFrom}
+              </p>
+            </div>
+  
+            <Link
+              href={`/flights?destination=${encodeURIComponent(deal.city)}`}
+              aria-label={`View flights to ${deal.city}`}
+              className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground transition hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            >
+              <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
+            </Link>
+          </div>
         </div>
-      </div>
-    </article>
-  );
-}
+      </article>
+    );
+  }
 
 function NavButton({
   direction,
@@ -248,7 +242,7 @@ function NavButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={direction === "prev" ? "Previous deals" : "Next deals"}
-      className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#ECF0F3] text-secondary dark:text-black shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)] transition-all duration-200 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#ECF0F3]/60 disabled:text-muted disabled:shadow-none dark:bg-surface dark:shadow-sm dark:hover:border-border-strong dark:disabled:bg-surface-muted dark:disabled:opacity-70"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#ECF0F3] text-secondary dark:text-black shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)] transition-all duration-200 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#ECF0F3]/60 disabled:text-muted disabled:shadow-none dark:bg-white dark:shadow-sm dark:hover:border-border-strong dark:disabled:bg-white-muted dark:disabled:opacity-70"
     >
       <Icon className="h-5 w-5" aria-hidden="true" />
     </button>

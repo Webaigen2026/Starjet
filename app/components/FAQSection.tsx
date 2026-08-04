@@ -57,7 +57,7 @@ export default function FAQSection() {
   }
 
   return (
-    <section className="bg-background py-16 sm:py-20 lg:py-24">
+    <section className="bg-white dark:bg-[#140227] py-16 sm:py-20 lg:py-24">
       <div className="mx-auto w-full max-w-full px-4 sm:px-6 lg:px-20">
         <div className="mb-10 sm:mb-12">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -136,22 +136,27 @@ export default function FAQSection() {
           })}
         </div>
 
-        <div className="mt-10 flex flex-col gap-4 rounded-2xl bg-surface-muted px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="mt-10 flex flex-col gap-4 rounded-2xl bg-white px-5 py-5 text-black sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
-            <h3 className="font-black text-primary">Still have questions?</h3>
+            <h3 className="font-black text-black">Still have questions?</h3>
 
-            <p className="mt-1 text-sm leading-6 text-secondary">
+            <p className="mt-1 text-sm leading-6 text-black">
               Our support team can help with your reservation or upcoming trip.
             </p>
           </div>
 
           <Link
             href="/contact"
-            className="inline-flex w-fit shrink-0 items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-black text-accent-foreground transition hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus-ring"
+            className="inline-flex w-fit shrink-0 items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-black text-black transition hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus-ring"
           >
             Contact support
           </Link>
         </div>
+   
+
+
+
+        
       </div>
     </section>
   );

@@ -180,17 +180,17 @@ export default function SiteFooter() {
   }
 
   return (
-    <footer className="relative overflow-hidden border-t border-border bg-background text-secondary">
+    <footer className="relative overflow-hidden  bg-background text-secondary">
       {/* Decorative background accents */}
-      <div
+      {/* <div
         className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-accent-muted blur-3xl"
         aria-hidden="true"
-      />
-
+      /> */}
+{/* 
       <div
         className="pointer-events-none absolute -bottom-40 -left-32 h-96 w-96 rounded-full bg-accent-muted/70 blur-3xl"
         aria-hidden="true"
-      />
+      /> */}
 
       <div className="relative mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-6 sm:py-16 lg:px-10 lg:py-20 xl:px-16">
         {/* Brand and newsletter */}
@@ -239,9 +239,7 @@ export default function SiteFooter() {
           {/* Newsletter */}
           <div className="rounded-[28px] p-5 backdrop-blur-sm sm:p-7 lg:p-8">
             <div className="flex items-start gap-4">
-              <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-accent-foreground shadow-md shadow-[color:var(--shadow-color)] sm:inline-flex">
-                <Mail className="h-5 w-5" aria-hidden="true" />
-              </div>
+             
 
               <div>
                 <p className="caption uppercase text-accent-muted-foreground">
@@ -263,7 +261,7 @@ export default function SiteFooter() {
               <div
                 role="status"
                 aria-live="polite"
-                className="mt-6 flex items-start gap-3 rounded-2xl border border-success/30 bg-success-muted px-4 py-4 text-sm text-success-foreground"
+                className="mt-6 flex items-start gap-3 rounded-2xl bg-success-muted px-4 py-4 text-sm text-success-foreground"
               >
                 <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success text-accent-foreground">
                   <Check className="h-4 w-4" aria-hidden="true" />
@@ -299,13 +297,13 @@ export default function SiteFooter() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="Enter your email address"
-                    className="h-13 w-full rounded-xl border border-input-border bg-input-background py-3.5 pl-11 pr-4 text-sm font-medium text-primary outline-none transition placeholder:text-muted hover:border-border-strong focus:border-accent focus:ring-4 focus:ring-focus-ring"
+                    className="h-13 w-full rounded-xl  bg-input-background py-3.5 pl-11 pr-4 text-sm font-medium text-primary outline-none transition placeholder:text-muted hover:border-border-strong  "
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="button-text group inline-flex min-h-13 shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-accent-foreground transition duration-200 hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus-ring active:scale-[0.98]"
+                  className="button-text cursor-pointer group inline-flex min-h-13 shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-black transition duration-200 hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus-ring active:scale-[0.98]"
                 >
                   Subscribe
 

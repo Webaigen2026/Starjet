@@ -36,8 +36,8 @@ function PromoCard() {
     // background rather than the plain --surface color it sat on before.
     // Dark mode falls back to bg-surface, same reasoning as the hero
     // section — the neumorphic palette is calibrated for a light bg only.
-    <div className="relative overflow-hidden rounded-[32px] bg-[#ECF0F3] p-4 shadow-[-18px_-18px_30px_var(--color-neu-highlight),18px_18px_30px_var(--color-neu-shadow)] dark:bg-surface sm:p-6 lg:p-8">
-      <span className="absolute right-4 top-4 rounded-md  px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-muted">
+    <div className="relative overflow-hidden rounded-[32px] bg-[#ECF0F3] p-4 shadow-[-18px_-18px_30px_var(--color-neu-highlight),18px_18px_30px_var(--color-neu-shadow)] bg-white sm:p-6 lg:p-8">
+      <span className="absolute right-4 top-4 rounded-md  px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-black">
         Featured
       </span>
 
@@ -57,11 +57,11 @@ function PromoCard() {
             Flight Alerts
           </div> */}
 
-          <h2 className="text-2xl font-black tracking-tight text-primary sm:text-3xl">
+          <h2 className="text-2xl font-black tracking-tight text-black sm:text-3xl">
             Missed the fare drop again?
           </h2>
 
-          <p className="mt-3 max-w-md text-sm leading-6 text-secondary sm:text-base">
+          <p className="mt-3 max-w-md text-sm leading-6 text-black sm:text-base">
             Turn on Flight Alerts and we&apos;ll ping you the moment prices on
             your route change — no more digging through old texts to
             remember what you paid last time.
@@ -69,7 +69,7 @@ function PromoCard() {
 
           <Link
             href="/flight-alerts"
-            className="mt-5 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-black text-accent-foreground transition hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            className="mt-5 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-black text-black transition hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             Turn on alerts
           </Link>
@@ -90,12 +90,12 @@ function PromoIllustration() {
         aria-hidden="true"
       />
 
-      <span className="absolute left-6 top-6 flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-bold text-primary shadow-sm">
+      <span className="absolute left-6 top-6 flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-bold text-black shadow-sm">
         <Bell className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
         $109
       </span>
 
-      <span className="absolute bottom-7 right-6 flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-bold text-primary shadow-sm">
+      <span className="absolute bottom-7 right-6 flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-bold text-black shadow-sm">
         <MessageCircleMore
           className="h-3.5 w-3.5 text-accent"
           aria-hidden="true"

@@ -29,7 +29,14 @@ export default function TravelPromoSection() {
 
 function PromoCard() {
   return (
-    <div className="relative overflow-hidden rounded-[32px] border border-border bg-surface p-4 shadow-sm sm:p-6 lg:p-8">
+    // Neumorphic raised card: dropped the hard border + shadow-sm in favor
+    // of the same dual-shadow spec used for the navbar/hero (--neu-highlight
+    // / --neu-shadow), plus the matching neumorphic surface color
+    // (#ECF0F3 in light mode) so the shadow reads correctly against its own
+    // background rather than the plain --surface color it sat on before.
+    // Dark mode falls back to bg-surface, same reasoning as the hero
+    // section — the neumorphic palette is calibrated for a light bg only.
+    <div className="relative overflow-hidden rounded-[32px] bg-[#ECF0F3] p-4 shadow-[-18px_-18px_30px_var(--color-neu-highlight),18px_18px_30px_var(--color-neu-shadow)] dark:bg-surface sm:p-6 lg:p-8">
       <span className="absolute right-4 top-4 rounded-md border border-border bg-surface-muted px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-muted">
         Featured
       </span>
@@ -98,4 +105,3 @@ function PromoIllustration() {
     </div>
   );
 }
-

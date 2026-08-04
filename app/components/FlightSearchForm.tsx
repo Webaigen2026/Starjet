@@ -107,13 +107,18 @@ export default function FlightSearchForm() {
 
       {/* The bar: a rounded rectangle on mobile (fields stack vertically),
           becoming the full pill shape once it lays out horizontally at sm+.
-          Applying rounded-full unconditionally here was clipping the first
-          and last stacked fields into an oval on small screens.
-          Shadow uses the theme's --shadow-color directly (it already swaps
-          between a soft light-mode tint and a deeper dark-mode tint), so a
-          single arbitrary shadow replaces the old shadow-2xl + shadow-color
-          combo, which was setting size/color twice. */}
-      <div className="overflow-hidden rounded-md border border-border/70 bg-surface shadow-[0_25px_50px_-12px_var(--shadow-color)] sm:rounded-full">
+          This bar floats *over* the hero card's photo/gradient background
+          (HeroBackground), not over the flat #ECF0F3 page background that
+          PromoCard/StatCard sit on. A dual highlight+shadow reads as "raised
+          off this exact surface color" — against a photo, the white-highlight
+          half stops making sense (there's no matching light surface for it to
+          blend into) and instead looks like a stray glow/halo. So here it's a
+          single soft drop shadow only, no highlight component, same as how a
+          normal floating card/toolbar reads against photography. Kept the
+          neumorphic bg-[#ECF0F3] surface (so the bar itself still matches the
+          style family) but paired it with a plain shadow instead of the dual
+          tone. */}
+      <div className="overflow-hidden rounded-md bg-[#ECF0F3] shadow-[0_20px_45px_-10px_rgba(13,39,80,0.45),0_8px_20px_-6px_rgba(13,39,80,0.3)] dark:bg-surface dark:shadow-[0_20px_45px_-10px_rgba(0,0,0,0.6),0_8px_20px_-6px_rgba(0,0,0,0.45)] sm:rounded-full">
         <div className="flex flex-col divide-y divide-border sm:flex-row sm:items-stretch sm:divide-x sm:divide-y-0">
           <AirportField
             name="originCode"
@@ -298,18 +303,18 @@ function DateRangeField({ tripType }: { tripType: TripType }) {
       />
 
       <div className="flex min-w-0 flex-1 items-center gap-2">
-   <input
-  id="field-departureDate"
-  name="departureDate"
-  type="date"
-  required
-  aria-label="Departure"
-  className={cn(
-    SEGMENT_INPUT,
-    "text-white [color-scheme:light] dark:text-white dark:[color-scheme:dark]",
-  )}
-  style={{ colorScheme: "dark" }}
-/>
+        <input
+          id="field-departureDate"
+          name="departureDate"
+          type="date"
+          required
+          aria-label="Departure"
+          className={cn(
+            SEGMENT_INPUT,
+            "text-white [color-scheme:light] dark:text-white dark:[color-scheme:dark]",
+          )}
+          style={{ colorScheme: "dark" }}
+        />
 
         {tripType === "ROUND_TRIP" && (
           <>
@@ -319,11 +324,11 @@ function DateRangeField({ tripType }: { tripType: TripType }) {
               name="returnDate"
               type="date"
               aria-label="Return"
-            className={cn(
-    SEGMENT_INPUT,
-    "text-white [color-scheme:light] dark:text-white dark:[color-scheme:dark]",
-  )}
-  style={{ colorScheme: "dark" }}
+              className={cn(
+                SEGMENT_INPUT,
+                "text-white [color-scheme:light] dark:text-white dark:[color-scheme:dark]",
+              )}
+              style={{ colorScheme: "dark" }}
             />
           </>
         )}

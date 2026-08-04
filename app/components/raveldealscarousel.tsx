@@ -162,7 +162,12 @@ export default function TravelDealsCarousel() {
 
 function DealCard({ deal }: { deal: TravelDeal }) {
   return (
-    <article className="group flex w-[88vw] max-w-[390px] shrink-0 snap-start flex-col overflow-hidden rounded-[30px] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-border-strong hover:shadow-xl hover:shadow-[color:var(--shadow-color)] sm:w-[380px] sm:max-w-none lg:w-[410px] xl:w-[430px]">
+    // Neumorphic raised card — same pattern as TravelToolCard: this card
+    // sits on the flat page background (bg-background), so the full dual
+    // highlight+shadow spec applies. bg-white -> bg-[#ECF0F3], border +
+    // shadow-sm -> dual-shadow tokens, hover deepens the same shadow pair
+    // instead of switching to an unrelated shadow-xl.
+    <article className="group flex w-[88vw] max-w-[390px] shrink-0 snap-start flex-col overflow-hidden rounded-[30px] bg-[#ECF0F3] shadow-[-14px_-14px_26px_var(--color-neu-highlight),14px_14px_26px_var(--color-neu-shadow)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[-18px_-18px_32px_var(--color-neu-highlight),18px_18px_32px_var(--color-neu-shadow)] dark:bg-surface dark:shadow-sm dark:hover:shadow-xl dark:hover:shadow-[color:var(--shadow-color)] sm:w-[380px] sm:max-w-none lg:w-[410px] xl:w-[430px]">
       {/* Image */}
       <div className="p-3 sm:p-4">
         <div className="relative h-52 cursor-pointer overflow-hidden rounded-[24px] bg-primary-muted sm:h-56 lg:h-60">
@@ -235,12 +240,15 @@ function NavButton({
   const Icon = direction === "prev" ? ChevronLeft : ChevronRight;
 
   return (
+    // Same treatment as TravelToolsSection's NavigationButton: flat page
+    // background behind it, so bg-[#ECF0F3] + scaled dual-shadow tokens
+    // apply directly. Disabled state drops the shadow and dims the surface.
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
       aria-label={direction === "prev" ? "Previous deals" : "Next deals"}
-      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-secondary dark:text-black shadow-sm transition-all duration-200 hover:border-border-strong hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-muted disabled:opacity-70"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#ECF0F3] text-secondary dark:text-black shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)] transition-all duration-200 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#ECF0F3]/60 disabled:text-muted disabled:shadow-none dark:bg-surface dark:shadow-sm dark:hover:border-border-strong dark:disabled:bg-surface-muted dark:disabled:opacity-70"
     >
       <Icon className="h-5 w-5" aria-hidden="true" />
     </button>

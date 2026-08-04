@@ -171,9 +171,17 @@ export default function TravelToolsSection() {
 
 function TravelToolCard({ tool }: { tool: TravelTool }) {
   return (
+    // Neumorphic raised card: this card sits directly on the section's flat
+    // page background (bg-background / dark:bg-[#140227]) — same situation
+    // as PromoCard, not the photo-overlay case from the search bar — so the
+    // full dual highlight+shadow spec is valid here. Swapped bg-white +
+    // border + shadow-sm for bg-[#ECF0F3] + the dual-shadow tokens; the
+    // hover state now deepens the same dual shadow instead of jumping to an
+    // unrelated shadow-2xl, so the "lift" reads as the neumorphic card
+    // pressing further up rather than switching shadow families on hover.
     <Link
       href={tool.href}
-      className="group flex w-[88vw] max-w-[390px] shrink-0 snap-start flex-col overflow-hidden rounded-[30px] border border-border bg-white text-primary shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-accent/40 hover:shadow-2xl hover:shadow-[color:var(--shadow-color)] sm:w-[360px] sm:max-w-none lg:w-[380px] xl:w-[400px]"
+      className="group flex w-[88vw] max-w-[390px] shrink-0 snap-start flex-col overflow-hidden rounded-[30px] bg-[#ECF0F3] text-primary shadow-[-14px_-14px_26px_var(--color-neu-highlight),14px_14px_26px_var(--color-neu-shadow)] transition-all duration-300 hover:-translate-y-2 hover:shadow-[-18px_-18px_32px_var(--color-neu-highlight),18px_18px_32px_var(--color-neu-shadow)] dark:bg-surface dark:shadow-sm dark:hover:shadow-2xl dark:hover:shadow-[color:var(--shadow-color)] sm:w-[360px] sm:max-w-none lg:w-[380px] xl:w-[400px]"
     >
       {/* Image */}
       <div className="relative h-56 overflow-hidden bg-surface-muted sm:h-60 lg:h-64">
@@ -242,6 +250,10 @@ function NavigationButton({
   const Icon = direction === "previous" ? ChevronLeft : ChevronRight;
 
   return (
+    // Same treatment as the navbar's raised buttons: flat page background
+    // behind it, so bg-[#ECF0F3] + the dual-shadow tokens apply directly.
+    // Disabled state drops the shadow and dims the surface instead of just
+    // fading text color, so it visually "sinks" back into the page.
     <button
       type="button"
       onClick={onClick}
@@ -251,7 +263,7 @@ function NavigationButton({
           ? "View previous StarJet services"
           : "View next StarJet services"
       }
-      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-secondary shadow-sm transition-all duration-200 hover:border-accent hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-muted disabled:opacity-60"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#ECF0F3] text-secondary shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)] transition-all duration-200 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#ECF0F3]/60 disabled:text-muted disabled:shadow-none dark:bg-surface dark:shadow-sm dark:hover:border-accent dark:hover:bg-accent dark:hover:text-accent-foreground dark:disabled:bg-surface-muted dark:disabled:opacity-60"
     >
       <Icon className="h-5 w-5" aria-hidden="true" />
     </button>

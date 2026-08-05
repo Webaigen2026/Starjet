@@ -13,7 +13,7 @@ const IMAGE_SIZES = `
 
 /**
  * Theme-aware airplane cutout. Driven by next-themes `resolvedTheme`
- * so ThemeToggle clicks swap the asset immediately (not only via CSS).
+ * so ThemeToggle clicks swap the asset immediately.
  */
 export default function HeroAirplaneCutout() {
   const { resolvedTheme } = useTheme();
@@ -23,26 +23,69 @@ export default function HeroAirplaneCutout() {
   return (
     <div
       aria-hidden="true"
-      className="hs-plane pointer-events-none absolute inset-0 z-20"
+      className="
+        hs-plane
+        pointer-events-none
+        absolute
+        inset-y-0
+        -left-[6%]
+        w-[112%]
+        z-20        
+      "
     >
+
+        {/* className="
+    hs-plane
+    pointer-events-none
+    absolute
+    left-0
+    top-0
+    h-[38%]
+    w-full
+    z-30
+
+    sm:inset-y-0
+    sm:-left-[6%]
+    sm:top-auto
+    sm:h-auto
+    sm:w-[112%]
+  " */}
+      {/* Light mode */}
       <Image
         src="/airplane/airplane_day_wt_bg.png"
         alt=""
         fill
+        priority
         sizes={IMAGE_SIZES}
         className={cn(
-          "object-contain object-top drop-shadow-[0_20px_35px_rgba(15,23,42,0.35)] sm:object-cover sm:object-[72%_28%]",
+          `
+            object-contain
+            object-center
+            drop-shadow-[0_20px_35px_rgba(15,23,42,0.35)]
+
+            sm:object-cover
+            sm:object-[72%_28%]
+          `,
           isDark ? "hidden" : "block",
         )}
       />
 
+      {/* Dark mode */}
       <Image
         src="/airplane/airplane_wt_bg.png"
         alt=""
         fill
+        priority
         sizes={IMAGE_SIZES}
         className={cn(
-          "object-contain object-top drop-shadow-[0_20px_35px_rgba(0,0,0,0.55)] sm:object-cover sm:object-[72%_28%]",
+          `
+            object-contain
+            object-center
+            drop-shadow-[0_20px_35px_rgba(0,0,0,0.55)]
+
+            sm:object-cover
+            sm:object-[72%_28%]
+          `,
           isDark ? "block" : "hidden",
         )}
       />

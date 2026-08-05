@@ -96,13 +96,21 @@ function TravelCircle({ src, alt, priority = false }) {
     // globals.css, so the old dark:max-[639px]:shadow-none /
     // dark:min-[640px]:shadow-[...] overrides are no longer needed.
     <div
-      className="group relative mx-auto aspect-square w-full max-w-[clamp(7rem,34vw,12rem)] p-[clamp(0.4rem,1.4vw,0.65rem)] shadow-[-3px_-3px_7px_var(--color-neu-highlight),3px_3px_7px_var(--color-neu-shadow)]"
-      style={{
-        borderRadius: WINDOW_RADIUS,
-        // background:
-        //   "linear-gradient(145deg, #f8fafc 0%, #e2e8f0 45%, #cbd5e1 100%)",
-        background: "#ffffff",
-      }}
+    className="
+  group
+  relative
+  mx-auto
+  aspect-square
+  w-full
+  max-w-[clamp(7rem,34vw,12rem)]
+  p-[clamp(0.4rem,1.4vw,0.65rem)]
+  bg-[#EDF1F4]
+  dark:bg-surface
+  shadow-[-3px_-3px_7px_var(--color-neu-highlight),3px_3px_7px_var(--color-neu-shadow)]
+"
+style={{
+  borderRadius: WINDOW_RADIUS,
+}}
     >
       {/* Inner bevel ring — a thin dark groove between the outer bezel and
           the glass, the way a real window's rim casts a shadow line onto

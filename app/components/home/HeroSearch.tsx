@@ -2,6 +2,12 @@ import TravelImageWall from "../TravelImageWall";
 import FlightSearchForm from "../FlightSearchForm";
 import HeroAirplaneCutout from "./HeroAirplaneCutout";
 import HeroBackground from "./HeroBackground";
+import { Playfair_Display } from "next/font/google";
+
+export const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+});
 
 export default function HeroSearch() {
   return (
@@ -28,10 +34,10 @@ export default function HeroSearch() {
           <div className="min-w-0">
             <div className="relative">
               {/* Soft ambient glow behind the hero card */}
-              <div
+              {/* <div
                 aria-hidden="true"
                 className="pointer-events-none absolute -inset-3 -z-10 rounded-[clamp(2rem,3.5vw,2.75rem)] bg-sky-200/40 blur-3xl dark:bg-cyan-400/10 sm:-inset-5"
-              />
+              /> */}
 
               {/* Floating hero card */}
               <div className="hs-hero-card relative isolate overflow-hidden sm:rounded-[clamp(1rem,2vw,1.5rem)]">
@@ -39,34 +45,34 @@ export default function HeroSearch() {
                 <HeroBackground />
 
                 {/* Soft atmospheric sky tint */}
-                <div
+                {/* <div
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-sky-500/[0.06] via-transparent to-sky-300/[0.14] dark:from-fuchsia-950/20 dark:via-purple-950/10 dark:to-cyan-400/10"
-                />
+                /> */}
 
                 {/* Bottom readability fade */}
-                <div
+                {/* <div
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/35 via-slate-900/[0.08] to-transparent dark:from-[#210340]/70 dark:via-[#210340]/30 dark:to-transparent"
-                />
+                /> */}
 
                 {/* Gentle left-side readability fade */}
-                <div
+                {/* <div
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950/[0.12] via-transparent to-transparent dark:from-[#210340]/35"
-                />
+                /> */}
 
                 {/* Soft perimeter dissolve into the page background */}
-                <div
+                {/* <div
                   aria-hidden="true"
                   className="hs-hero-edge-fade pointer-events-none absolute inset-0"
-                />
+                /> */}
 
                 {/* Faint highlight along the top rim */}
-                <div
+                {/* <div
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/20 to-transparent dark:from-white/[0.06]"
-                />
+                /> */}
 
                 {/* Hero content */}
                 <div
@@ -76,7 +82,7 @@ export default function HeroSearch() {
                     px-5 pb-5 pt-40
 
                     sm:min-h-[min(72svh,39rem)]
-                    sm:px-[clamp(1.5rem,3vw,3rem)]
+                   
                     sm:pb-[clamp(1.5rem,2.5vw,2.25rem)]
                     sm:pt-[clamp(4rem,10vw,7rem)]
 
@@ -86,18 +92,40 @@ export default function HeroSearch() {
                   "
                 >
 
+{/* sm:px-[clamp(1.5rem,3vw,3rem)] */}
+
 
 
            
                   <div className="flex w-full max-w-5xl flex-col gap-6 sm:gap-8">
                     {/* Hero heading — tablet and desktop only */}
-                    <header className="hidden sm:block">
-                      <h2 className="hero-title max-w-3xl font-heading text-[clamp(2rem,4vw,3.25rem)] font-extrabold leading-[0.94] tracking-[-0.045em] text-white  dark:text-white  drop-shadow-[0_4px_20px_rgba(15,23,42,0.28)]">
-                        Fly Smarter.
-                        <br className="lg:hidden" />
-                        <span className="lg:ml-2">Travel Better.</span>
-                      </h2>
-                    </header>
+
+
+{/* <header className="hidden sm:block">
+  <h2
+    className={`${playfair.className}
+      hero-title
+      max-w-3xl
+      text-[clamp(2rem,4vw,3.4rem)]
+      font-black
+      leading-[0.95]
+      tracking-[-0.04em]
+      bg-gradient-to-r
+      from-[#021E7A]
+      via-[#0A53FF]
+      to-[#74B9FF]
+      bg-clip-text
+      text-transparent
+      drop-shadow-[0_6px_24px_rgba(2,14,99,0.25)]
+    `}
+  >
+    Fly Smarter.
+    <br className="lg:hidden" />
+    <span className="lg:ml-2">
+      Travel Better.
+    </span>
+  </h2>
+</header> */}
 
                     {/* Search form */}
                     <div className="relative z-30 w-full">
@@ -107,8 +135,22 @@ export default function HeroSearch() {
                 </div>
               </div>
 
-              {/* Foreground airplane */}
-              <HeroAirplaneCutout />
+              <div
+  className="
+    pointer-events-none
+    absolute
+    inset-0
+    z-[99999]
+    flex
+    items-start
+    justify-center
+    -translate-y-[13rem]
+    md:translate-y-0
+  "
+>
+  <HeroAirplaneCutout />
+</div>
+        
             </div>
           </div>
 
@@ -124,21 +166,14 @@ export default function HeroSearch() {
       <style>{`
         .hs-hero-card {
           border: 0;
-          /*
-            Neumorphic dual-shadow (drop-shadow flavor from the spec):
-            a white highlight offset up-left and a tinted dark shadow
-            offset down-right, both at the same blur. Uses the same
-            --neu-highlight / --neu-shadow tokens as the navbar, so light
-            and dark mode swap automatically without a separate .dark rule
-            here — the CSS variables already flip in globals.css.
-            Offsets/blur are kept close to the source spec (20px/28px)
-            since this card is large-format, unlike the scaled-down
-            navbar controls.
-          */
+       
           box-shadow:
             -20px -20px 28px var(--neu-highlight),
             20px 20px 28px var(--neu-shadow);
         }
+            .dark .hs-hero-card {
+  box-shadow: none;
+}
 
         /*
           Fade the outer edge of the background media while keeping the

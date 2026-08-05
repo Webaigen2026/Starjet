@@ -17,7 +17,7 @@ export default function HeroBackground() {
   const isDark = mounted && resolvedTheme === "dark";
 
   return (
-    <div className="hs-hero-media absolute inset-0">
+    <div className="hs-hero-media absolute inset-0 overflow-hidden">
       {/* Light mode */}
       <Image
         src="/airplane/hero_day_bg.png"
@@ -44,15 +44,32 @@ export default function HeroBackground() {
         )}
       />
 
-      {/* Soft white atmospheric veil */}
+      {/* Soft atmospheric veil */}
       <div
         aria-hidden="true"
-        className="
-          absolute inset-0
-          bg-white/8
-          dark:bg-transparent
-        "
+        className={cn(
+          "pointer-events-none absolute inset-0",
+          isDark ? "bg-black/5" : "bg-white/5",
+        )}
       />
+
+      {/* Animated bright cloud glow */}
+    {/* Moving cloud glow */}
+<div
+  aria-hidden="true"
+  className="
+  dark:hidden
+    cloud-glow
+    pointer-events-none
+    absolute
+    bottom-[-4%]
+    left-[-25%]
+    h-[38%]
+    w-[150%]
+    bg-white/90
+    blur-3xl
+  "
+/>
     </div>
   );
 }

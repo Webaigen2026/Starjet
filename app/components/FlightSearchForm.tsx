@@ -217,8 +217,9 @@ export default function FlightSearchForm() {
     disabled:cursor-not-allowed
     disabled:opacity-50
     disabled:shadow-none
-    dark:bg-[#020E63]
-    dark:text-white
+    dark: bg-[#cdd3df]
+    dark:text-black
+    dark:font-extrabold
     dark:shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)]
     dark:hover:bg-gradient-to-br
     dark:hover:from-[#8EC5F0]

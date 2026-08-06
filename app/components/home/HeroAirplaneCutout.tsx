@@ -13,37 +13,13 @@ const IMAGE_SIZES = `
     calc(100vw - 28vw - 5rem)
   ),
   (min-width: 1024px) calc(100vw - 5rem),
-  100vw
+  130vw
 `;
 
-/**
- * Number of pixels the hero must scroll past the top of the viewport
- * before the airplane has completely flown away.
- */
 const FLY_OFF_DISTANCE = 500;
-
-/**
- * How quickly the rendered position catches up to the scroll-derived
- * target, per frame. Lower = smoother and more "weighted", higher =
- * snappier and closer to a 1:1 scroll mapping. 0.15 reads as a gentle,
- * eased glide rather than either a lag or a rigid lockstep.
- */
 const SMOOTHING = 0.15;
-
-/**
- * Once the rendered value is this close to the target, treat it as
- * arrived and stop the animation loop instead of chasing rounding noise
- * on every frame forever.
- */
 const SETTLE_THRESHOLD = 0.0008;
 
-/**
- * Theme-aware airplane cutout.
- *
- * The outer wrapper handles scroll-based movement and opacity. The inner
- * `.hs-plane` element keeps the existing entrance and floating animations
- * defined in HeroSearch.
- */
 export default function HeroAirplaneCutout() {
   const { resolvedTheme } = useTheme();
   const mounted = useIsMounted();
@@ -63,12 +39,10 @@ export default function HeroAirplaneCutout() {
     if (reducedMotionQuery.matches) {
       wrapper.style.transform = "none";
       wrapper.style.opacity = "1";
+      wrapper.style.visibility = "visible";
       return;
     }
 
-    // The hero's top offset relative to the document. Measured once on
-    // mount and again on resize — never on a scroll tick — so scrolling
-    // itself never forces a synchronous layout read.
     let heroTop = 0;
     let targetProgress = 0;
     let renderedProgress = 0;
@@ -80,10 +54,6 @@ export default function HeroAirplaneCutout() {
     };
 
     const applyProgress = (progress: number) => {
-      /*
-       * Ease-out curve: starts quickly and settles toward the final
-       * position.
-       */
       const easedProgress = progress * (2 - progress);
 
       const translatePixels = easedProgress * 140;
@@ -94,7 +64,10 @@ export default function HeroAirplaneCutout() {
       wrapper.style.transform =
         `translateX(calc(${translatePixels}px + ${translatePercent}%)) ` +
         `rotate(${rotation}deg)`;
+
       wrapper.style.opacity = String(opacity);
+      wrapper.style.visibility =
+        opacity <= 0.01 ? "hidden" : "visible";
     };
 
     const tick = () => {
@@ -109,6 +82,7 @@ export default function HeroAirplaneCutout() {
 
       renderedProgress += delta * SMOOTHING;
       applyProgress(renderedProgress);
+
       animationFrameId = window.requestAnimationFrame(tick);
     };
 
@@ -120,7 +94,12 @@ export default function HeroAirplaneCutout() {
 
     const updateTarget = () => {
       const scrolledPastHero = Math.max(0, window.scrollY - heroTop);
-      targetProgress = Math.min(1, scrolledPastHero / FLY_OFF_DISTANCE);
+
+      targetProgress = Math.min(
+        1,
+        scrolledPastHero / FLY_OFF_DISTANCE,
+      );
+
       requestTick();
     };
 
@@ -133,7 +112,10 @@ export default function HeroAirplaneCutout() {
     updateTarget();
     applyProgress(renderedProgress);
 
-    window.addEventListener("scroll", updateTarget, { passive: true });
+    window.addEventListener("scroll", updateTarget, {
+      passive: true,
+    });
+
     window.addEventListener("resize", handleResize);
 
     return () => {
@@ -153,20 +135,36 @@ export default function HeroAirplaneCutout() {
       className="
         pointer-events-none
         absolute inset-0 z-40
+        overflow-visible
         transform-gpu
       "
       style={{
         opacity: 1,
+        visibility: "visible",
         willChange: "transform, opacity",
       }}
     >
+      {/*
+        Wider airplane canvas:
+        Mobile stays moderately oversized.
+        Tablet and desktop receive more room on the right.
+      */}
       <div
         className="
           hs-plane
           pointer-events-none
           absolute inset-y-0
-          -left-[6%]
-          w-[112%]
+          -left-[12%]
+          w-[130%]
+
+          sm:-left-[14%]
+          sm:w-[136%]
+
+          lg:-left-[16%]
+          lg:w-[142%]
+
+          xl:-left-[18%]
+          xl:w-[148%]
         "
       >
         {/* Light-mode airplane */}
@@ -182,8 +180,8 @@ export default function HeroAirplaneCutout() {
               object-center
               drop-shadow-[0_20px_35px_rgba(15,23,42,0.35)]
 
-              sm:object-cover
-              sm:object-[72%_28%]
+              sm:object-contain
+              sm:object-center
             `,
             isDark ? "hidden" : "block",
           )}
@@ -202,8 +200,8 @@ export default function HeroAirplaneCutout() {
               object-center
               drop-shadow-[0_20px_35px_rgba(0,0,0,0.55)]
 
-              sm:object-cover
-              sm:object-[72%_28%]
+              sm:object-contain
+              sm:object-center
             `,
             isDark ? "block" : "hidden",
           )}

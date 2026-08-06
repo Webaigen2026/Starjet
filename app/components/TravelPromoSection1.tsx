@@ -1,31 +1,41 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
-import {
-  Bell,
-  MessageCircleMore,
-  Pause,
-  PlaneTakeoff,
-  Play,
-} from "lucide-react";
-
-const routeCodes = ["BOS", "MIA", "CAP", "PAP"];
-
-const searchStats = [
-  { initials: "MJ" },
-  { initials: "RD" },
-  { initials: "KL" },
-];
+import { Bell, ArrowRight } from "lucide-react";
 
 export default function TravelPromoSection() {
   return (
-    <section className="bg-background py-20 sm:py-20 lg:py-20">
+    <section className="bg-background py-12 sm:py-16 lg:py-20">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-10">
-        <PromoCard />
+        <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.7fr)] lg:gap-12 xl:gap-16">
+          {/* Decorative traveler artwork */}
+          <div className="order-2 flex justify-center lg:order-1 lg:justify-end">
+            <Image
+              src="/airplane/avatars.png"
+              alt="Travelers preparing for their next trip"
+              width={500}
+              height={500}
+              sizes="
+                (max-width: 639px) 240px,
+                (max-width: 1023px) 320px,
+                380px
+              "
+              className="
+                h-auto
+                w-full
+                max-w-[240px]
+                object-contain
+                sm:max-w-[320px]
+                lg:max-w-[380px]
+              "
+            />
+          </div>
 
-        <div className="mt-4 grid gap-4 sm:mt-5 sm:grid-cols-3">
-          {/* Add stat cards here later */}
+          {/* Promotional content */}
+          <div className="order-1 min-w-0 lg:order-2">
+            <PromoCard />
+          </div>
         </div>
       </div>
     </section>
@@ -33,260 +43,205 @@ export default function TravelPromoSection() {
 }
 
 function PromoCard() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  async function toggleVideo() {
-    const video = videoRef.current;
-
-    if (!video) {
-      return;
-    }
-
-    if (video.paused) {
-      try {
-        await video.play();
-      } catch (error) {
-        console.error("The video could not be played:", error);
-      }
-    } else {
-      video.pause();
-    }
-  }
-
   return (
-    <div
+    <article
       className="
         relative
         overflow-hidden
-        rounded-[32px]
-        bg-white
-   
+        rounded-[28px]
+        bg-[#ecf0f3]
         p-4
-        bg-[#ECF0F3]
-        shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)]
+        shadow-[-6px_-6px_14px_var(--color-neu-highlight),6px_6px_14px_var(--color-neu-shadow)]
+
+        sm:rounded-[32px]
         sm:p-6
+
         lg:p-8
+
+        dark:bg-surface
+        dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_20px_50px_-24px_rgba(0,0,0,0.55)]
       "
     >
-      {/* <span
-        className="
-          absolute
-          right-4
-          top-4
-          z-20
-          rounded-md
-          px-2
-          py-1
-          text-[10px]
-          font-bold
-          uppercase
-          tracking-wide
-          text-black
-        "
-      >
-        Featured
-      </span> */}
+      <div className="grid items-center gap-7 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:gap-10">
+        <PromoImage />
 
-      <div className="flex flex-col items-center gap-6 lg:flex-row lg:gap-10">
-        {/* Video */}
-        <div
-          className="
-            relative
-            w-full
-            shrink-0
-            overflow-hidden
-            rounded-3xl
-            bg-surface
-            lg:w-[400px]
-            lg:h-[300px]
-          "
-        >
-          <video
-            ref={videoRef}
-            src="/videos/airplane.mp4"
-            muted
-            playsInline
-            preload="metadata"
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            onEnded={() => setIsPlaying(false)}
-            className="
-              aspect-video
-              h-auto
-              w-full
-              object-cover
-              lg:aspect-square
-            "
-          />
-
-          {/* Paused overlay */}
+        <div className="min-w-0 text-center lg:text-left">
           <div
-            aria-hidden="true"
-            className={`
-              pointer-events-none
-              absolute
-              inset-0
-              bg-black/20
-              transition-opacity
-              duration-300
-              ${isPlaying ? "opacity-0" : "opacity-100"}
-            `}
-          />
-
-          {/* Main play/pause control */}
-          {/* <button
-            type="button"
-            onClick={toggleVideo}
-            aria-label={isPlaying ? "Pause video" : "Play video"}
-            aria-pressed={isPlaying}
             className="
-              absolute
-              left-1/2
-              top-1/2
-              z-10
-              flex
-              h-16
-              w-16
-              -translate-x-1/2
-              -translate-y-1/2
-              items-center
-              justify-center
-              rounded-full
-              border
-              border-white/70
-              bg-white/90
-              text-[#020E63]
-              shadow-[0_12px_30px_rgba(0,0,0,0.28)]
-              backdrop-blur-md
-              transition
-              duration-200
-              hover:scale-105
-              hover:bg-white
-              focus-visible:outline-none
-              focus-visible:ring-4
-              focus-visible:ring-white/60
-              active:scale-95
-            "
-          >
-            {isPlaying ? (
-              <Pause
-                className="h-7 w-7 fill-current"
-                aria-hidden="true"
-              />
-            ) : (
-              <Play
-                className="ml-1 h-7 w-7 fill-current"
-                aria-hidden="true"
-              />
-            )}
-          </button> */}
-
-          {/* Bottom control */}
-          <button
-            type="button"
-            onClick={toggleVideo}
-            className="
-              absolute
-              bottom-4
-              left-4
-              z-10
+              mb-4
               inline-flex
               items-center
               gap-2
               rounded-full
-              bg-black/55
-              px-4
+              bg-white/70
+              px-3.5
               py-2
               text-xs
               font-bold
-              text-white
-              backdrop-blur-md
-              transition
-              hover:bg-black/70
-              focus-visible:outline-none
-              focus-visible:ring-2
-              focus-visible:ring-white
+              uppercase
+              tracking-[0.12em]
+              text-black
+              shadow-sm
+              backdrop-blur-sm
+
+              dark:bg-white/10
+              dark:text-white
             "
           >
-            {isPlaying ? (
-              <>
-                <Pause className="h-4 w-4" aria-hidden="true" />
-                Pause video
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4" aria-hidden="true" />
-                Play video
-              </>
-            )}
-          </button>
-        </div>
+            <Bell className="h-4 w-4" aria-hidden="true" />
+            Flight alerts
+          </div>
 
-        {/* Text content */}
-        <div className="flex-1">
-          <h2 className="text-2xl font-black tracking-tight text-black sm:text-3xl">
+          <h2
+            className="
+              text-balance
+              text-2xl
+              font-black
+              leading-tight
+              tracking-[-0.035em]
+              text-black
+
+              sm:text-3xl
+              lg:text-4xl
+
+              dark:text-white
+            "
+          >
             Missed the fare drop again?
           </h2>
 
-          <p className="mt-3 max-w-md text-sm leading-6 text-black sm:text-base">
-            Turn on Flight Alerts and we&apos;ll ping you the moment prices on
-            your route change — no more digging through old texts to remember
-            what you paid last time.
+          <p
+            className="
+              mx-auto
+              mt-4
+              max-w-xl
+              text-sm
+              leading-6
+              text-black/75
+
+              sm:text-base
+              sm:leading-7
+
+              lg:mx-0
+
+              dark:text-white/75
+            "
+          >
+            Turn on Flight Alerts and we&apos;ll notify you the moment prices
+            change on your route—so you can book at the right time without
+            repeatedly checking.
           </p>
 
           <Link
             href="/flight-alerts"
             className="
-              mt-5
+              mt-6
               inline-flex
+              min-h-12
               items-center
               justify-center
+              gap-2
               rounded-full
-             shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)]
-             dark:shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)]
+              bg-white
               px-6
               py-3
               text-sm
               font-black
-              text-[#020E63]
-              dark:text-white
-              transition
-              hover:text-[#020E63]
+              text-[#020e63]
+              shadow-[-4px_-4px_10px_var(--color-neu-highlight),4px_4px_10px_var(--color-neu-shadow)]
+              transition-all
+              duration-200
+
+              hover:-translate-y-0.5
+              hover:shadow-[-5px_-5px_12px_var(--color-neu-highlight),5px_5px_12px_var(--color-neu-shadow)]
+
               focus-visible:outline-none
               focus-visible:ring-2
-                focus-visible:ring-[#020E63]
+              focus-visible:ring-[#020e63]
               focus-visible:ring-offset-2
+              focus-visible:ring-offset-[#ecf0f3]
+
+              active:translate-y-0
+
+              dark:bg-white/10
+              dark:text-white
+              dark:shadow-none
+              dark:hover:bg-white/15
+              dark:focus-visible:ring-white
+              dark:focus-visible:ring-offset-surface
             "
           >
             Turn on alerts
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
-function PromoIllustration() {
+function PromoImage() {
   return (
-    <div className="relative flex h-40 w-full shrink-0 items-center justify-center overflow-hidden rounded-[24px] border border-border bg-accent-muted sm:h-48 lg:h-52 lg:w-64">
-      <PlaneTakeoff
-        className="h-16 w-16 text-accent/40 sm:h-20 sm:w-20"
-        aria-hidden="true"
+    <div
+      className="
+        group
+        relative
+        aspect-[4/3]
+        w-full
+        overflow-hidden
+        rounded-[24px]
+        bg-surface
+        shadow-[0_14px_40px_rgba(15,23,42,0.12)]
+
+        sm:rounded-[28px]
+
+        lg:h-[300px]
+        lg:aspect-auto
+      "
+    >
+      <Image
+        src="/airplane/boston.webp"
+        alt="Aerial view of Boston"
+        fill
+        priority
+        sizes="
+          (max-width: 639px) calc(100vw - 4rem),
+          (max-width: 1023px) calc(100vw - 6rem),
+          400px
+        "
+        className="
+          object-cover
+          object-center
+          transition-transform
+          duration-700
+          ease-out
+          motion-safe:group-hover:scale-105
+        "
       />
 
-      <span className="absolute left-6 top-6 flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-bold text-black shadow-sm">
-        <Bell className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
-        $109
-      </span>
+      <div
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          absolute inset-0
+          bg-gradient-to-t
+          from-black/20
+          via-transparent
+          to-white/[0.05]
+        "
+      />
 
-      <span className="absolute bottom-7 right-6 flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-bold text-black shadow-sm">
-        <MessageCircleMore
-          className="h-3.5 w-3.5 text-accent"
-          aria-hidden="true"
-        />
-        Price drop
-      </span>
+      <div
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          absolute inset-0
+          rounded-[inherit]
+          ring-1
+          ring-inset
+          ring-white/25
+        "
+      />
     </div>
   );
 }

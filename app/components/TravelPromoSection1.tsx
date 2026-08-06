@@ -20,7 +20,7 @@ const searchStats = [
 
 export default function TravelPromoSection() {
   return (
-    <section className="bg-background py-10 sm:py-14 lg:py-16">
+    <section className="bg-background py-20 sm:py-20 lg:py-20">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-10">
         <PromoCard />
 
@@ -61,13 +61,15 @@ function PromoCard() {
         overflow-hidden
         rounded-[32px]
         bg-white
+   
         p-4
-        shadow-[-18px_-18px_30px_var(--color-neu-highlight),18px_18px_30px_var(--color-neu-shadow)]
+        bg-[#ECF0F3]
+        shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)]
         sm:p-6
         lg:p-8
       "
     >
-      <span
+      {/* <span
         className="
           absolute
           right-4
@@ -84,7 +86,7 @@ function PromoCard() {
         "
       >
         Featured
-      </span>
+      </span> */}
 
       <div className="flex flex-col items-center gap-6 lg:flex-row lg:gap-10">
         {/* Video */}
@@ -241,17 +243,19 @@ function PromoCard() {
               items-center
               justify-center
               rounded-full
-              bg-accent
+             shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)]
+             dark:shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)]
               px-6
               py-3
               text-sm
               font-black
-              text-black
+              text-[#020E63]
+              dark:text-white
               transition
-              hover:bg-accent-hover
+              hover:text-[#020E63]
               focus-visible:outline-none
               focus-visible:ring-2
-              focus-visible:ring-accent
+                focus-visible:ring-[#020E63]
               focus-visible:ring-offset-2
             "
           >

@@ -61,9 +61,12 @@ export default function HeroSearch() {
     z-40
     overflow-visible
 
-    -translate-y-[7rem]
+    -translate-y-[5rem]
 
     md:translate-y-0
+    mr-20
+   md:mr-0
+   
   "
 >
   <HeroAirplaneCutout />

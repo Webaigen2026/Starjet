@@ -17,7 +17,7 @@ export default function HeroBackground() {
   const isDark = mounted && resolvedTheme === "dark";
 
   return (
-    <div className="hs-hero-media absolute inset-0 overflow-hidden">
+    <div className="hs-hero-media absolute inset-0 overflow-hidden ">
       {/* Light mode */}
       <Image
         src="/airplane/hero_day_bg.png"
@@ -26,7 +26,7 @@ export default function HeroBackground() {
         priority
         sizes={IMAGE_SIZES}
         className={cn(
-          "hs-hero-image object-cover object-[center_32%] opacity-[0.92] sm:object-[center_28%]",
+          "hs-hero-image object-cover object-[center_32%] opacity-[0.92] sm:object-[center_28%] ",
           isDark ? "hidden" : "block",
         )}
       />

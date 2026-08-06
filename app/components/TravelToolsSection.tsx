@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -20,7 +21,7 @@ interface TravelTool {
   href: string;
   imageUrl: string;
   imageAlt: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }
 
 const travelTools: TravelTool[] = [
@@ -78,8 +79,7 @@ export default function TravelToolsSection() {
 
     setAtStart(track.scrollLeft <= tolerance);
     setAtEnd(
-      track.scrollLeft + track.clientWidth >=
-        track.scrollWidth - tolerance,
+      track.scrollLeft + track.clientWidth >= track.scrollWidth - tolerance,
     );
   }, []);
 
@@ -110,10 +110,10 @@ export default function TravelToolsSection() {
   }
 
   return (
-    <section className="overflow-hidden bg-background dark:bg-[#140227] py-14 sm:py-16 lg:py-20">
-      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 xl:px-16">
+    <section className="overflow-hidden bg-[#EDF1F4] py-20 dark:bg-[#140227] sm:py-20 lg:py-20">
+      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 xl:px-10">
         {/* Heading */}
-        <div className="mb-8 flex flex-col gap-5 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-8 flex flex-col gap-5 sm:mb-20 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-3xl">
             <h2 className="section-title text-black dark:text-white lg:text-[clamp(1.75rem,1.2rem+1.5vw,2.5rem)]">
               Travel with confidence
@@ -122,7 +122,7 @@ export default function TravelToolsSection() {
 
           <Link
             href="/services"
-            className="group inline-flex w-fit items-center gap-2 text-sm font-black text-black transition hover:text-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4"
+            className="group inline-flex w-fit items-center gap-2 text-sm font-black text-black dark:text-white transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
           >
             View all services
 
@@ -137,7 +137,7 @@ export default function TravelToolsSection() {
         <div
           ref={trackRef}
           onScroll={updateNavigationState}
-          className="-mx-4 flex snap-x  snap-mandatory gap-5 overflow-x-auto px-4 py-6 pb-16 scroll-smooth [scrollbar-width:none] sm:-mx-6 sm:gap-6 sm:px-6 lg:mx-0 lg:px-0 [&::-webkit-scrollbar]:hidden"
+          className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-10 py-6 pb-20 scroll-smooth [scrollbar-width:none] sm:-mx-6 sm:gap-6 sm:px-10 lg:mx-0 lg:px-0 [&::-webkit-scrollbar]:hidden"
         >
           {travelTools.map((tool) => (
             <TravelToolCard key={tool.title} tool={tool} />
@@ -176,7 +176,7 @@ function TravelToolCard({ tool }: { tool: TravelTool }) {
       className="group  flex w-[88vw] max-w-[390px] shrink-0 snap-start flex-col overflow-hidden rounded-[30px] bg-white text-black shadow-[-14px_-14px_26px_var(--color-neu-highlight),14px_14px_26px_var(--color-neu-shadow)] transition-all duration-300 hover:-translate-y-2 hover:shadow-[-18px_-18px_32px_var(--color-neu-highlight),18px_18px_32px_var(--color-neu-shadow)] dark:bg-white dark:shadow-sm dark:hover:shadow-2xl dark:hover:shadow-[color:var(--shadow-color)] sm:w-[360px] sm:max-w-none lg:w-[380px] xl:w-[400px]"
     >
       {/* Image */}
-      <div className="relative h-56 overflow-hidden bg-white-muted sm:h-60 lg:h-64">
+      <div className="relative h-56 overflow-hidden bg-primary-muted sm:h-60 lg:h-64">
         <Image
           src={tool.imageUrl}
           alt={tool.imageAlt}
@@ -185,6 +185,10 @@ function TravelToolCard({ tool }: { tool: TravelTool }) {
           className="object-cover transition-transform duration-700 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-slate-950/10 to-transparent" />
+
+        <span className="absolute left-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white text-black shadow-sm">
+          {tool.icon}
+        </span>
       </div>
 
       {/* Content */}
@@ -198,8 +202,8 @@ function TravelToolCard({ tool }: { tool: TravelTool }) {
           </p>
         </div>
 
-        <div className="mt-7 flex items-center justify-between  pt-5">
-          <span className="text-2xl inline-flex items-center gap-2 font-black tracking-tight text-black">
+        <div className="mt-7 flex items-center justify-between pt-5">
+          <span className="inline-flex items-center gap-2 text-2xl font-black tracking-tight text-black">
             Explore
             <ChevronRight
               className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1"
@@ -233,7 +237,7 @@ function NavigationButton({
           ? "View previous StarJet services"
           : "View next StarJet services"
       }
-      className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#ECF0F3] text-black shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)] transition-all duration-200 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#ECF0F3]/60 disabled:text-muted disabled:shadow-none dark:bg-white dark:shadow-sm dark:hover:border-accent dark:hover:bg-accent dark:hover:text-accent-foreground dark:disabled:bg-white-muted dark:disabled:opacity-60"
+      className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-[#ECF0F3] text-black shadow-[-6px_-6px_12px_var(--color-neu-highlight),6px_6px_12px_var(--color-neu-shadow)] transition-all duration-200 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#ECF0F3]/60 disabled:text-muted disabled:shadow-none dark:bg-white dark:shadow-sm dark:hover:border-accent dark:hover:bg-accent dark:hover:text-accent-foreground dark:disabled:bg-white/60 dark:disabled:opacity-60"
     >
       <Icon className="h-5 w-5" aria-hidden="true" />
     </button>

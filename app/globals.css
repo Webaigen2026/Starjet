@@ -332,27 +332,9 @@ textarea {
   animation: cloud-drift 22s ease-in-out infinite;
   will-change: transform, opacity;
 }
-
-.hs-plane {
-  /* Mobile */
-  --hs-plane-shift: 0rem;
-  --hs-plane-y: clamp(
-    -56px,
-    calc(-32px - 24px * ((100vw - 320px) / 319px)),
-    -20px
-  );
-  --hs-plane-scale: clamp(
-    0.85,
-    calc(0.85 + 0.25 * ((100vw - 320px) / 319px)),
-    1.1
-  );
-}
-
 @media (min-width: 640px) {
   .hs-plane {
     --hs-plane-shift: 5rem;
-    --hs-plane-y: -80px;
-    --hs-plane-scale: 1;
   }
 }
 
@@ -371,11 +353,5 @@ textarea {
 @media (min-width: 1280px) {
   .hs-plane {
     --hs-plane-shift: 14rem;
-  }
-}
-
-@media (min-width: 1536px) {
-  .hs-plane {
-    --hs-plane-shift: 18rem;
   }
 }

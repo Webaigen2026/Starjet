@@ -23,11 +23,26 @@ const IMAGE_SIZES = `
 const FLY_OFF_DISTANCE = 500;
 
 /**
+ * How quickly the rendered position catches up to the scroll-derived
+ * target, per frame. Lower = smoother and more "weighted", higher =
+ * snappier and closer to a 1:1 scroll mapping. 0.15 reads as a gentle,
+ * eased glide rather than either a lag or a rigid lockstep.
+ */
+const SMOOTHING = 0.15;
+
+/**
+ * Once the rendered value is this close to the target, treat it as
+ * arrived and stop the animation loop instead of chasing rounding noise
+ * on every frame forever.
+ */
+const SETTLE_THRESHOLD = 0.0008;
+
+/**
  * Theme-aware airplane cutout.
  *
- * The outer wrapper handles scroll-based movement and opacity.
- * The inner `.hs-plane` element keeps the existing entrance and floating
- * animations defined in HeroSearch.
+ * The outer wrapper handles scroll-based movement and opacity. The inner
+ * `.hs-plane` element keeps the existing entrance and floating animations
+ * defined in HeroSearch.
  */
 export default function HeroAirplaneCutout() {
   const { resolvedTheme } = useTheme();
@@ -51,30 +66,23 @@ export default function HeroAirplaneCutout() {
       return;
     }
 
+    // The hero's top offset relative to the document. Measured once on
+    // mount and again on resize — never on a scroll tick — so scrolling
+    // itself never forces a synchronous layout read.
+    let heroTop = 0;
+    let targetProgress = 0;
+    let renderedProgress = 0;
     let animationFrameId: number | null = null;
 
-    const updateAirplanePosition = () => {
-      animationFrameId = null;
+    const measureHeroTop = () => {
+      const rect = wrapper.getBoundingClientRect();
+      heroTop = rect.top + window.scrollY;
+    };
 
-      const element = wrapperRef.current;
-
-      if (!element) return;
-
-      const rect = element.getBoundingClientRect();
-
+    const applyProgress = (progress: number) => {
       /*
-       * Begin the fly-off animation once the hero starts moving above the
-       * viewport. Progress is clamped between 0 and 1.
-       */
-      const scrolledPastHero = Math.max(0, -rect.top);
-      const progress = Math.min(
-        1,
-        scrolledPastHero / FLY_OFF_DISTANCE,
-      );
-
-      /*
-       * Ease-out curve:
-       * starts quickly and settles toward the final position.
+       * Ease-out curve: starts quickly and settles toward the final
+       * position.
        */
       const easedProgress = progress * (2 - progress);
 
@@ -83,35 +91,54 @@ export default function HeroAirplaneCutout() {
       const rotation = easedProgress * 8;
       const opacity = 1 - easedProgress;
 
-      element.style.transform = `
-        translateX(
-          calc(${translatePixels}px + ${translatePercent}%)
-        )
-        rotate(${rotation}deg)
-      `;
-
-      element.style.opacity = String(opacity);
+      wrapper.style.transform =
+        `translateX(calc(${translatePixels}px + ${translatePercent}%)) ` +
+        `rotate(${rotation}deg)`;
+      wrapper.style.opacity = String(opacity);
     };
 
-    const requestUpdate = () => {
-      if (animationFrameId !== null) return;
+    const tick = () => {
+      const delta = targetProgress - renderedProgress;
 
-      animationFrameId = window.requestAnimationFrame(
-        updateAirplanePosition,
-      );
+      if (Math.abs(delta) < SETTLE_THRESHOLD) {
+        renderedProgress = targetProgress;
+        applyProgress(renderedProgress);
+        animationFrameId = null;
+        return;
+      }
+
+      renderedProgress += delta * SMOOTHING;
+      applyProgress(renderedProgress);
+      animationFrameId = window.requestAnimationFrame(tick);
     };
 
-    updateAirplanePosition();
+    const requestTick = () => {
+      if (animationFrameId === null) {
+        animationFrameId = window.requestAnimationFrame(tick);
+      }
+    };
 
-    window.addEventListener("scroll", requestUpdate, {
-      passive: true,
-    });
+    const updateTarget = () => {
+      const scrolledPastHero = Math.max(0, window.scrollY - heroTop);
+      targetProgress = Math.min(1, scrolledPastHero / FLY_OFF_DISTANCE);
+      requestTick();
+    };
 
-    window.addEventListener("resize", requestUpdate);
+    const handleResize = () => {
+      measureHeroTop();
+      updateTarget();
+    };
+
+    measureHeroTop();
+    updateTarget();
+    applyProgress(renderedProgress);
+
+    window.addEventListener("scroll", updateTarget, { passive: true });
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener("scroll", requestUpdate);
-      window.removeEventListener("resize", requestUpdate);
+      window.removeEventListener("scroll", updateTarget);
+      window.removeEventListener("resize", handleResize);
 
       if (animationFrameId !== null) {
         window.cancelAnimationFrame(animationFrameId);

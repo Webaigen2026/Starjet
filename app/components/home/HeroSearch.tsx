@@ -2,87 +2,38 @@ import TravelImageWall from "../TravelImageWall";
 import FlightSearchForm from "../FlightSearchForm";
 import HeroAirplaneCutout from "./HeroAirplaneCutout";
 import HeroBackground from "./HeroBackground";
-import { Playfair_Display } from "next/font/google";
-
-export const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["700", "800", "900"],
-});
 
 export default function HeroSearch() {
   return (
-    <section className="relative w-full overflow-x-clip bg-background ">
+    <section className="relative w-full overflow-x-clip bg-background">
       <div className="mx-auto w-full max-w-[1800px] sm:px-[clamp(0.5rem,1vw,1rem)] sm:py-[clamp(0.75rem,1.8vw,2rem)]">
- 
-
         {/*
-          The travel image wall is removed below md so mobile receives a
-          focused, single-column hero without reserved sidebar space.
-
-          From md to 2xl it appears below the hero. At 2xl it becomes a
-          side column.
-
-          bg-surface -> bg-[#EDF1F4] in light mode: this is the neumorphic
-          BG Color from the shadow spec, applied behind both the hero card
-          and the travel image wall so the raised/inset shadows (which are
-          calibrated against this exact background) read correctly. Dark
-          mode keeps the existing bg-surface since the neumorphic palette
-          is light-only per the spec.
+          Mobile: only the main hero is rendered.
+          md–2xl: the image wall appears below the hero.
+          2xl+: the image wall becomes a side column.
         */}
-        <div className="grid min-w-0 grid-cols-1 gap-[clamp(1.25rem,2.5vw,2.75rem)] rounded-3xl bg-[#EDF1F4] dark:bg-surface sm:p-10 2xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28vw)] 2xl:items-stretch 2xl:gap-10">
+        <div className="grid min-w-0 grid-cols-1 gap-[clamp(1.25rem,2.5vw,2.75rem)] bg-[#EDF1F4] dark:bg-surface sm:rounded-3xl sm:p-10 2xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28vw)] 2xl:items-stretch 2xl:gap-10">
           {/* Main hero */}
           <div className="min-w-0">
             <div className="relative">
-              {/* Soft ambient glow behind the hero card */}
-              {/* <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -inset-3 -z-10 rounded-[clamp(2rem,3.5vw,2.75rem)] bg-sky-200/40 blur-3xl dark:bg-cyan-400/10 sm:-inset-5"
-              /> */}
-
-              {/* Floating hero card */}
+              {/* Hero card */}
               <div className="hs-hero-card relative isolate overflow-hidden sm:rounded-[clamp(1rem,2vw,1.5rem)]">
-         
                 <HeroBackground />
 
-                {/* Soft atmospheric sky tint */}
-                {/* <div
+                {/* Subtle bottom wash for form readability */}
+                <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-sky-500/[0.06] via-transparent to-sky-300/[0.14] dark:from-fuchsia-950/20 dark:via-purple-950/10 dark:to-cyan-400/10"
-                /> */}
-
-                {/* Bottom readability fade */}
-                {/* <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/35 via-slate-900/[0.08] to-transparent dark:from-[#210340]/70 dark:via-[#210340]/30 dark:to-transparent"
-                /> */}
-
-                {/* Gentle left-side readability fade */}
-                {/* <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950/[0.12] via-transparent to-transparent dark:from-[#210340]/35"
-                /> */}
-
-                {/* Soft perimeter dissolve into the page background */}
-                {/* <div
-                  aria-hidden="true"
-                  className="hs-hero-edge-fade pointer-events-none absolute inset-0"
-                /> */}
-
-                {/* Faint highlight along the top rim */}
-                {/* <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/20 to-transparent dark:from-white/[0.06]"
-                /> */}
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent dark:from-[#140227]/35"
+                />
 
                 {/* Hero content */}
                 <div
                   className="
-                    relative z-10
+                    relative z-20
                     flex min-h-[36rem] flex-col justify-end
                     px-5 pb-5 pt-40
 
                     sm:min-h-[min(72svh,39rem)]
-                   
                     sm:pb-[clamp(1.5rem,2.5vw,2.25rem)]
                     sm:pt-[clamp(4rem,10vw,7rem)]
 
@@ -91,42 +42,7 @@ export default function HeroSearch() {
                     2xl:min-h-[40rem]
                   "
                 >
-
-{/* sm:px-[clamp(1.5rem,3vw,3rem)] */}
-
-
-
-           
                   <div className="flex w-full max-w-5xl flex-col gap-6 sm:gap-8">
-                    {/* Hero heading — tablet and desktop only */}
-
-
-{/* <header className="hidden sm:block">
-  <h2
-    className={`${playfair.className}
-      hero-title
-      max-w-3xl
-      text-[clamp(2rem,4vw,3.4rem)]
-      font-black
-      leading-[0.95]
-      tracking-[-0.04em]
-      bg-gradient-to-r
-      from-[#021E7A]
-      via-[#0A53FF]
-      to-[#74B9FF]
-      bg-clip-text
-      text-transparent
-      drop-shadow-[0_6px_24px_rgba(2,14,99,0.25)]
-    `}
-  >
-    Fly Smarter.
-    <br className="lg:hidden" />
-    <span className="lg:ml-2">
-      Travel Better.
-    </span>
-  </h2>
-</header> */}
-
                     {/* Search form */}
                     <div className="relative z-30 w-full">
                       <FlightSearchForm />
@@ -135,26 +51,27 @@ export default function HeroSearch() {
                 </div>
               </div>
 
-              <div
+           {/* Foreground airplane */}
+{/* Foreground airplane */}
+<div
+  aria-hidden="true"
   className="
     pointer-events-none
-    absolute
-    inset-0
-    z-[99999]
-    flex
-    items-start
-    justify-center
-    -translate-y-[13rem]
+    absolute inset-0
+    z-40
+    overflow-visible
+
+    -translate-y-[7rem]
+
     md:translate-y-0
   "
 >
   <HeroAirplaneCutout />
 </div>
-        
             </div>
           </div>
 
-          {/* Travel image wall — stretches to match the adjacent hero card */}
+          {/* Travel image wall */}
           <aside className="hidden min-w-0 self-stretch md:block">
             <div className="mx-auto h-full w-full max-w-xl overflow-hidden px-2 py-[clamp(1rem,3vw,1.75rem)] sm:max-w-2xl sm:rounded-[clamp(1.25rem,2.2vw,1.75rem)] sm:px-4 md:max-w-3xl 2xl:max-w-none 2xl:px-1 2xl:py-2">
               <TravelImageWall />
@@ -164,48 +81,48 @@ export default function HeroSearch() {
       </div>
 
       <style>{`
+        /* ------------------------------------------------------------------ */
+        /* Hero card                                                          */
+        /* ------------------------------------------------------------------ */
+
         .hs-hero-card {
           border: 0;
-       
+          background: #edf1f4;
           box-shadow:
             -20px -20px 28px var(--neu-highlight),
             20px 20px 28px var(--neu-shadow);
         }
-            .dark .hs-hero-card {
-  box-shadow: none;
-}
 
-        /*
-          Fade the outer edge of the background media while keeping the
-          center fully visible and sharp.
-        */
+        .dark .hs-hero-card {
+          background: var(--surface);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.05),
+            0 18px 45px -20px rgba(229, 46, 122, 0.18);
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* Background image                                                   */
+        /* ------------------------------------------------------------------ */
+
         .hs-hero-media {
           -webkit-mask-image: radial-gradient(
-            ellipse 96% 92% at 50% 42%,
-            #000 60%,
-            rgba(0, 0, 0, 0.94) 74%,
-            rgba(0, 0, 0, 0.58) 87%,
+            ellipse 98% 94% at 50% 44%,
+            #000 65%,
+            rgba(0, 0, 0, 0.96) 78%,
+            rgba(0, 0, 0, 0.72) 90%,
             transparent 100%
           );
           mask-image: radial-gradient(
-            ellipse 96% 92% at 50% 42%,
-            #000 60%,
-            rgba(0, 0, 0, 0.94) 74%,
-            rgba(0, 0, 0, 0.58) 87%,
+            ellipse 98% 94% at 50% 44%,
+            #000 65%,
+            rgba(0, 0, 0, 0.96) 78%,
+            rgba(0, 0, 0, 0.72) 90%,
             transparent 100%
           );
           -webkit-mask-repeat: no-repeat;
           mask-repeat: no-repeat;
           -webkit-mask-size: 100% 100%;
           mask-size: 100% 100%;
-        }
-
-        .hs-hero-edge-fade {
-          background: radial-gradient(
-            ellipse 100% 100% at 50% 50%,
-            transparent 64%,
-            color-mix(in srgb, var(--background) 48%, transparent) 100%
-          );
         }
 
         @keyframes hs-ken-burns {
@@ -222,40 +139,48 @@ export default function HeroSearch() {
           animation: hs-ken-burns 14s ease-out forwards;
         }
 
-        /*
-          Foreground airplane positioning and scale.
-        */
+        /* ------------------------------------------------------------------ */
+        /* Centered foreground airplane                                       */
+        /* ------------------------------------------------------------------ */
+
         .hs-plane {
-          --hs-plane-shift: 0px;
-          --hs-plane-y: clamp(
-            -56px,
-            calc(-32px - 24px * ((100vw - 320px) / 319px)),
-            -20px
-          );
-          --hs-plane-scale: clamp(
-            0.85,
-            calc(0.85 + 0.25 * ((100vw - 320px) / 319px)),
-            1.1
-          );
+          /*
+            The element starts at the horizontal center of the hero.
+            translateX(-50%) centers its own width around that point.
+          */
+          left: 50%;
+          width: 100%;
+          transform-origin: center center;
+
+          --hs-plane-x: 0px;
+          --hs-plane-y: -7.5rem;
+          --hs-plane-scale: 0.92;
+
+          opacity: 0;
+          animation:
+            hs-plane-enter 1s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+            hs-plane-float 7s ease-in-out infinite;
+          animation-delay: 0.3s, 1.3s;
         }
 
         @media (min-width: 640px) {
           .hs-plane {
-            --hs-plane-shift: 4rem;
-            --hs-plane-y: -80px;
-            --hs-plane-scale: 1;
+            --hs-plane-y: -6rem;
+            --hs-plane-scale: 0.96;
           }
         }
 
         @media (min-width: 1024px) {
           .hs-plane {
-            --hs-plane-shift: 6rem;
+            --hs-plane-y: -5rem;
+            --hs-plane-scale: 1;
           }
         }
 
         @media (min-width: 1280px) {
           .hs-plane {
-            --hs-plane-shift: 8rem;
+            --hs-plane-y: -4.5rem;
+            --hs-plane-scale: 1;
           }
         }
 
@@ -263,7 +188,9 @@ export default function HeroSearch() {
           from {
             opacity: 0;
             transform:
-              translateX(calc(var(--hs-plane-shift, 0px) - 1.5rem))
+              translateX(
+                calc(-50% + var(--hs-plane-x, 0px) - 1.5rem)
+              )
               translateY(calc(var(--hs-plane-y, 0px) + 16px))
               scale(calc(var(--hs-plane-scale, 1) * 0.96));
           }
@@ -271,7 +198,7 @@ export default function HeroSearch() {
           to {
             opacity: 1;
             transform:
-              translateX(var(--hs-plane-shift, 0px))
+              translateX(calc(-50% + var(--hs-plane-x, 0px)))
               translateY(var(--hs-plane-y, 0px))
               scale(var(--hs-plane-scale, 1));
           }
@@ -281,26 +208,22 @@ export default function HeroSearch() {
           0%,
           100% {
             transform:
-              translateX(var(--hs-plane-shift, 0px))
+              translateX(calc(-50% + var(--hs-plane-x, 0px)))
               translateY(var(--hs-plane-y, 0px))
               scale(var(--hs-plane-scale, 1));
           }
 
           50% {
             transform:
-              translateX(var(--hs-plane-shift, 0px))
+              translateX(calc(-50% + var(--hs-plane-x, 0px)))
               translateY(calc(var(--hs-plane-y, 0px) - 10px))
               scale(var(--hs-plane-scale, 1));
           }
         }
 
-        .hs-plane {
-          opacity: 0;
-          animation:
-            hs-plane-enter 1s cubic-bezier(0.16, 1, 0.3, 1) forwards,
-            hs-plane-float 7s ease-in-out infinite;
-          animation-delay: 0.3s, 1.3s;
-        }
+        /* ------------------------------------------------------------------ */
+        /* Reduced motion                                                     */
+        /* ------------------------------------------------------------------ */
 
         @media (prefers-reduced-motion: reduce) {
           .hs-hero-image {
@@ -311,7 +234,7 @@ export default function HeroSearch() {
             opacity: 1;
             animation: none;
             transform:
-              translateX(var(--hs-plane-shift, 0px))
+              translateX(calc(-50% + var(--hs-plane-x, 0px)))
               translateY(var(--hs-plane-y, 0px))
               scale(var(--hs-plane-scale, 1));
           }

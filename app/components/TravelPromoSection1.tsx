@@ -49,7 +49,7 @@ function PromoCard() {
         relative
         overflow-hidden
         rounded-[28px]
-        bg-[#ecf0f3]
+        bg-white
         p-4
         shadow-[-6px_-6px_14px_var(--color-neu-highlight),6px_6px_14px_var(--color-neu-shadow)]
 
@@ -66,31 +66,7 @@ function PromoCard() {
         <PromoImage />
 
         <div className="min-w-0 text-center lg:text-left">
-          <div
-            className="
-              mb-4
-              inline-flex
-              items-center
-              gap-2
-              rounded-full
-              bg-white/70
-              px-3.5
-              py-2
-              text-xs
-              font-bold
-              uppercase
-              tracking-[0.12em]
-              text-black
-              shadow-sm
-              backdrop-blur-sm
-
-              dark:bg-white/10
-              dark:text-white
-            "
-          >
-            <Bell className="h-4 w-4" aria-hidden="true" />
-            Flight alerts
-          </div>
+    
 
           <h2
             className="

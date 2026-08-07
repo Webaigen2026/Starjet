@@ -20,7 +20,7 @@ export default function HeroSearch() {
               <div className="hs-hero-card relative isolate overflow-hidden sm:rounded-[clamp(1rem,2vw,1.5rem)]">
                 <HeroBackground />
 
-                {/* Subtle bottom wash for form readability */}
+                {/* Subtle bottom wash for form readability. */}
                 <div
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent dark:from-[#140227]/35"

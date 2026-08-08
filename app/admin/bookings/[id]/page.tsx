@@ -2,15 +2,15 @@ import { prisma } from "../../../lib/prisma";
 import StatusUpdateForm from "../../../api/bookings/[id]/StatusUpdateForm";
 
 type BookingDetailsPageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export default async function BookingDetailsPage({
   params,
 }: BookingDetailsPageProps) {
-  const { id } = params;
+  const { id } = await params;
 
   const booking = await prisma.booking.findUnique({
     where: {
@@ -125,21 +125,14 @@ export default async function BookingDetailsPage({
           />    
 
           <div className="space-y-4">
-            {booking.passengers.map(
-              (passenger: {
-                id: string;
-                firstName: string;
-                lastName: string;
-                passportNumber?: string | null;
-                nationality?: string | null;
-              }) => (
-                <div
-                  key={passenger.id}
-                  className="rounded-2xl border p-4"
-                >
-                  <h3 className="font-semibold text-slate-950">
-                    {passenger.firstName} {passenger.lastName}
-                  </h3>
+            {booking.passengers.map((passenger) => (
+              <div
+                key={passenger.id}
+                className="rounded-2xl border p-4"
+              >
+                <h3 className="font-semibold text-slate-950">
+                  {passenger.firstName} {passenger.lastName}
+                </h3>
 
                 <p className="text-sm text-slate-600">
                   Passport:{" "}

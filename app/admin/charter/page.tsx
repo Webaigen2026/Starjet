@@ -1,8 +1,7 @@
-import type { CharterRequest } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 
 export default async function AdminCharterPage() {
-  const charterRequests: CharterRequest[] = await prisma.charterRequest.findMany({
+  const charterRequests = await prisma.charterRequest.findMany({
     orderBy: {
       createdAt: "desc",
     },

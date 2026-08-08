@@ -1,248 +1,131 @@
-import TravelImageWall from "../TravelImageWall";
-import FlightSearchForm from "../FlightSearchForm";
-import HeroAirplaneCutout from "./HeroAirplaneCutout";
-import HeroBackground from "./HeroBackground";
-
 export default function HeroSearch() {
-  return (
-    <section className="relative w-full overflow-x-clip bg-background">
-      <div className="mx-auto w-full max-w-[1800px] sm:px-[clamp(0.5rem,1vw,1rem)] sm:py-[clamp(0.75rem,1.8vw,2rem)]">
-        {/*
-          Mobile: only the main hero is rendered.
-          md–2xl: the image wall appears below the hero.
-          2xl+: the image wall becomes a side column.
-        */}
-        <div className="grid min-w-0 grid-cols-1 gap-[clamp(1.25rem,2.5vw,2.75rem)] bg-[#EDF1F4] dark:bg-surface sm:rounded-3xl sm:p-10 2xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28vw)] 2xl:items-stretch 2xl:gap-10">
-          {/* Main hero */}
-          <div className="min-w-0">
-            <div className="relative">
-              {/* Hero card */}
-              <div className="hs-hero-card relative isolate overflow-hidden sm:rounded-[clamp(1rem,2vw,1.5rem)]">
-                <HeroBackground />
+    return (
+      <section className="bg-white px-6 py-10">
+        <div className="mx-auto max-w-7xl">
+          <div className="relative min-h-[680px] overflow-hidden rounded-[2rem]">
+            <img
+              src="/image/hero-bck.jpeg"
+              alt="Airplane taking off"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            
 
-                {/* Subtle bottom wash for form readability. */}
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent dark:from-[#140227]/35"
-                />
-
-                {/* Hero content */}
-                <div
-                  className="
-                    relative z-20
-                    flex min-h-[36rem] flex-col justify-end
-                    px-5 pb-5 pt-40
-
-                    sm:min-h-[min(72svh,39rem)]
-                    sm:pb-[clamp(1.5rem,2.5vw,2.25rem)]
-                    sm:pt-[clamp(4rem,10vw,7rem)]
-
-                    lg:min-h-[38rem]
-                    xl:min-h-[36rem]
-                    2xl:min-h-[40rem]
-                  "
-                >
-                  <div className="flex w-full max-w-5xl flex-col gap-6 sm:gap-8">
-                    {/* Search form */}
-                    <div className="relative z-30 w-full">
-                      <FlightSearchForm />
-                    </div>
-                  </div>
+  
+  <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-transparent" />
+  
+            <div className="relative z-10 grid min-h-[680px] items-center gap-10 px-8 py-12 lg:grid-cols-[1fr_460px] lg:px-14">
+              <div className="max-w-2xl">
+                <p className="inline-flex rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur">
+                  Haiti • United States • International Travel
+                </p>
+  
+                <h1 className="mt-7 text-5xl font-semibold tracking-[-0.04em] text-white md:text-6xl">
+                  Book flights between Haiti, the U.S. and beyond.
+                </h1>
+  
+                <p className="mt-6 max-w-xl text-lg leading-8 text-white/85">
+                  Search flights, manage your trips, request cargo service, and
+                  arrange private charter travel with SkyBridge.
+                </p>
+  
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white backdrop-blur">
+                    Flight booking
+                  </span>
+                  <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white backdrop-blur">
+                    Cargo service
+                  </span>
+                  <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white backdrop-blur">
+                    Private charter
+                  </span>
                 </div>
               </div>
-
-           {/* Foreground airplane */}
-{/* Foreground airplane */}
-<div
-  aria-hidden="true"
-  className="
-    pointer-events-none
-    absolute inset-0
-    z-40
-    overflow-visible
-
-    -translate-y-[5rem]
-
-    md:translate-y-0
-    mr-20
-   md:mr-0
-   
-  "
->
-  <HeroAirplaneCutout />
-</div>
+  
+              <form
+                action="/flights/results"
+                className="rounded-[1.75rem] bg-white p-6 shadow-2xl"
+              >
+                <div className="mb-6">
+                  <h2 className="text-2xl font-semibold text-slate-950">
+                    Find your flight
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Enter your route and travel dates.
+                  </p>
+                </div>
+  
+                <div className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="From" name="originCode" defaultValue="BOS" />
+                    <Field label="To" name="destinationCode" defaultValue="PAP" />
+                  </div>
+  
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <DateField label="Departure" name="departureDate" />
+                    <DateField label="Return" name="returnDate" />
+                  </div>
+  
+                  <div>
+                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Travelers
+                    </label>
+                    <input
+                      name="passengersCount"
+                      type="number"
+                      min={1}
+                      defaultValue={1}
+                      className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-slate-950 outline-none focus:border-slate-950"
+                    />
+                  </div>
+  
+                  <input type="hidden" name="tripType" value="ROUND_TRIP" />
+  
+                  <button className="mt-2 h-14 w-full rounded-xl bg-slate-950 text-sm font-semibold text-white hover:bg-slate-800">
+                    Search flights
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-
-          {/* Travel image wall */}
-          <aside className="hidden min-w-0 self-stretch md:block">
-            <div className="mx-auto h-full w-full max-w-xl overflow-hidden px-2 py-[clamp(1rem,3vw,1.75rem)] sm:max-w-2xl sm:rounded-[clamp(1.25rem,2.2vw,1.75rem)] sm:px-4 md:max-w-3xl 2xl:max-w-none 2xl:px-1 2xl:py-2">
-              <TravelImageWall />
-            </div>
-          </aside>
         </div>
+      </section>
+    );
+  }
+  
+  function Field({
+    label,
+    name,
+    defaultValue,
+  }: {
+    label: string;
+    name: string;
+    defaultValue: string;
+  }) {
+    return (
+      <div>
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {label}
+        </label>
+        <input
+          name={name}
+          defaultValue={defaultValue}
+          className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-slate-950 outline-none focus:border-slate-950"
+        />
       </div>
-
-      <style>{`
-        /* ------------------------------------------------------------------ */
-        /* Hero card                                                          */
-        /* ------------------------------------------------------------------ */
-
-        .hs-hero-card {
-          border: 0;
-          background: #edf1f4;
-          box-shadow:
-            -20px -20px 28px var(--neu-highlight),
-            20px 20px 28px var(--neu-shadow);
-        }
-
-        .dark .hs-hero-card {
-          background: var(--surface);
-          box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.05),
-            0 18px 45px -20px rgba(229, 46, 122, 0.18);
-        }
-
-        /* ------------------------------------------------------------------ */
-        /* Background image                                                   */
-        /* ------------------------------------------------------------------ */
-
-        .hs-hero-media {
-          -webkit-mask-image: radial-gradient(
-            ellipse 98% 94% at 50% 44%,
-            #000 65%,
-            rgba(0, 0, 0, 0.96) 78%,
-            rgba(0, 0, 0, 0.72) 90%,
-            transparent 100%
-          );
-          mask-image: radial-gradient(
-            ellipse 98% 94% at 50% 44%,
-            #000 65%,
-            rgba(0, 0, 0, 0.96) 78%,
-            rgba(0, 0, 0, 0.72) 90%,
-            transparent 100%
-          );
-          -webkit-mask-repeat: no-repeat;
-          mask-repeat: no-repeat;
-          -webkit-mask-size: 100% 100%;
-          mask-size: 100% 100%;
-        }
-
-        @keyframes hs-ken-burns {
-          from {
-            transform: scale(1.07);
-          }
-
-          to {
-            transform: scale(1);
-          }
-        }
-
-        .hs-hero-image {
-          animation: hs-ken-burns 14s ease-out forwards;
-        }
-
-        /* ------------------------------------------------------------------ */
-        /* Centered foreground airplane                                       */
-        /* ------------------------------------------------------------------ */
-
-        .hs-plane {
-          /*
-            The element starts at the horizontal center of the hero.
-            translateX(-50%) centers its own width around that point.
-          */
-          left: 50%;
-          width: 100%;
-          transform-origin: center center;
-
-          --hs-plane-x: 0px;
-          --hs-plane-y: -7.5rem;
-          --hs-plane-scale: 0.92;
-
-          opacity: 0;
-          animation:
-            hs-plane-enter 1s cubic-bezier(0.16, 1, 0.3, 1) forwards,
-            hs-plane-float 7s ease-in-out infinite;
-          animation-delay: 0.3s, 1.3s;
-        }
-
-        @media (min-width: 640px) {
-          .hs-plane {
-            --hs-plane-y: -6rem;
-            --hs-plane-scale: 0.96;
-          }
-        }
-
-        @media (min-width: 1024px) {
-          .hs-plane {
-            --hs-plane-y: -5rem;
-            --hs-plane-scale: 1;
-          }
-        }
-
-        @media (min-width: 1280px) {
-          .hs-plane {
-            --hs-plane-y: -4.5rem;
-            --hs-plane-scale: 1;
-          }
-        }
-
-        @keyframes hs-plane-enter {
-          from {
-            opacity: 0;
-            transform:
-              translateX(
-                calc(-50% + var(--hs-plane-x, 0px) - 1.5rem)
-              )
-              translateY(calc(var(--hs-plane-y, 0px) + 16px))
-              scale(calc(var(--hs-plane-scale, 1) * 0.96));
-          }
-
-          to {
-            opacity: 1;
-            transform:
-              translateX(calc(-50% + var(--hs-plane-x, 0px)))
-              translateY(var(--hs-plane-y, 0px))
-              scale(var(--hs-plane-scale, 1));
-          }
-        }
-
-        @keyframes hs-plane-float {
-          0%,
-          100% {
-            transform:
-              translateX(calc(-50% + var(--hs-plane-x, 0px)))
-              translateY(var(--hs-plane-y, 0px))
-              scale(var(--hs-plane-scale, 1));
-          }
-
-          50% {
-            transform:
-              translateX(calc(-50% + var(--hs-plane-x, 0px)))
-              translateY(calc(var(--hs-plane-y, 0px) - 10px))
-              scale(var(--hs-plane-scale, 1));
-          }
-        }
-
-        /* ------------------------------------------------------------------ */
-        /* Reduced motion                                                     */
-        /* ------------------------------------------------------------------ */
-
-        @media (prefers-reduced-motion: reduce) {
-          .hs-hero-image {
-            animation: none;
-          }
-
-          .hs-plane {
-            opacity: 1;
-            animation: none;
-            transform:
-              translateX(calc(-50% + var(--hs-plane-x, 0px)))
-              translateY(var(--hs-plane-y, 0px))
-              scale(var(--hs-plane-scale, 1));
-          }
-        }
-      `}</style>
-    </section>
-  );
-}
+    );
+  }
+  
+  function DateField({ label, name }: { label: string; name: string }) {
+    return (
+      <div>
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {label}
+        </label>
+        <input
+          name={name}
+          type="date"
+          className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-slate-950 outline-none focus:border-slate-950"
+        />
+      </div>
+    );
+  }

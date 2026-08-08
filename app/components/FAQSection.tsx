@@ -10,6 +10,9 @@ interface FAQItem {
   answer: string;
 }
 
+const BRAND_COLOR = "#020E63";
+const BRAND_HOVER_COLOR = "#0A1C9E";
+
 const faqItems: FAQItem[] = [
   {
     id: "find-flight-deals",
@@ -57,19 +60,19 @@ export default function FAQSection() {
   }
 
   return (
-    <section className="bg-white dark:bg-[#140227] py-16 sm:py-20 lg:py-24">
+    <section className="bg-white py-16 dark:bg-[#140227] sm:py-20 lg:py-24">
       <div className="mx-auto w-full max-w-full px-4 sm:px-6 lg:px-20">
         <div className="mb-10 sm:mb-12">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="section-title max-w-3xl text-primary">
+              <h2 className="section-title max-w-3xl text-[#020E63] dark:text-white">
                 Frequently asked questions about StarJet
               </h2>
             </div>
 
             <Link
               href="/faqs"
-              className="inline-flex w-fit items-center text-sm font-black text-accent transition hover:text-accent-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4"
+              className="inline-flex w-fit items-center text-sm font-black text-[#020E63] transition-colors duration-200 hover:text-[#0A1C9E] focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#020E63] focus-visible:ring-offset-4 dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
             >
               View all FAQs
             </Link>
@@ -83,7 +86,10 @@ export default function FAQSection() {
             const panelId = `faq-panel-${item.id}`;
 
             return (
-              <article key={item.id} className="border-b border-border">
+              <article
+                key={item.id}
+                className="border-b border-[#020E63]/15 dark:border-white/15"
+              >
                 <h3>
                   <button
                     id={buttonId}
@@ -91,13 +97,13 @@ export default function FAQSection() {
                     aria-expanded={isOpen}
                     aria-controls={panelId}
                     onClick={() => toggleItem(item.id)}
-                    className="group flex w-full items-center justify-between gap-5 py-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent sm:py-6"
+                    className="group flex w-full items-center justify-between gap-5 py-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#020E63] sm:py-6 dark:focus-visible:ring-white"
                   >
                     <span
-                      className={`text-sm font-black leading-6 transition-colors sm:text-[15px] ${
+                      className={`text-sm font-black leading-6 transition-colors duration-200 sm:text-[15px] ${
                         isOpen
-                          ? "text-accent"
-                          : "text-primary group-hover:text-accent"
+                          ? "text-[#020E63] dark:text-white"
+                          : "text-gray-900 group-hover:text-[#020E63] dark:text-white/90 dark:group-hover:text-white"
                       }`}
                     >
                       {item.question}
@@ -106,8 +112,8 @@ export default function FAQSection() {
                     <span
                       className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
                         isOpen
-                          ? "rotate-180 bg-accent-muted text-accent"
-                          : "text-primary group-hover:bg-surface-muted group-hover:text-accent"
+                          ? "rotate-180 bg-[#020E63]/10 text-[#020E63] dark:bg-white/15 dark:text-white"
+                          : "text-gray-700 group-hover:bg-[#020E63]/5 group-hover:text-[#020E63] dark:text-white/80 dark:group-hover:bg-white/10 dark:group-hover:text-white"
                       }`}
                     >
                       <ChevronDown className="h-5 w-5" aria-hidden="true" />
@@ -126,7 +132,7 @@ export default function FAQSection() {
                   }`}
                 >
                   <div className="overflow-hidden">
-                    <p className="max-w-xl pb-6 pr-10 text-sm leading-7 text-secondary sm:text-[15px]">
+                    <p className="max-w-xl pb-6 pr-10 text-sm leading-7 text-gray-600 sm:text-[15px] dark:text-white/70">
                       {item.answer}
                     </p>
                   </div>
@@ -136,27 +142,24 @@ export default function FAQSection() {
           })}
         </div>
 
-        <div className="mt-10 flex flex-col gap-4 rounded-2xl bg-white px-5 py-5 text-black sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="mt-10 flex flex-col gap-4 rounded-3xl border border-[#020E63]/10 bg-[#F8F9FF] px-6 py-6 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5">
           <div>
-            <h3 className="font-black text-black">Still have questions?</h3>
+            <h3 className="font-black text-[#020E63] dark:text-white">
+              Still have questions?
+            </h3>
 
-            <p className="mt-1 text-sm leading-6 text-black">
+            <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-white/70">
               Our support team can help with your reservation or upcoming trip.
             </p>
           </div>
 
           <Link
             href="/contact"
-            className="inline-flex w-fit shrink-0 items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-black text-black transition hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus-ring"
+            className="inline-flex w-fit shrink-0 items-center justify-center rounded-full bg-[#020E63] px-6 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-[#0A1C9E] hover:shadow-lg hover:shadow-[#020E63]/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#020E63]/30"
           >
             Contact support
           </Link>
         </div>
-   
-
-
-
-        
       </div>
     </section>
   );

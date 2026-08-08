@@ -26,11 +26,11 @@ export default function HomePage() {
       <TravelDealsCarousel />
       <TravelToolsSection />
       {/* <PopularDestinations /> */}
-
-      {/* <Features /> */}
-<TravelPromoSection/>
-   
       <RouteMap />
+      {/* <Features /> */}
+{/* <TravelPromoSection/> */}
+   
+     
 <FAQSection/>
       <Footer />
     </>

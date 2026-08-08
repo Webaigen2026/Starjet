@@ -61,7 +61,13 @@ function InstagramIcon({ className }: { className?: string }) {
     >
       <rect x="2" y="2" width="20" height="20" rx="5" />
       <circle cx="12" cy="12" r="4" />
-      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+      <circle
+        cx="17.5"
+        cy="6.5"
+        r="1"
+        fill="currentColor"
+        stroke="none"
+      />
     </svg>
   );
 }
@@ -103,7 +109,10 @@ const footerColumns: FooterColumn[] = [
         label: "In-Flight Experience",
         href: "/experience",
       },
-      { label: "Frequently Asked Questions", href: "/faqs" },
+      {
+        label: "Frequently Asked Questions",
+        href: "/faqs",
+      },
     ],
   },
   {
@@ -173,24 +182,26 @@ export default function SiteFooter() {
 
     const trimmedEmail = email.trim();
 
-    if (!trimmedEmail) return;
+    if (!trimmedEmail) {
+      return;
+    }
 
     setSubscribed(true);
     setEmail("");
   }
 
   return (
-    <footer className="relative overflow-hidden  bg-white dark:bg-[#140227] text-secondary">
+    <footer className="relative overflow-hidden bg-white text-gray-700 dark:bg-[#140227] dark:text-white/75">
       {/* Decorative background accents */}
-      {/* <div
-        className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-accent-muted blur-3xl"
-        aria-hidden="true"
-      /> */}
-{/* 
       <div
-        className="pointer-events-none absolute -bottom-40 -left-32 h-96 w-96 rounded-full bg-accent-muted/70 blur-3xl"
         aria-hidden="true"
-      /> */}
+        className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#020E63]/5 blur-3xl dark:bg-white/5"
+      />
+
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-40 -left-32 h-96 w-96 rounded-full bg-[#020E63]/5 blur-3xl dark:bg-white/5"
+      />
 
       <div className="relative mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-6 sm:py-16 lg:px-10 lg:py-20 xl:px-16">
         {/* Brand and newsletter */}
@@ -200,13 +211,14 @@ export default function SiteFooter() {
             <Link
               href="/"
               aria-label="StarJet home"
-              className="inline-flex items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-surface"
+              className="inline-flex items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#020E63] focus-visible:ring-offset-4 focus-visible:ring-offset-white dark:focus-visible:ring-white dark:focus-visible:ring-offset-[#140227]"
             >
               <div className="relative h-22 w-22 sm:h-24 sm:w-24">
                 <BrandLogo size={96} />
               </div>
             </Link>
-            <p className="body-text mt-5 max-w-md text-sm text-secondary sm:text-base">
+
+            <p className="mt-5 max-w-md text-sm leading-7 text-gray-600 sm:text-base dark:text-white/70">
               Connecting Boston, New York, and South Florida to Cap-Haïtien and
               Port-au-Prince with dependable, nonstop service.
             </p>
@@ -226,8 +238,8 @@ export default function SiteFooter() {
                 support@starjet.com
               </ContactLink>
 
-              <div className="flex items-start gap-3 text-sm leading-6 text-secondary">
-                <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-muted text-accent-muted-foreground">
+              <div className="flex items-start gap-3 text-sm leading-6 text-gray-600 dark:text-white/70">
+                <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#020E63]/10 text-[#020E63] dark:bg-white/10 dark:text-white">
                   <MapPin className="h-4 w-4" aria-hidden="true" />
                 </span>
 
@@ -237,39 +249,36 @@ export default function SiteFooter() {
           </div>
 
           {/* Newsletter */}
-          <div className="rounded-[28px] p-5 backdrop-blur-sm sm:p-7 lg:p-8">
-            <div className="flex items-start gap-4">
-             
+          <div className="rounded-[28px]  p-6 backdrop-blur-sm sm:p-8 dark:border-white/10 dark:bg-white/5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#020E63] dark:text-white/70">
+                StarJet offers
+              </p>
 
-              <div>
-                <p className="caption uppercase text-accent-muted-foreground">
-                  StarJet offers
-                </p>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-[#020E63] sm:text-3xl dark:text-white">
+                Get fare alerts
+              </h2>
 
-                <h2 className="section-title mt-2 text-primary">
-                  Get fare alerts
-                </h2>
-
-                <p className="body-text mt-2 max-w-lg text-sm text-secondary">
-                  Receive new route announcements, exclusive promotions, and our
-                  latest flight offers directly in your inbox.
-                </p>
-              </div>
+              <p className="mt-2 max-w-lg text-sm leading-7 text-gray-600 dark:text-white/70">
+                Receive new route announcements, exclusive promotions, and our
+                latest flight offers directly in your inbox.
+              </p>
             </div>
 
             {subscribed ? (
               <div
                 role="status"
                 aria-live="polite"
-                className="mt-6 flex items-start gap-3 rounded-2xl bg-success-muted px-4 py-4 text-sm text-success-foreground"
+                className="mt-6 flex items-start gap-3 rounded-2xl bg-[#020E63]/10 px-4 py-4 text-sm text-[#020E63] dark:bg-white/10 dark:text-white"
               >
-                <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success text-accent-foreground">
+                <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#020E63] text-white dark:bg-white dark:text-[#020E63]">
                   <Check className="h-4 w-4" aria-hidden="true" />
                 </span>
 
                 <div>
                   <p className="font-bold">You&apos;re on the list.</p>
-                  <p className="mt-1 opacity-90">
+
+                  <p className="mt-1 opacity-80">
                     Watch your inbox for the latest StarJet fare alerts.
                   </p>
                 </div>
@@ -285,7 +294,7 @@ export default function SiteFooter() {
                   </label>
 
                   <Mail
-                    className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                    className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-white/45"
                     aria-hidden="true"
                   />
 
@@ -297,13 +306,13 @@ export default function SiteFooter() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="Enter your email address"
-                    className="h-13 w-full rounded-xl  bg-input-background py-3.5 pl-11 pr-4 text-sm font-medium text-primary outline-none transition placeholder:text-muted hover:border-border-strong  "
+                    className="h-13 w-full rounded-xl border border-[#020E63]/10 bg-white py-3.5 pl-11 pr-4 text-sm font-medium text-gray-950 outline-none transition placeholder:text-gray-400 hover:border-[#020E63]/30 focus:border-[#020E63] focus:ring-4 focus:ring-[#020E63]/10 dark:border-white/10 dark:bg-white/10 dark:text-white dark:placeholder:text-white/40 dark:hover:border-white/25 dark:focus:border-white dark:focus:ring-white/10"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="button-text cursor-pointer group inline-flex min-h-13 shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-black transition duration-200 hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus-ring active:scale-[0.98]"
+                  className="group inline-flex min-h-13 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#020E63] px-6 py-3.5 text-sm font-black text-white transition-all duration-200 hover:bg-[#0A1C9E] hover:shadow-lg hover:shadow-[#020E63]/25 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#020E63]/30 active:scale-[0.98] dark:bg-white dark:text-[#020E63] dark:hover:bg-white/90 dark:hover:shadow-none"
                 >
                   Subscribe
 
@@ -315,7 +324,7 @@ export default function SiteFooter() {
               </form>
             )}
 
-            <p className="mt-3 text-xs leading-5 text-muted">
+            <p className="mt-3 text-xs leading-5 text-gray-500 dark:text-white/50">
               By subscribing, you agree to receive promotional emails from
               StarJet. You may unsubscribe at any time.
             </p>
@@ -325,11 +334,11 @@ export default function SiteFooter() {
         {/* Footer navigation */}
         <nav
           aria-label="Footer navigation"
-          className="grid grid-cols-2 gap-x-6 gap-y-10 border-b border-border py-12 sm:grid-cols-4 lg:gap-12 lg:py-14"
+          className="grid grid-cols-2 gap-x-6 gap-y-10 border-b border-[#020E63]/10 py-12 sm:grid-cols-4 lg:gap-12 lg:py-14 dark:border-white/10"
         >
           {footerColumns.map((column) => (
             <div key={column.title}>
-              <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-primary">
+              <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-[#020E63] dark:text-white">
                 {column.title}
               </h2>
 
@@ -338,7 +347,7 @@ export default function SiteFooter() {
                   <li key={`${column.title}-${link.href}`}>
                     <Link
                       href={link.href}
-                      className="group inline-flex items-center gap-1.5 text-sm leading-6 text-secondary transition-colors duration-200 hover:text-accent focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      className="group inline-flex items-center gap-1.5 rounded text-sm leading-6 text-gray-600 transition-colors duration-200 hover:text-[#020E63] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#020E63] dark:text-white/65 dark:hover:text-white dark:focus-visible:ring-white"
                     >
                       <span>{link.label}</span>
 
@@ -357,7 +366,7 @@ export default function SiteFooter() {
         {/* Bottom section */}
         <div className="flex flex-col gap-7 pt-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-muted">
+            <p className="text-sm text-gray-500 dark:text-white/50">
               © {currentYear} StarJet. All rights reserved.
             </p>
 
@@ -366,7 +375,7 @@ export default function SiteFooter() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-xs font-medium text-muted transition-colors hover:text-accent focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:text-sm"
+                    className="rounded text-xs font-medium text-gray-500 transition-colors hover:text-[#020E63] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#020E63] sm:text-sm dark:text-white/50 dark:hover:text-white dark:focus-visible:ring-white"
                   >
                     {link.label}
                   </Link>
@@ -379,10 +388,10 @@ export default function SiteFooter() {
             <button
               type="button"
               aria-label="Change language and region"
-              className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-bold text-secondary shadow-sm transition duration-200 hover:border-accent hover:bg-accent-muted hover:text-accent-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="inline-flex w-fit items-center gap-2 rounded-full border border-[#020E63]/10 bg-white px-4 py-2.5 text-sm font-bold text-gray-700 shadow-sm transition duration-200 hover:border-[#020E63] hover:bg-[#020E63]/10 hover:text-[#020E63] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#020E63] dark:border-white/10 dark:bg-white/5 dark:text-white/75 dark:hover:border-white/30 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:ring-white"
             >
               <Globe2
-                className="h-4 w-4 text-accent-muted-foreground"
+                className="h-4 w-4 text-[#020E63] dark:text-white"
                 aria-hidden="true"
               />
 
@@ -400,7 +409,7 @@ export default function SiteFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`Follow StarJet on ${label}`}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-secondary shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-accent-muted hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#020E63]/10 bg-white text-gray-600 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#020E63] hover:bg-[#020E63] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#020E63] dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:border-white dark:hover:bg-white dark:hover:text-[#020E63] dark:focus-visible:ring-white"
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </a>
@@ -425,9 +434,9 @@ function ContactLink({
   return (
     <a
       href={href}
-      className="group flex w-fit items-center gap-3 text-sm text-secondary transition-colors duration-200 hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      className="group flex w-fit items-center gap-3 rounded text-sm text-gray-600 transition-colors duration-200 hover:text-[#020E63] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#020E63] dark:text-white/70 dark:hover:text-white dark:focus-visible:ring-white"
     >
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-muted text-accent-muted-foreground transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#020E63]/10 text-[#020E63] transition-colors duration-200 group-hover:bg-[#020E63] group-hover:text-white dark:bg-white/10 dark:text-white dark:group-hover:bg-white dark:group-hover:text-[#020E63]">
         {icon}
       </span>
 

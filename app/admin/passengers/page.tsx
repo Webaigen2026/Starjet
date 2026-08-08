@@ -1,8 +1,7 @@
-import type { Passenger } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 
 export default async function AdminPassengersPage() {
-  const passengers: Passenger[] = await prisma.passenger.findMany({
+  const passengers = await prisma.passenger.findMany({
     orderBy: {
       createdAt: "desc",
     },

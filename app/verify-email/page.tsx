@@ -1,25 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function VerifyEmailPage() {
-  return (
-    <Suspense
-      fallback={
-        <main className="min-h-screen bg-slate-50 px-6 py-16">
-          <p className="mx-auto max-w-md text-center text-slate-600">
-            Verifying your email...
-          </p>
-        </main>
-      }
-    >
-      <VerifyEmailPageContent />
-    </Suspense>
-  );
-}
-
-function VerifyEmailPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 

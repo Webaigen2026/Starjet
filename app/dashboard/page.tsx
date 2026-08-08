@@ -1,4 +1,3 @@
-import type { Booking, CargoRequest, CharterRequest } from "@prisma/client";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
@@ -14,7 +13,7 @@ export default async function CustomerDashboardPage() {
 
   const email = session.user.email;
 
-  const [bookings, cargoRequests, charterRequests] = (await Promise.all([
+  const [bookings, cargoRequests, charterRequests] = await Promise.all([
     prisma.booking.findMany({
       where: { customerEmail: email },
       orderBy: { createdAt: "desc" },
@@ -30,7 +29,7 @@ export default async function CustomerDashboardPage() {
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
-  ])) as [Booking[], CargoRequest[], CharterRequest[]];
+  ]);
 
   return (
     <main className="min-h-screen bg-[#f6f8fc]">

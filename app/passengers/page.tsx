@@ -1,29 +1,15 @@
 "use client";
 
-import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function PassengersPage() {
-  return (
-    <Suspense
-      fallback={
-        <main className="mx-auto max-w-5xl px-4 py-10">
-          <p className="text-slate-600">Loading passenger details…</p>
-        </main>
-      }
-    >
-      <PassengersPageContent />
-    </Suspense>
-  );
-}
-
-function PassengersPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const flightId = searchParams.get("flightId") || "";
-  const airline = searchParams.get("airline") || "StarJet Air";
+  const airline = searchParams.get("airline") || "SkyBridge Air";
   const originCode = searchParams.get("originCode") || "";
   const destinationCode = searchParams.get("destinationCode") || "";
   const departureDate = searchParams.get("departureDate") || "";

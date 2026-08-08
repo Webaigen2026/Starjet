@@ -7,25 +7,24 @@ datasource db {
 }
 
 model User {
-  id                  String           @id @default(cuid())
-  name                String?
-  email               String           @unique
-  phone               String?
-  password            String?
-  role                UserRole         @default(CUSTOMER)
+  id       String   @id @default(cuid())
+  name     String?
+  email    String   @unique
+  phone    String?
+  password String?
+  role     UserRole @default(CUSTOMER)
 
   emailVerified       DateTime?
-  failedLoginAttempts Int              @default(0)
+  failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
 
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  bookings            Booking[]
-  cargoRequests       CargoRequest[]
-  charterRequests     CharterRequest[]
+  bookings        Booking[]
+  cargoRequests   CargoRequest[]
+  charterRequests CharterRequest[]
 }
-
 
 model Booking {
   id                      String        @id @default(cuid())
@@ -57,10 +56,18 @@ model Booking {
   stripeCheckoutSessionId String?
   stripePaymentIntentId   String?
   taxes                   Decimal?      @db.Decimal(10, 2)
-  userId                  String?
-  user                    User?         @relation(fields: [userId], references: [id])
-  passengers              Passenger[]
-  payments                Payment[]
+
+  scheduleId String
+  userId     String?
+
+  schedule FlightSchedule @relation(fields: [scheduleId], references: [id])
+  user     User?          @relation(fields: [userId], references: [id])
+
+  passengers Passenger[]
+  payments   Payment[]
+  seats      Seat[]
+
+  @@index([scheduleId])
 }
 
 model Passenger {
@@ -72,12 +79,16 @@ model Passenger {
   nationality     String?
   passportNumber  String?
   passportExpiry  DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
   gender          String?
   middleName      String?
   passportCountry String?
-  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  seat Seat?
 }
 
 model Payment {
@@ -92,6 +103,7 @@ model Payment {
   updatedAt   DateTime      @updatedAt
   booking     Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
+
 model Flight {
   id              String   @id @default(cuid())
   flightCode      String   @unique
@@ -170,6 +182,7 @@ model ContactMessage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
 model EmailVerificationToken {
   id        String   @id @default(cuid())
   email     String
@@ -203,7 +216,10 @@ enum BookingStatus {
   PENDING_PAYMENT
   PAID
   CONFIRMED
+  CHECKED_IN
   TICKETED
+  BOARDED
+  COMPLETED
   CANCELLED
   REFUNDED
   FAILED
@@ -232,4 +248,215 @@ enum CargoType {
   BARREL
   PALLET
   OTHER
+}
+
+// ==========================================================
+// AIRLINE OPERATIONS (V2)
+// Append below your existing schema
+// ==========================================================
+
+enum AircraftStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+enum FlightScheduleStatus {
+  SCHEDULED
+  BOARDING
+  DELAYED
+  DEPARTED
+  ARRIVED
+  CANCELLED
+}
+
+enum CabinClass {
+  ECONOMY
+  PREMIUM_ECONOMY
+  BUSINESS
+  FIRST
+}
+
+enum SeatClass {
+  ECONOMY
+  BUSINESS
+  FIRST
+}
+
+enum SeatStatus {
+  AVAILABLE
+  RESERVED
+  BOOKED
+}
+
+model Airline {
+  id String @id @default(cuid())
+
+  name     String
+  iataCode String  @unique
+  icaoCode String? @unique
+
+  logoUrl String?
+  website String?
+
+  supportEmail String?
+  supportPhone String?
+
+  country String
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  aircraft Aircraft[]
+  routes   FlightRoute[]
+
+  @@index([country])
+}
+
+model Airport {
+  id String @id @default(cuid())
+
+  iataCode String  @unique
+  icaoCode String? @unique
+
+  name    String
+  city    String
+  state   String?
+  country String
+
+  timezone String
+
+  latitude  Decimal? @db.Decimal(9, 6)
+  longitude Decimal? @db.Decimal(9, 6)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  originRoutes      FlightRoute[] @relation("OriginAirport")
+  destinationRoutes FlightRoute[] @relation("DestinationAirport")
+
+  @@index([city])
+  @@index([country])
+}
+
+model Aircraft {
+  id String @id @default(cuid())
+
+  airlineId String
+
+  registrationNumber String @unique
+
+  manufacturer String
+
+  model String
+
+  capacity Int
+
+  economySeats Int
+
+  premiumSeats Int @default(0)
+
+  businessSeats Int
+
+  firstClassSeats Int
+
+  status AircraftStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  airline Airline @relation(fields: [airlineId], references: [id])
+
+  schedules FlightSchedule[]
+
+  @@index([airlineId])
+}
+
+model FlightRoute {
+  id String @id @default(cuid())
+
+  airlineId    String
+  routeCode    String @unique
+  flightNumber String
+
+  originAirportId      String
+  destinationAirportId String
+
+  estimatedDuration Int
+  distanceKm        Int?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  airline Airline @relation(fields: [airlineId], references: [id])
+
+  originAirport Airport @relation("OriginAirport", fields: [originAirportId], references: [id])
+
+  destinationAirport Airport @relation("DestinationAirport", fields: [destinationAirportId], references: [id])
+
+  schedules FlightSchedule[]
+
+  @@index([airlineId])
+  @@index([originAirportId])
+  @@index([destinationAirportId])
+}
+
+model FlightSchedule {
+  id String @id @default(cuid())
+
+  routeId    String
+  aircraftId String
+
+  departureTime DateTime
+  arrivalTime   DateTime
+
+  availableSeats Int
+  baseFare       Decimal @db.Decimal(10, 2)
+
+  // Airport operation information
+  departureTerminal String?
+  departureGate     String?
+  arrivalTerminal   String?
+  arrivalGate       String?
+
+  status FlightScheduleStatus @default(SCHEDULED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  route    FlightRoute @relation(fields: [routeId], references: [id])
+  aircraft Aircraft    @relation(fields: [aircraftId], references: [id])
+
+  seats    Seat[]
+  bookings Booking[]
+}
+
+model Seat {
+  id String @id @default(cuid())
+
+  scheduleId  String
+  bookingId   String?
+  passengerId String? @unique
+
+  seatNumber String
+  seatClass  SeatClass
+  status     SeatStatus @default(AVAILABLE)
+  price      Decimal    @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schedule  FlightSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  booking   Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  passenger Passenger?     @relation(fields: [passengerId], references: [id], onDelete: SetNull)
+
+  @@unique([scheduleId, seatNumber])
+  @@index([bookingId])
+  @@index([status])
 }

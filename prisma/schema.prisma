@@ -32,40 +32,59 @@ model Booking {
   departureDate           DateTime
   returnDate              DateTime?
   passengersCount         Int
+
   customerName            String
   customerEmail           String
   customerPhone           String?
+
   airlineName             String?
   flightNumber            String?
   flightOfferId           String?
+
+  baseFare                Decimal?      @db.Decimal(10, 2)
+  taxes                   Decimal?      @db.Decimal(10, 2)
+  serviceFee              Decimal?      @db.Decimal(10, 2)
+
+  // Review / checkout
+  travelProtection        Boolean       @default(false)
+  travelProtectionAmount  Decimal?      @db.Decimal(10, 2)
+
+  promoCode               String?
+  discountAmount          Decimal?      @db.Decimal(10, 2)
+
+  termsAccepted            Boolean       @default(false)
+  termsAcceptedAt          DateTime?
+
   totalAmount             Decimal?      @db.Decimal(10, 2)
   currency                String        @default("USD")
+
   status                  BookingStatus @default(DRAFT)
+  paymentStatus           PaymentStatus @default(PENDING)
+
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
+
   airlineCode             String?
-  baseFare                Decimal?      @db.Decimal(10, 2)
   bookingCode             String        @unique
   destinationCity         String?
   destinationCode         String
   originCity              String?
   originCode              String
-  paymentStatus           PaymentStatus @default(PENDING)
+
   provider                String        @default("DUFFEL")
-  serviceFee              Decimal?      @db.Decimal(10, 2)
+
   stripeCheckoutSessionId String?
   stripePaymentIntentId   String?
-  taxes                   Decimal?      @db.Decimal(10, 2)
 
-  scheduleId String
-  userId     String?
+  scheduleId              String
+  userId                  String?
 
-  schedule FlightSchedule @relation(fields: [scheduleId], references: [id])
-  user     User?          @relation(fields: [userId], references: [id])
+  schedule                FlightSchedule @relation(fields: [scheduleId], references: [id])
+  user                    User?          @relation(fields: [userId], references: [id])
 
-  passengers Passenger[]
-  payments   Payment[]
-  seats      Seat[]
+  passengers              Passenger[]
+  payments                Payment[]
+  seats                   Seat[]
 
   @@index([scheduleId])
 }

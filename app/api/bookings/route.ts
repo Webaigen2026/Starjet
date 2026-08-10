@@ -1,223 +1,188 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-
 import { prisma } from "../../lib/prisma";
-import { authOptions } from "../auth/[...nextauth]/route";
 
-// ========================================================
-// TYPES
-// ========================================================
+/* =========================================================
+   TYPES
+========================================================= */
 
 type PassengerInput = {
-  firstName: string;
+  firstName?: string;
   middleName?: string | null;
-  lastName: string;
+  lastName?: string;
   dateOfBirth?: string | null;
   gender?: string | null;
   nationality?: string | null;
   passportNumber?: string | null;
   passportCountry?: string | null;
   passportExpiry?: string | null;
+  seatId?: string | null;
 };
 
-// ========================================================
-// HELPERS
-// ========================================================
+type CreateBookingBody = {
+  scheduleId?: string;
 
-function parseOptionalDate(value: unknown): Date | null {
-  if (!value) {
+  tripType?: string;
+  returnDate?: string | null;
+
+  passengersCount?: number | string;
+
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+
+  passengers?: PassengerInput[];
+};
+
+/* =========================================================
+   BASIC HELPERS
+========================================================= */
+
+function cleanString(value: unknown): string | null {
+  if (typeof value !== "string") {
     return null;
   }
 
-  const date = new Date(String(value));
+  const cleaned = value.trim();
+
+  return cleaned || null;
+}
+
+function parseOptionalDate(value: unknown): Date | null {
+  if (!value || typeof value !== "string") {
+    return null;
+  }
+
+  const cleaned = value.trim();
+
+  if (!cleaned) {
+    return null;
+  }
+
+  /*
+   * Passenger forms send YYYY-MM-DD.
+   * Parsing at UTC midnight avoids local timezone shifts.
+   */
+
+  const date = new Date(`${cleaned}T00:00:00.000Z`);
 
   if (Number.isNaN(date.getTime())) {
-    throw new Error("INVALID_DATE");
+    return null;
   }
 
   return date;
 }
 
-function parseOptionalNumber(value: unknown): number | null {
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
-    return null;
-  }
+function getTodayUTC(): Date {
+  const now = new Date();
 
-  const number = Number(value);
-
-  if (!Number.isFinite(number) || number < 0) {
-    throw new Error("INVALID_AMOUNT");
-  }
-
-  return number;
+  return new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate()
+    )
+  );
 }
 
-// ========================================================
-// GET ALL BOOKINGS
-// ========================================================
+/* =========================================================
+   CONTACT VALIDATION
+========================================================= */
 
-export async function GET() {
-  try {
-    const bookings = await prisma.booking.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
+function isValidEmail(value: string): boolean {
+  const email = value.trim();
 
-      include: {
-        schedule: {
-          include: {
-            route: {
-              include: {
-                airline: true,
-                originAirport: true,
-                destinationAirport: true,
-              },
-            },
-
-            aircraft: true,
-          },
-        },
-
-        passengers: {
-          include: {
-            seat: true,
-          },
-
-          orderBy: {
-            createdAt: "asc",
-          },
-        },
-
-        payments: true,
-
-        seats: {
-          orderBy: {
-            seatNumber: "asc",
-          },
-        },
-
-        user: true,
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: bookings,
-    });
-  } catch (error) {
-    console.error("GET BOOKINGS ERROR:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Unable to fetch bookings.",
-        error:
-          process.env.NODE_ENV === "development"
-            ? String(error)
-            : undefined,
-      },
-      {
-        status: 500,
-      }
-    );
+  if (email.length < 5 || email.length > 254) {
+    return false;
   }
+
+  /*
+   * Practical email validation.
+   * We do not restrict customers to Gmail.
+   */
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(email);
 }
 
-// ========================================================
-// CREATE BOOKING
-// ========================================================
+function isValidPhone(value: string): boolean {
+  /*
+   * Allow common customer formatting:
+   *
+   * +1 617 555 1234
+   * (617) 555-1234
+   * 617-555-1234
+   */
+
+  const digits = value.replace(/\D/g, "");
+
+  return digits.length >= 7 && digits.length <= 15;
+}
+
+/* =========================================================
+   BOOKING CODE
+========================================================= */
+
+function createBookingCode(): string {
+  const timestamp = Date.now()
+    .toString(36)
+    .toUpperCase();
+
+  const random = Math.random()
+    .toString(36)
+    .substring(2, 8)
+    .toUpperCase();
+
+  return `BK${timestamp}${random}`;
+}
+
+/* =========================================================
+   TRIP TYPE
+========================================================= */
+
+function normalizeTripType(
+  value: unknown
+): "ONE_WAY" | "ROUND_TRIP" | "MULTI_CITY" {
+  if (value === "ROUND_TRIP") {
+    return "ROUND_TRIP";
+  }
+
+  if (value === "MULTI_CITY") {
+    return "MULTI_CITY";
+  }
+
+  return "ONE_WAY";
+}
+
+/* =========================================================
+   POST
+   CREATE BOOKING
+========================================================= */
 
 export async function POST(request: NextRequest) {
   try {
-    // ====================================================
-    // 1. READ REQUEST BODY
-    // ====================================================
+    /* -----------------------------------------------------
+       READ REQUEST
+    ----------------------------------------------------- */
 
-    let body: Record<string, any>;
+    const body: CreateBookingBody = await request.json();
 
-    try {
-      body = await request.json();
-    } catch {
-      throw new Error("INVALID_JSON");
-    }
+    const scheduleId = cleanString(body.scheduleId);
 
-    // ====================================================
-    // 2. GET LOGGED-IN USER SESSION
-    // ====================================================
+    const customerName = cleanString(body.customerName);
 
-    const session = await getServerSession(authOptions);
+    const customerEmail = cleanString(body.customerEmail);
 
-    // ====================================================
-    // 3. PASSENGERS
-    // ====================================================
+    const customerPhone = cleanString(body.customerPhone);
 
-    const passengers: PassengerInput[] =
-      Array.isArray(body.passengers)
-        ? body.passengers
-        : [];
+    /* -----------------------------------------------------
+       BOOKING CONTACT
+    ----------------------------------------------------- */
 
-    // ====================================================
-    // 4. SELECTED SEATS
-    // ====================================================
-
-    const selectedSeatIds: string[] =
-      Array.isArray(body.selectedSeatIds)
-        ? [
-            ...new Set(
-              body.selectedSeatIds
-                .filter(
-                  (seatId: unknown) =>
-                    typeof seatId === "string"
-                )
-                .map((seatId: string) =>
-                  seatId.trim()
-                )
-                .filter(Boolean)
-            ),
-          ]
-        : [];
-
-    // ====================================================
-    // 5. PASSENGER COUNT
-    // ====================================================
-
-    const passengersCount = Number(
-      body.passengersCount ??
-        (passengers.length > 0
-          ? passengers.length
-          : 1)
-    );
-
-    // ====================================================
-    // 6. VALIDATE REQUIRED BOOKING FIELDS
-    //
-    // IMPORTANT:
-    // Flight information is NOT accepted as the source
-    // of truth from the client.
-    //
-    // The schedule determines:
-    // - departure date
-    // - airline
-    // - flight number
-    // - origin
-    // - destination
-    // - base fare
-    // ====================================================
-
-    if (
-      !body.scheduleId ||
-      !body.customerName ||
-      !body.customerEmail
-    ) {
+    if (!scheduleId) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "scheduleId, customerName and customerEmail are required.",
+            "Flight information is missing. Please select your flight again.",
         },
         {
           status: 400,
@@ -225,9 +190,76 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ====================================================
-    // 7. VALIDATE PASSENGER COUNT
-    // ====================================================
+    if (!customerName) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Contact name is required.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!customerEmail) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Contact email is required.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!isValidEmail(customerEmail)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Please enter a valid email address.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!customerPhone) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Contact phone number is required.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!isValidPhone(customerPhone)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Please enter a valid phone number.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    /* -----------------------------------------------------
+       PASSENGER COUNT
+    ----------------------------------------------------- */
+
+    const passengersCount = Number(
+      body.passengersCount ?? 1
+    );
 
     if (
       !Number.isInteger(passengersCount) ||
@@ -237,7 +269,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           message:
-            "passengersCount must be a whole number of at least 1.",
+            "Passenger count must be at least 1.",
         },
         {
           status: 400,
@@ -245,19 +277,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ====================================================
-    // 8. PASSENGER RECORDS MUST MATCH COUNT
-    // ====================================================
+    /* -----------------------------------------------------
+       PASSENGERS
+    ----------------------------------------------------- */
 
-    if (
-      passengers.length > 0 &&
-      passengers.length !== passengersCount
-    ) {
+    const passengers = Array.isArray(body.passengers)
+      ? body.passengers
+      : [];
+
+    if (passengers.length !== passengersCount) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "The number of passenger records must match passengersCount.",
+          message: `Expected ${passengersCount} passenger record(s), but received ${passengers.length}.`,
         },
         {
           status: 400,
@@ -265,40 +297,215 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ====================================================
-    // 9. SELECTED SEATS MUST MATCH PASSENGER COUNT
-    // ====================================================
+    /* -----------------------------------------------------
+       DATE USED FOR DOB / PASSPORT VALIDATION
+    ----------------------------------------------------- */
 
-    if (
-      selectedSeatIds.length > 0 &&
-      selectedSeatIds.length !== passengersCount
+    const today = getTodayUTC();
+
+    /* -----------------------------------------------------
+       VALIDATE EVERY PASSENGER
+    ----------------------------------------------------- */
+
+    for (
+      let index = 0;
+      index < passengers.length;
+      index++
     ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "The number of selected seats must match passengersCount.",
-        },
-        {
-          status: 400,
-        }
+      const passenger = passengers[index];
+
+      const passengerNumber = index + 1;
+
+      /* ---------------- FIRST NAME ---------------- */
+
+      if (!cleanString(passenger.firstName)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Traveler ${passengerNumber}: first name is required.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      /* ---------------- LAST NAME ---------------- */
+
+      if (!cleanString(passenger.lastName)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Traveler ${passengerNumber}: last name is required.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      /* ---------------- DATE OF BIRTH ---------------- */
+
+      if (!passenger.dateOfBirth) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Traveler ${passengerNumber}: date of birth is required.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      const dateOfBirth = parseOptionalDate(
+        passenger.dateOfBirth
       );
-    }
 
-    // ====================================================
-    // 10. VALIDATE PASSENGER NAMES
-    // ====================================================
+      if (!dateOfBirth) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Traveler ${passengerNumber}: please enter a valid date of birth.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
 
-    for (const passenger of passengers) {
+      /*
+       * DOB cannot be today or in the future.
+       */
+
+      if (dateOfBirth >= today) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Traveler ${passengerNumber}: date of birth must be before today.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      /* ---------------- GENDER ---------------- */
+
+      const gender = cleanString(
+        passenger.gender
+      );
+
+      if (!gender) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Traveler ${passengerNumber}: gender is required.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
       if (
-        !passenger.firstName?.trim() ||
-        !passenger.lastName?.trim()
+        !["MALE", "FEMALE", "OTHER"].includes(
+          gender.toUpperCase()
+        )
       ) {
         return NextResponse.json(
           {
             success: false,
-            message:
-              "Every passenger must have firstName and lastName.",
+            message: `Traveler ${passengerNumber}: please select a valid gender.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      /* ---------------- NATIONALITY ---------------- */
+
+      if (!cleanString(passenger.nationality)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Traveler ${passengerNumber}: nationality is required.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      /* ---------------- PASSPORT NUMBER ---------------- */
+
+      if (!cleanString(passenger.passportNumber)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Traveler ${passengerNumber}: passport number is required.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      /* ---------------- PASSPORT COUNTRY ---------------- */
+
+      if (!cleanString(passenger.passportCountry)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Traveler ${passengerNumber}: passport country is required.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      /* ---------------- PASSPORT EXPIRY ---------------- */
+
+      if (!passenger.passportExpiry) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Traveler ${passengerNumber}: passport expiration date is required.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      const passportExpiry = parseOptionalDate(
+        passenger.passportExpiry
+      );
+
+      if (!passportExpiry) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Traveler ${passengerNumber}: please enter a valid passport expiration date.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      /*
+       * Expired today = not accepted.
+       * Past expiration = not accepted.
+       */
+
+      if (passportExpiry <= today) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Traveler ${passengerNumber}: passport must be valid beyond today.`,
           },
           {
             status: 400,
@@ -307,525 +514,565 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ====================================================
-    // 11. TRIP TYPE
-    // ====================================================
+    /* -----------------------------------------------------
+       TRIP TYPE
+    ----------------------------------------------------- */
 
-    const tripType =
-      body.tripType ?? "ONE_WAY";
+    const tripType = normalizeTripType(
+      body.tripType
+    );
 
-    // ====================================================
-    // 12. RETURN DATE
-    //
-    // ONE_WAY always gets null.
-    // Other trip types may supply a returnDate.
-    // ====================================================
+    if (tripType === "MULTI_CITY") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Multi-city booking is not currently available.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
-    const returnDate =
-      tripType === "ONE_WAY"
-        ? null
-        : parseOptionalDate(body.returnDate);
+    const returnDate = parseOptionalDate(
+      body.returnDate
+    );
 
-    // ====================================================
-    // 13. CREATE BOOKING CODE
-    // ====================================================
+    if (
+      tripType === "ROUND_TRIP" &&
+      !returnDate
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "A return date is required for a round-trip booking.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
-    const bookingCode = `BK${Date.now()
-      .toString(36)
-      .toUpperCase()}${Math.random()
-      .toString(36)
-      .slice(2, 6)
-      .toUpperCase()}`;
+    /* =====================================================
+       GET REAL FLIGHT FROM DATABASE
 
-    // ====================================================
-    // 14. TRANSACTION
-    // ====================================================
+       Never trust:
+       - airline from URL
+       - route from URL
+       - aircraft from URL
+       - fare from URL
+       - seat inventory from URL
 
-    const bookingId = await prisma.$transaction(
-      async (tx) => {
-        // ================================================
-        // FIND SCHEDULE
-        // ================================================
+       scheduleId is used to retrieve authoritative data.
+    ===================================================== */
 
-        const schedule =
-          await tx.flightSchedule.findUnique({
-            where: {
-              id: body.scheduleId,
-            },
+    const schedule =
+      await prisma.flightSchedule.findUnique({
+        where: {
+          id: scheduleId,
+        },
 
+        include: {
+          route: {
             include: {
-              route: {
-                include: {
-                  airline: true,
-                  originAirport: true,
-                  destinationAirport: true,
-                },
-              },
-
-              aircraft: true,
+              airline: true,
+              originAirport: true,
+              destinationAirport: true,
             },
-          });
+          },
 
-        if (!schedule) {
-          throw new Error(
-            "SCHEDULE_NOT_FOUND"
-          );
+          aircraft: true,
+        },
+      });
+
+    if (!schedule) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "The selected flight could not be found. Please search again.",
+        },
+        {
+          status: 404,
         }
+      );
+    }
 
-        // ================================================
-        // SCHEDULE MUST BE BOOKABLE
-        // ================================================
+    /* -----------------------------------------------------
+       SCHEDULE STATUS
+    ----------------------------------------------------- */
 
-        if (schedule.status !== "SCHEDULED") {
-          throw new Error(
-            "SCHEDULE_NOT_BOOKABLE"
-          );
+    if (schedule.status === "CANCELLED") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "This flight has been cancelled and is no longer available for booking.",
+        },
+        {
+          status: 400,
         }
+      );
+    }
 
-        // ================================================
-        // VALIDATE RETURN DATE AGAINST REAL SCHEDULE
-        // ================================================
-
-        if (
-          returnDate &&
-          returnDate <= schedule.departureTime
-        ) {
-          throw new Error(
-            "INVALID_RETURN_DATE"
-          );
+    if (schedule.status === "DEPARTED") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "This flight has already departed.",
+        },
+        {
+          status: 400,
         }
+      );
+    }
 
-        // ================================================
-        // CHECK INVENTORY
-        // ================================================
-
-        if (
-          selectedSeatIds.length >
-          schedule.availableSeats
-        ) {
-          throw new Error(
-            "NOT_ENOUGH_SEATS"
-          );
+    if (schedule.status === "ARRIVED") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "This flight has already arrived and cannot be booked.",
+        },
+        {
+          status: 400,
         }
+      );
+    }
 
-        // ================================================
-        // VERIFY SELECTED SEATS
-        // ================================================
+    /* -----------------------------------------------------
+       DEPARTURE TIME
+    ----------------------------------------------------- */
 
-        if (selectedSeatIds.length > 0) {
-          const selectedSeats =
-            await tx.seat.findMany({
-              where: {
-                id: {
-                  in: selectedSeatIds,
-                },
-              },
+    const currentTime = new Date();
 
-              select: {
-                id: true,
-                scheduleId: true,
-                status: true,
-                bookingId: true,
-                passengerId: true,
-              },
-            });
-
-          // ----------------------------------------------
-          // Make sure every requested seat exists
-          // ----------------------------------------------
-
-          if (
-            selectedSeats.length !==
-            selectedSeatIds.length
-          ) {
-            throw new Error(
-              "SEAT_NOT_FOUND"
-            );
-          }
-
-          // ----------------------------------------------
-          // Every seat must belong to this schedule
-          // ----------------------------------------------
-
-          const hasSeatFromDifferentSchedule =
-            selectedSeats.some(
-              (seat) =>
-                seat.scheduleId !==
-                schedule.id
-            );
-
-          if (
-            hasSeatFromDifferentSchedule
-          ) {
-            throw new Error(
-              "SEAT_SCHEDULE_MISMATCH"
-            );
-          }
-
-          // ----------------------------------------------
-          // Every seat must be available
-          // ----------------------------------------------
-
-          const hasUnavailableSeat =
-            selectedSeats.some(
-              (seat) =>
-                seat.status !==
-                  "AVAILABLE" ||
-                seat.bookingId !== null ||
-                seat.passengerId !== null
-            );
-
-          if (hasUnavailableSeat) {
-            throw new Error(
-              "SEAT_NOT_AVAILABLE"
-            );
-          }
+    if (
+      schedule.departureTime &&
+      new Date(schedule.departureTime) <= currentTime
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "This flight is no longer available for booking because its departure time has passed.",
+        },
+        {
+          status: 400,
         }
+      );
+    }
 
-        // ================================================
-        // CREATE BOOKING
-        // ================================================
-        //
-        // IMPORTANT:
-        // All actual flight information comes from
-        // schedule -> route -> airports/airline.
-        //
-        // We DO NOT trust the frontend for these values.
-        // ================================================
+    /* -----------------------------------------------------
+       INVENTORY
+    ----------------------------------------------------- */
 
-        const createdBooking =
-          await tx.booking.create({
-            data: {
-              bookingCode,
+    if (
+      schedule.availableSeats <
+      passengersCount
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
 
-              // ------------------------------------------
-              // Schedule
-              // ------------------------------------------
+          message:
+            schedule.availableSeats === 0
+              ? "This flight is sold out."
+              : `Only ${schedule.availableSeats} seat${
+                  schedule.availableSeats === 1
+                    ? ""
+                    : "s"
+                } remain on this flight.`,
 
-              schedule: {
-                connect: {
-                  id: schedule.id,
-                },
-              },
+          availableSeats:
+            schedule.availableSeats,
 
-              // ------------------------------------------
-              // Logged-in user if available
-              // ------------------------------------------
+          requestedSeats:
+            passengersCount,
+        },
+        {
+          status: 409,
+        }
+      );
+    }
 
-              ...(session?.user &&
-              (session.user as { id?: string })
-                .id
-                ? {
-                    user: {
-                      connect: {
-                        id: (
-                          session.user as {
-                            id: string;
-                          }
-                        ).id,
-                      },
-                    },
-                  }
-                : {}),
+    /* =====================================================
+       FARE
 
-              // ------------------------------------------
-              // Trip
-              // ------------------------------------------
+       IMPORTANT:
+       Price comes ONLY from the database.
+    ===================================================== */
 
-              tripType,
+    const baseFarePerPassenger = Number(
+      schedule.baseFare
+    );
 
-              // ------------------------------------------
-              // Origin - DATABASE SOURCE OF TRUTH
-              // ------------------------------------------
+    if (
+      !Number.isFinite(
+        baseFarePerPassenger
+      ) ||
+      baseFarePerPassenger < 0
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "The fare for this flight is currently unavailable.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
 
-              originCode:
-                schedule.route.originAirport
-                  .iataCode,
+    const baseFareTotal =
+      baseFarePerPassenger *
+      passengersCount;
 
-              originCity:
-                schedule.route.originAirport
-                  .city,
+    /*
+     * Tax engine can be connected later.
+     */
 
-              // ------------------------------------------
-              // Destination - DATABASE SOURCE OF TRUTH
-              // ------------------------------------------
+    const taxes = 0;
 
-              destinationCode:
-                schedule.route
-                  .destinationAirport.iataCode,
+    const serviceFee = 0;
 
-              destinationCity:
-                schedule.route
-                  .destinationAirport.city,
+    const totalAmount =
+      baseFareTotal +
+      taxes +
+      serviceFee;
 
-              // ------------------------------------------
-              // Dates - DATABASE SOURCE OF TRUTH
-              // ------------------------------------------
+    /* -----------------------------------------------------
+       DATABASE FLIGHT INFORMATION
+    ----------------------------------------------------- */
 
-              departureDate:
-                schedule.departureTime,
+    const airline =
+      schedule.route.airline;
 
-              returnDate,
+    const originAirport =
+      schedule.route.originAirport;
 
-              // ------------------------------------------
-              // Passenger count
-              // ------------------------------------------
+    const destinationAirport =
+      schedule.route.destinationAirport;
 
-              passengersCount,
+    const flightNumber =
+      schedule.route.flightNumber;
 
-              // ------------------------------------------
-              // Airline - DATABASE SOURCE OF TRUTH
-              // ------------------------------------------
+    const bookingCode =
+      createBookingCode();
 
-              airlineName:
-                schedule.route.airline.name,
+    /* =====================================================
+       TRANSACTION
+    ===================================================== */
 
-              airlineCode:
-                schedule.route.airline
-                  .iataCode,
+    const createdBooking =
+      await prisma.$transaction(
+        async (tx) => {
+          /* ---------------------------------------------
+             CREATE BOOKING
+          --------------------------------------------- */
 
-              // ------------------------------------------
-              // Flight number
-              // ------------------------------------------
-
-              flightNumber:
-                schedule.route.flightNumber,
-
-              // ------------------------------------------
-              // Internal airline booking
-              // ------------------------------------------
-
-              flightOfferId: null,
-
-              provider: "INTERNAL",
-
-              // ------------------------------------------
-              // Fare - DATABASE SOURCE OF TRUTH
-              // ------------------------------------------
-
-              baseFare: Number(
-                schedule.baseFare
-              ),
-
-              // ------------------------------------------
-              // Additional pricing
-              //
-              // Keeping these for now because payment
-              // processing will be implemented later.
-              // ------------------------------------------
-
-              taxes: parseOptionalNumber(
-                body.taxes
-              ),
-
-              serviceFee:
-                parseOptionalNumber(
-                  body.serviceFee
-                ),
-
-              totalAmount:
-                parseOptionalNumber(
-                  body.totalAmount
-                ),
-
-              currency: "USD",
-
-              // ------------------------------------------
-              // Customer
-              // ------------------------------------------
-
-              customerName: String(
-                body.customerName
-              ).trim(),
-
-              customerEmail: String(
-                body.customerEmail
-              )
-                .trim()
-                .toLowerCase(),
-
-              customerPhone:
-                body.customerPhone ?? null,
-
-              // ------------------------------------------
-              // Initial states
-              // ------------------------------------------
-
-              status: "DRAFT",
-
-              paymentStatus: "PENDING",
-
-              stripeCheckoutSessionId: null,
-
-              stripePaymentIntentId: null,
-            },
-          });
-
-        // ================================================
-        // CREATE PASSENGERS
-        // ================================================
-
-        const createdPassengers = [];
-
-        for (const passenger of passengers) {
-          const dateOfBirth =
-            parseOptionalDate(
-              passenger.dateOfBirth
-            );
-
-          const passportExpiry =
-            parseOptionalDate(
-              passenger.passportExpiry
-            );
-
-          const createdPassenger =
-            await tx.passenger.create({
+          const booking =
+            await tx.booking.create({
               data: {
-                bookingId:
-                  createdBooking.id,
-
-                firstName:
-                  passenger.firstName.trim(),
-
-                middleName:
-                  passenger.middleName?.trim() ||
-                  null,
-
-                lastName:
-                  passenger.lastName.trim(),
-
-                dateOfBirth,
-
-                gender:
-                  passenger.gender ?? null,
-
-                nationality:
-                  passenger.nationality ??
-                  null,
-
-                passportNumber:
-                  passenger.passportNumber?.trim() ||
-                  null,
-
-                passportCountry:
-                  passenger.passportCountry ??
-                  null,
-
-                passportExpiry,
-              },
-            });
-
-          createdPassengers.push(
-            createdPassenger
-          );
-        }
-
-        // ================================================
-        // RESERVE SELECTED SEATS
-        // ================================================
-
-        for (
-          let index = 0;
-          index < selectedSeatIds.length;
-          index++
-        ) {
-          const seatId =
-            selectedSeatIds[index];
-
-          const passenger =
-            createdPassengers[index];
-
-          // ----------------------------------------------
-          // Atomic conditional seat reservation
-          // ----------------------------------------------
-
-          const updateResult =
-            await tx.seat.updateMany({
-              where: {
-                id: seatId,
+                bookingCode,
 
                 scheduleId:
                   schedule.id,
 
-                status: "AVAILABLE",
+                tripType,
 
-                bookingId: null,
+                departureDate:
+                  schedule.departureTime,
 
-                passengerId: null,
-              },
+                returnDate:
+                  tripType ===
+                    "ROUND_TRIP"
+                    ? returnDate
+                    : null,
 
-              data: {
-                bookingId:
-                  createdBooking.id,
+                passengersCount,
 
-                passengerId:
-                  passenger?.id ?? null,
+                customerName,
 
-                status: "RESERVED",
+                customerEmail:
+                  customerEmail.toLowerCase(),
+
+                customerPhone,
+
+                airlineName:
+                  airline.name,
+
+                airlineCode:
+                  airline.iataCode,
+
+                flightNumber,
+
+                originCode:
+                  originAirport.iataCode,
+
+                originCity:
+                  originAirport.city,
+
+                destinationCode:
+                  destinationAirport.iataCode,
+
+                destinationCity:
+                  destinationAirport.city,
+
+                provider:
+                  "INTERNAL",
+
+                /*
+                 * Booking.baseFare currently stores
+                 * the PER-PASSENGER fare.
+                 */
+
+                baseFare:
+                  baseFarePerPassenger,
+
+                taxes,
+
+                serviceFee,
+
+                totalAmount,
+
+                currency:
+                  "USD",
+
+                status:
+                  "DRAFT",
+
+                paymentStatus:
+                  "PENDING",
               },
             });
 
-          // ----------------------------------------------
-          // Protect against another request taking seat
-          // ----------------------------------------------
+          /* ---------------------------------------------
+             CREATE PASSENGERS
+          --------------------------------------------- */
 
-          if (updateResult.count !== 1) {
-            throw new Error(
-              "SEAT_RESERVATION_CONFLICT"
+          const createdPassengers = [];
+
+          for (
+            const passenger of passengers
+          ) {
+            const createdPassenger =
+              await tx.passenger.create({
+                data: {
+                  bookingId:
+                    booking.id,
+
+                  firstName:
+                    cleanString(
+                      passenger.firstName
+                    )!,
+
+                  middleName:
+                    cleanString(
+                      passenger.middleName
+                    ),
+
+                  lastName:
+                    cleanString(
+                      passenger.lastName
+                    )!,
+
+                  dateOfBirth:
+                    parseOptionalDate(
+                      passenger.dateOfBirth
+                    ),
+
+                  gender:
+                    cleanString(
+                      passenger.gender
+                    ),
+
+                  nationality:
+                    cleanString(
+                      passenger.nationality
+                    ),
+
+                  passportNumber:
+                    cleanString(
+                      passenger.passportNumber
+                    ),
+
+                  passportCountry:
+                    cleanString(
+                      passenger.passportCountry
+                    ),
+
+                  passportExpiry:
+                    parseOptionalDate(
+                      passenger.passportExpiry
+                    ),
+                },
+              });
+
+            createdPassengers.push(
+              createdPassenger
             );
           }
+
+          /* ---------------------------------------------
+             OPTIONAL SEAT SELECTION
+
+             Passenger form does not need seatId yet.
+             This runs only if a seatId is provided.
+          --------------------------------------------- */
+
+          let reservedSeats = 0;
+
+          for (
+            let index = 0;
+            index < passengers.length;
+            index++
+          ) {
+            const requestedSeatId =
+              cleanString(
+                passengers[index].seatId
+              );
+
+            if (!requestedSeatId) {
+              continue;
+            }
+
+            const seat =
+              await tx.seat.findUnique({
+                where: {
+                  id: requestedSeatId,
+                },
+              });
+
+            if (!seat) {
+              throw new Error(
+                "SEAT_NOT_FOUND"
+              );
+            }
+
+            if (
+              seat.scheduleId !==
+              schedule.id
+            ) {
+              throw new Error(
+                "SEAT_SCHEDULE_MISMATCH"
+              );
+            }
+
+            if (
+              seat.status !==
+                "AVAILABLE" ||
+              seat.bookingId !== null ||
+              seat.passengerId !== null
+            ) {
+              throw new Error(
+                "SEAT_NOT_AVAILABLE"
+              );
+            }
+
+            /*
+             * updateMany provides an additional
+             * condition check before reserving.
+             */
+
+            const reservation =
+              await tx.seat.updateMany({
+                where: {
+                  id: seat.id,
+
+                  scheduleId:
+                    schedule.id,
+
+                  status:
+                    "AVAILABLE",
+
+                  bookingId:
+                    null,
+
+                  passengerId:
+                    null,
+                },
+
+                data: {
+                  bookingId:
+                    booking.id,
+
+                  passengerId:
+                    createdPassengers[
+                      index
+                    ].id,
+
+                  status:
+                    "BOOKED",
+                },
+              });
+
+            if (
+              reservation.count !== 1
+            ) {
+              throw new Error(
+                "SEAT_RESERVATION_CONFLICT"
+              );
+            }
+
+            reservedSeats++;
+          }
+
+          /* ---------------------------------------------
+             UPDATE INVENTORY WHEN SEAT MAP EXISTS
+          --------------------------------------------- */
+
+          const totalSeatRecords =
+            await tx.seat.count({
+              where: {
+                scheduleId:
+                  schedule.id,
+              },
+            });
+
+          if (totalSeatRecords > 0) {
+            const availableSeatCount =
+              await tx.seat.count({
+                where: {
+                  scheduleId:
+                    schedule.id,
+
+                  status:
+                    "AVAILABLE",
+                },
+              });
+
+            await tx.flightSchedule.update({
+              where: {
+                id: schedule.id,
+              },
+
+              data: {
+                availableSeats:
+                  availableSeatCount,
+              },
+            });
+          }
+
+          return {
+            booking,
+            createdPassengers,
+            reservedSeats,
+          };
         }
+      );
 
-        // ================================================
-        // RECALCULATE AVAILABLE SEATS
-        // ================================================
-        //
-        // Instead of blindly decrementing the stored
-        // number, calculate it from the real seat table.
-        // This keeps inventory synchronized.
-        // ================================================
+    /* =====================================================
+       FETCH COMPLETE BOOKING
+    ===================================================== */
 
-        const availableSeatCount =
-          await tx.seat.count({
-            where: {
-              scheduleId:
-                schedule.id,
-
-              status: "AVAILABLE",
-
-              bookingId: null,
-
-              passengerId: null,
-            },
-          });
-
-        // ================================================
-        // UPDATE SCHEDULE INVENTORY
-        // ================================================
-
-        await tx.flightSchedule.update({
-          where: {
-            id: schedule.id,
-          },
-
-          data: {
-            availableSeats:
-              availableSeatCount,
-          },
-        });
-
-        return createdBooking.id;
-      }
-    );
-
-    // ====================================================
-    // 15. GET COMPLETE CREATED BOOKING
-    // ====================================================
-
-    const createdBooking =
+    const result =
       await prisma.booking.findUnique({
         where: {
-          id: bookingId,
+          id: createdBooking.booking.id,
         },
 
         include: {
@@ -847,17 +1094,9 @@ export async function POST(request: NextRequest) {
             include: {
               seat: true,
             },
-
-            orderBy: {
-              createdAt: "asc",
-            },
           },
 
-          seats: {
-            orderBy: {
-              seatNumber: "asc",
-            },
-          },
+          seats: true,
 
           payments: true,
 
@@ -865,20 +1104,31 @@ export async function POST(request: NextRequest) {
         },
       });
 
-    // ====================================================
-    // 16. SUCCESS RESPONSE
-    // ====================================================
+    if (!result) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "The booking was created but could not be retrieved.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    /* =====================================================
+       SUCCESS
+    ===================================================== */
 
     return NextResponse.json(
       {
         success: true,
 
         message:
-          selectedSeatIds.length > 0
-            ? "Booking created and seats reserved successfully."
-            : "Booking created successfully.",
+          "Booking created successfully.",
 
-        data: createdBooking,
+        data: result,
       },
       {
         status: 201,
@@ -886,113 +1136,176 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error(
-      "BOOKING CREATE ERROR:",
+      "CREATE BOOKING ERROR:",
       error
     );
 
-    const errorMessage =
+    const message =
       error instanceof Error
         ? error.message
         : String(error);
 
-    // ====================================================
-    // KNOWN ERRORS
-    // ====================================================
+    /* -----------------------------------------------------
+       SEAT ERRORS
+    ----------------------------------------------------- */
 
-    const knownErrors: Record<
-      string,
-      {
-        message: string;
-        status: number;
-      }
-    > = {
-      INVALID_JSON: {
-        message:
-          "The request body contains invalid JSON.",
-        status: 400,
-      },
+    if (
+      message === "SEAT_NOT_FOUND"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "The selected seat could not be found.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
 
-      INVALID_DATE: {
-        message:
-          "One or more dates are invalid.",
-        status: 400,
-      },
+    if (
+      message ===
+      "SEAT_SCHEDULE_MISMATCH"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "The selected seat does not belong to this flight.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
-      INVALID_RETURN_DATE: {
-        message:
-          "returnDate must be after the scheduled departure time.",
-        status: 400,
-      },
+    if (
+      message ===
+      "SEAT_NOT_AVAILABLE"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "The selected seat is no longer available.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
 
-      INVALID_AMOUNT: {
-        message:
-          "taxes, serviceFee and totalAmount must contain valid positive numbers.",
-        status: 400,
-      },
+    if (
+      message ===
+      "SEAT_RESERVATION_CONFLICT"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Another customer reserved the selected seat. Please choose another seat.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
 
-      SCHEDULE_NOT_FOUND: {
-        message:
-          "Flight schedule not found.",
-        status: 404,
-      },
-
-      SCHEDULE_NOT_BOOKABLE: {
-        message:
-          "This flight schedule is not currently available for booking.",
-        status: 409,
-      },
-
-      NOT_ENOUGH_SEATS: {
-        message:
-          "This schedule does not have enough available seats.",
-        status: 409,
-      },
-
-      SEAT_NOT_FOUND: {
-        message:
-          "One or more selected seats could not be found.",
-        status: 404,
-      },
-
-      SEAT_SCHEDULE_MISMATCH: {
-        message:
-          "One or more selected seats do not belong to this flight schedule.",
-        status: 400,
-      },
-
-      SEAT_NOT_AVAILABLE: {
-        message:
-          "One or more selected seats are no longer available.",
-        status: 409,
-      },
-
-      SEAT_RESERVATION_CONFLICT: {
-        message:
-          "Another customer reserved one of these seats. Select different seats and try again.",
-        status: 409,
-      },
-    };
-
-    const knownError =
-      knownErrors[errorMessage];
+    /* -----------------------------------------------------
+       GENERAL ERROR
+    ----------------------------------------------------- */
 
     return NextResponse.json(
       {
         success: false,
 
         message:
-          knownError?.message ??
-          "Unable to create booking.",
+          "We were unable to create your booking. Please try again.",
 
         error:
           process.env.NODE_ENV ===
           "development"
-            ? errorMessage
+            ? message
             : undefined,
       },
       {
-        status:
-          knownError?.status ?? 500,
+        status: 500,
+      }
+    );
+  }
+}
+
+/* =========================================================
+   GET
+   LIST BOOKINGS
+========================================================= */
+
+export async function GET() {
+  try {
+    const bookings =
+      await prisma.booking.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        include: {
+          schedule: {
+            include: {
+              route: {
+                include: {
+                  airline: true,
+                  originAirport: true,
+                  destinationAirport: true,
+                },
+              },
+
+              aircraft: true,
+            },
+          },
+
+          passengers: {
+            include: {
+              seat: true,
+            },
+          },
+
+          seats: true,
+
+          payments: true,
+
+          user: true,
+        },
+      });
+
+    return NextResponse.json({
+      success: true,
+      count: bookings.length,
+      data: bookings,
+    });
+  } catch (error) {
+    console.error(
+      "GET BOOKINGS ERROR:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+
+        message:
+          "Unable to fetch bookings.",
+
+        error:
+          process.env.NODE_ENV ===
+          "development"
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : undefined,
+      },
+      {
+        status: 500,
       }
     );
   }

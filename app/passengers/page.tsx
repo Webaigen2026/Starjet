@@ -3,6 +3,7 @@
 import {
   FormEvent,
   ReactNode,
+  Suspense,
   useEffect,
   useMemo,
   useState,
@@ -25,7 +26,7 @@ import {
 
 import Navbar from "../components/Navbar";
 
-/* =========================================================
+/* =========================================================*
    TYPES
 ========================================================= */
 
@@ -122,8 +123,8 @@ type BookingResponse = {
   };
 };
 
-/* =========================================================
-   EMPTY PASSENGER
+/* =========================================================*
+   *EMPTY PASSENGER*
 ========================================================= */
 
 function createEmptyPassenger(): PassengerForm {
@@ -142,16 +143,16 @@ function createEmptyPassenger(): PassengerForm {
   };
 }
 
-/* =========================================================
+/* =========================================================*
    PAGE
 ========================================================= */
 
-export default function PassengersPage() {
+function PassengersPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  /* =======================================================
-     EDIT MODE
+/* =======================================================*
+     *EDIT MODE*
   ======================================================= */
 
   const bookingId =
@@ -163,8 +164,8 @@ export default function PassengersPage() {
   const isEditMode =
     Boolean(bookingId) && mode === "edit";
 
-  /* =======================================================
-     FLIGHT DATA FROM RESULTS PAGE
+/* =======================================================*
+     *FLIGHT DATA FROM RESULTS PAGE*
   ======================================================= */
 
   const scheduleIdFromUrl =
@@ -232,8 +233,8 @@ export default function PassengersPage() {
       ? requestedPassengerCount
       : 1;
 
-  /* =======================================================
-     FLIGHT / BOOKING STATE
+/* =======================================================*
+     *FLIGHT / BOOKING STATE*
   ======================================================= */
 
   const [scheduleId, setScheduleId] =
@@ -300,8 +301,8 @@ export default function PassengersPage() {
   const [rawPrice, setRawPrice] =
     useState(rawPriceFromUrl);
 
-  /* =======================================================
-     FORM STATE
+/* =======================================================*
+     *FORM STATE*
   ======================================================= */
 
   const [passengers, setPassengers] =
@@ -332,8 +333,8 @@ export default function PassengersPage() {
   const [errorMessage, setErrorMessage] =
     useState("");
 
-  /* =======================================================
-     LOAD BOOKING WHEN EDITING
+/* =======================================================*
+     *LOAD BOOKING WHEN EDITING*
   ======================================================= */
 
   useEffect(() => {
@@ -553,7 +554,7 @@ export default function PassengersPage() {
     };
   }, [bookingId, isEditMode]);
 
-  /* =======================================================
+/* =======================================================*
      PRICE
   ======================================================= */
 
@@ -571,23 +572,23 @@ export default function PassengersPage() {
   const estimatedTotal =
     pricePerPassenger * passengersCount;
 
-  /* =======================================================
-     UPDATE PASSENGER
+/* =======================================================*
+     *UPDATE PASSENGER*
   ======================================================= */
 
   function updatePassenger(
-    index: number,
-    field: keyof PassengerForm,
-    value: string
+index: number,
+field: keyof PassengerForm,
+value: string
   ) {
     let normalizedValue = value;
 
-    /*
-      Passport numbers can contain letters
-      and numbers.
+/**
+      *Passport numbers can contain letters*
+      *and numbers.*
 
-      Spaces and special characters are
-      removed automatically.
+      *Spaces and special characters are*
+      *removed automatically.*
     */
 
     if (field === "passportNumber") {
@@ -612,7 +613,7 @@ export default function PassengersPage() {
     setErrorMessage("");
   }
 
-  /* =======================================================
+/* =======================================================*
      VALIDATION
   ======================================================= */
 
@@ -703,9 +704,9 @@ export default function PassengersPage() {
         return `Please enter the passport expiry date for traveler ${travelerNumber}.`;
       }
 
-      /*
-        Passport cannot expire today or
-        any date before today.
+/**
+        *Passport cannot expire today or*
+        *any date before today.*
       */
 
       if (
@@ -719,12 +720,12 @@ export default function PassengersPage() {
     return "";
   }
 
-  /* =======================================================
+/* =======================================================*
      SUBMIT
   ======================================================= */
 
   async function handleSubmit(
-    event: FormEvent<HTMLFormElement>
+event: FormEvent<HTMLFormElement>
   ) {
     event.preventDefault();
 
@@ -800,8 +801,8 @@ export default function PassengersPage() {
           })
         );
 
-      /* ===================================================
-         EDIT EXISTING BOOKING
+/* ===================================================*
+         *EDIT EXISTING BOOKING*
       =================================================== */
 
       if (isEditMode) {
@@ -858,8 +859,8 @@ export default function PassengersPage() {
         return;
       }
 
-      /* ===================================================
-         CREATE NEW BOOKING
+/* ===================================================*
+         *CREATE NEW BOOKING*
       =================================================== */
 
       const response = await fetch(
@@ -926,15 +927,15 @@ export default function PassengersPage() {
         );
       }
 
-      /*
-        CORRECT FLOW:
+/**
+        *CORRECT FLOW:*
 
         Flight
-          ↓
+          *↓*
         Travelers
-          ↓
+          *↓*
         Review
-          ↓
+          *↓*
         Payment
       */
 
@@ -959,7 +960,7 @@ export default function PassengersPage() {
     }
   }
 
-  /* =======================================================
+/* =======================================================*
      LOADING
   ======================================================= */
 
@@ -983,7 +984,7 @@ export default function PassengersPage() {
     );
   }
 
-  /* =======================================================
+/* =======================================================*
      RENDER
   ======================================================= */
 
@@ -992,53 +993,53 @@ export default function PassengersPage() {
       <Navbar />
 
       <main className="min-h-screen bg-[#f6f7f9] text-slate-950">
-        {/* =================================================
+        {/* =================================================*
             PROGRESS
-        ================================================= */}
+        *================================================= */}
 
         <div className="border-b border-slate-200 bg-white">
           <div className="mx-auto max-w-[1240px] px-4 sm:px-6 lg:px-8">
             <div className="flex h-14 items-center overflow-x-auto">
               <BookingStep
-                number="1"
-                label="Select flight"
-                completed
+number="1"
+label="Select flight"
+completed
               />
 
               <StepDivider />
 
               <BookingStep
-                number="2"
-                label="Travelers"
-                active
+number="2"
+label="Travelers"
+active
               />
 
               <StepDivider />
 
               <BookingStep
-                number="3"
-                label="Review"
+number="3"
+label="Review"
               />
 
               <StepDivider />
 
               <BookingStep
-                number="4"
-                label="Payment"
+number="4"
+label="Payment"
               />
             </div>
           </div>
         </div>
 
-        {/* =================================================
+        {/* =================================================*
             HEADER
-        ================================================= */}
+        *================================================= */}
 
         <section className="border-b border-slate-200 bg-white">
           <div className="mx-auto max-w-[1240px] px-4 py-7 sm:px-6 lg:px-8">
             <button
-              type="button"
-              onClick={() => {
+type="button"
+onClick={() => {
                 if (
                   isEditMode &&
                   bookingId
@@ -1054,7 +1055,7 @@ export default function PassengersPage() {
 
                 router.back();
               }}
-              className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-blue-700"
+className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-blue-700"
             >
               <ArrowLeft className="h-4 w-4" />
 
@@ -1090,33 +1091,33 @@ export default function PassengersPage() {
           </div>
         </section>
 
-        {/* =================================================
+        {/* =================================================*
             FORM
-        ================================================= */}
+        *================================================= */}
 
         <form
-          onSubmit={handleSubmit}
-          noValidate
+onSubmit={handleSubmit}
+noValidate
         >
           <div className="mx-auto max-w-[1240px] px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
             {/* ERROR */}
 
             {errorMessage && (
               <div
-                role="alert"
-                className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700"
+role="alert"
+className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700"
               >
                 {errorMessage}
               </div>
             )}
 
             <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
-              {/* =================================================
-                  LEFT COLUMN
-              ================================================= */}
+              {/* =================================================*
+                  *LEFT COLUMN*
+              *================================================= */}
 
               <div className="min-w-0 space-y-6">
-                {/* ===============================================
+                {/* ===============================================*
                     FLIGHT
                 =============================================== */}
 
@@ -1156,13 +1157,13 @@ export default function PassengersPage() {
                   <div className="px-5 py-6 sm:px-6">
                     <div className="grid gap-6 md:grid-cols-[1fr_170px_1fr] md:items-center">
                       <FlightEndpoint
-                        time={formatTime(
+time={formatTime(
                           departureTime
                         )}
-                        code={originCode}
-                        city={originCity}
-                        airport={originAirport}
-                        date={formatDate(
+code={originCode}
+city={originCity}
+airport={originAirport}
+date={formatDate(
                           departureTime ||
                             departureDate
                         )}
@@ -1197,19 +1198,19 @@ export default function PassengersPage() {
                       </div>
 
                       <FlightEndpoint
-                        time={formatTime(
+time={formatTime(
                           arrivalTime
                         )}
-                        code={destinationCode}
-                        city={destinationCity}
-                        airport={
+code={destinationCode}
+city={destinationCity}
+airport={
                           destinationAirport
                         }
-                        date={formatDate(
+date={formatDate(
                           arrivalTime ||
                             departureDate
                         )}
-                        alignRight
+alignRight
                       />
                     </div>
 
@@ -1228,18 +1229,18 @@ export default function PassengersPage() {
                   </div>
                 </section>
 
-                {/* ===============================================
+                {/* ===============================================*
                     TRAVELERS
                 =============================================== */}
 
                 {passengers.map(
                   (passenger, index) => (
                     <section
-                      key={
+key={
                         passenger.id ||
                         `traveler-${index}`
                       }
-                      className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
                     >
                       {/* HEADER */}
 
@@ -1272,15 +1273,15 @@ export default function PassengersPage() {
 
                         <div className="grid gap-x-5 gap-y-5 md:grid-cols-2">
                           <Field
-                            label="First name"
-                            required
+label="First name"
+required
                           >
                             <input
-                              type="text"
-                              value={
+type="text"
+value={
                                 passenger.firstName
                               }
-                              onChange={(
+onChange={(
                                 event
                               ) =>
                                 updatePassenger(
@@ -1290,9 +1291,9 @@ export default function PassengersPage() {
                                     .value
                                 )
                               }
-                              autoComplete="given-name"
-                              placeholder="First name"
-                              className={
+autoComplete="given-name"
+placeholder="First name"
+className={
                                 inputClass
                               }
                             />
@@ -1300,11 +1301,11 @@ export default function PassengersPage() {
 
                           <Field label="Middle name">
                             <input
-                              type="text"
-                              value={
+type="text"
+value={
                                 passenger.middleName
                               }
-                              onChange={(
+onChange={(
                                 event
                               ) =>
                                 updatePassenger(
@@ -1314,24 +1315,24 @@ export default function PassengersPage() {
                                     .value
                                 )
                               }
-                              autoComplete="additional-name"
-                              placeholder="Middle name"
-                              className={
+autoComplete="additional-name"
+placeholder="Middle name"
+className={
                                 inputClass
                               }
                             />
                           </Field>
 
                           <Field
-                            label="Last name"
-                            required
+label="Last name"
+required
                           >
                             <input
-                              type="text"
-                              value={
+type="text"
+value={
                                 passenger.lastName
                               }
-                              onChange={(
+onChange={(
                                 event
                               ) =>
                                 updatePassenger(
@@ -1341,25 +1342,25 @@ export default function PassengersPage() {
                                     .value
                                 )
                               }
-                              autoComplete="family-name"
-                              placeholder="Last name"
-                              className={
+autoComplete="family-name"
+placeholder="Last name"
+className={
                                 inputClass
                               }
                             />
                           </Field>
 
                           <Field
-                            label="Date of birth"
-                            required
+label="Date of birth"
+required
                           >
                             <input
-                              type="date"
-                              value={
+type="date"
+value={
                                 passenger.dateOfBirth
                               }
-                              max={getTodayDateInput()}
-                              onChange={(
+max={getTodayDateInput()}
+onChange={(
                                 event
                               ) =>
                                 updatePassenger(
@@ -1369,21 +1370,21 @@ export default function PassengersPage() {
                                     .value
                                 )
                               }
-                              className={
+className={
                                 inputClass
                               }
                             />
                           </Field>
 
                           <Field
-                            label="Gender"
-                            required
+label="Gender"
+required
                           >
                             <select
-                              value={
+value={
                                 passenger.gender
                               }
-                              onChange={(
+onChange={(
                                 event
                               ) =>
                                 updatePassenger(
@@ -1393,7 +1394,7 @@ export default function PassengersPage() {
                                     .value
                                 )
                               }
-                              className={
+className={
                                 inputClass
                               }
                             >
@@ -1416,15 +1417,15 @@ export default function PassengersPage() {
                           </Field>
 
                           <Field
-                            label="Nationality"
-                            required
+label="Nationality"
+required
                           >
                             <input
-                              type="text"
-                              value={
+type="text"
+value={
                                 passenger.nationality
                               }
-                              onChange={(
+onChange={(
                                 event
                               ) =>
                                 updatePassenger(
@@ -1434,8 +1435,8 @@ export default function PassengersPage() {
                                     .value
                                 )
                               }
-                              placeholder="e.g. United States"
-                              className={
+placeholder="e.g. United States"
+className={
                                 inputClass
                               }
                             />
@@ -1443,8 +1444,8 @@ export default function PassengersPage() {
                         </div>
                       </div>
 
-                      {/* =========================================
-                          TRAVEL DOCUMENT
+                      {/* =========================================*
+                          *TRAVEL DOCUMENT*
                       ========================================= */}
 
                       <div className="border-t border-slate-200 px-5 py-6 sm:px-6">
@@ -1463,15 +1464,15 @@ export default function PassengersPage() {
 
                         <div className="grid gap-x-5 gap-y-5 md:grid-cols-2">
                           <Field
-                            label="Passport number"
-                            required
+label="Passport number"
+required
                           >
                             <input
-                              type="text"
-                              value={
+type="text"
+value={
                                 passenger.passportNumber
                               }
-                              onChange={(
+onChange={(
                                 event
                               ) =>
                                 updatePassenger(
@@ -1481,12 +1482,12 @@ export default function PassengersPage() {
                                     .value
                                 )
                               }
-                              placeholder="Passport number"
-                              maxLength={20}
-                              autoComplete="off"
-                              autoCapitalize="characters"
-                              spellCheck={false}
-                              className={`${inputClass} uppercase`}
+placeholder="Passport number"
+maxLength={20}
+autoComplete="off"
+autoCapitalize="characters"
+spellCheck={false}
+className={`${inputClass} uppercase`}
                             />
 
                             <p className="mt-1.5 text-xs leading-5 text-slate-500">
@@ -1498,15 +1499,15 @@ export default function PassengersPage() {
                           </Field>
 
                           <Field
-                            label="Country of issue"
-                            required
+label="Country of issue"
+required
                           >
                             <input
-                              type="text"
-                              value={
+type="text"
+value={
                                 passenger.passportCountry
                               }
-                              onChange={(
+onChange={(
                                 event
                               ) =>
                                 updatePassenger(
@@ -1516,24 +1517,24 @@ export default function PassengersPage() {
                                     .value
                                 )
                               }
-                              placeholder="e.g. United States"
-                              className={
+placeholder="e.g. United States"
+className={
                                 inputClass
                               }
                             />
                           </Field>
 
                           <Field
-                            label="Passport expiration date"
-                            required
+label="Passport expiration date"
+required
                           >
                             <input
-                              type="date"
-                              value={
+type="date"
+value={
                                 passenger.passportExpiry
                               }
-                              min={getTomorrowDateInput()}
-                              onChange={(
+min={getTomorrowDateInput()}
+onChange={(
                                 event
                               ) =>
                                 updatePassenger(
@@ -1543,7 +1544,7 @@ export default function PassengersPage() {
                                     .value
                                 )
                               }
-                              className={
+className={
                                 inputClass
                               }
                             />
@@ -1560,8 +1561,8 @@ export default function PassengersPage() {
                   )
                 )}
 
-                {/* ===============================================
-                    CONTACT INFORMATION
+                {/* ===============================================*
+                    *CONTACT INFORMATION*
                 =============================================== */}
 
                 <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -1587,13 +1588,13 @@ export default function PassengersPage() {
                     <div className="grid gap-x-5 gap-y-5 md:grid-cols-2">
                       <div className="md:col-span-2">
                         <Field
-                          label="Contact name"
-                          required
+label="Contact name"
+required
                         >
                           <input
-                            type="text"
-                            value={customerName}
-                            onChange={(
+type="text"
+value={customerName}
+onChange={(
                               event
                             ) => {
                               setCustomerName(
@@ -1605,9 +1606,9 @@ export default function PassengersPage() {
                                 ""
                               );
                             }}
-                            placeholder="Full name"
-                            autoComplete="name"
-                            className={
+placeholder="Full name"
+autoComplete="name"
+className={
                               inputClass
                             }
                           />
@@ -1615,13 +1616,13 @@ export default function PassengersPage() {
                       </div>
 
                       <Field
-                        label="Email address"
-                        required
+label="Email address"
+required
                       >
                         <input
-                          type="email"
-                          value={customerEmail}
-                          onChange={(
+type="email"
+value={customerEmail}
+onChange={(
                             event
                           ) => {
                             setCustomerEmail(
@@ -1630,18 +1631,18 @@ export default function PassengersPage() {
 
                             setErrorMessage("");
                           }}
-                          placeholder="name@example.com"
-                          autoComplete="email"
-                          inputMode="email"
-                          className={inputClass}
+placeholder="name@example.com"
+autoComplete="email"
+inputMode="email"
+className={inputClass}
                         />
                       </Field>
 
                       <Field label="Phone number">
                         <input
-                          type="tel"
-                          value={customerPhone}
-                          onChange={(
+type="tel"
+value={customerPhone}
+onChange={(
                             event
                           ) => {
                             setCustomerPhone(
@@ -1650,9 +1651,9 @@ export default function PassengersPage() {
 
                             setErrorMessage("");
                           }}
-                          placeholder="+1 617 555 1234"
-                          autoComplete="tel"
-                          className={inputClass}
+placeholder="+1 617 555 1234"
+autoComplete="tel"
+className={inputClass}
                         />
                       </Field>
                     </div>
@@ -1663,49 +1664,49 @@ export default function PassengersPage() {
 
                 <div className="lg:hidden">
                   <MobileFareSummary
-                    isEditMode={isEditMode}
-                    passengersCount={
+isEditMode={isEditMode}
+passengersCount={
                       passengersCount
                     }
-                    pricePerPassenger={
+pricePerPassenger={
                       pricePerPassenger
                     }
-                    estimatedTotal={
+estimatedTotal={
                       estimatedTotal
                     }
-                    currency={currency}
-                    submitting={submitting}
+currency={currency}
+submitting={submitting}
                   />
                 </div>
               </div>
 
-              {/* =================================================
-                  DESKTOP SUMMARY
-              ================================================= */}
+              {/* =================================================*
+                  *DESKTOP SUMMARY*
+              *================================================= */}
 
               <aside className="hidden lg:block">
                 <div className="sticky top-24">
                   <FareSummary
-                    isEditMode={isEditMode}
-                    originCode={originCode}
-                    destinationCode={
+isEditMode={isEditMode}
+originCode={originCode}
+destinationCode={
                       destinationCode
                     }
-                    departureTime={
+departureTime={
                       departureTime ||
                       departureDate
                     }
-                    passengersCount={
+passengersCount={
                       passengersCount
                     }
-                    pricePerPassenger={
+pricePerPassenger={
                       pricePerPassenger
                     }
-                    estimatedTotal={
+estimatedTotal={
                       estimatedTotal
                     }
-                    currency={currency}
-                    submitting={submitting}
+currency={currency}
+submitting={submitting}
                   />
                 </div>
               </aside>
@@ -1713,9 +1714,9 @@ export default function PassengersPage() {
           </div>
         </form>
 
-        {/* =================================================
+        {/* =================================================*
             FOOTER
-        ================================================= */}
+        *================================================= */}
 
         <footer className="border-t border-slate-200 bg-white">
           <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-4 py-7 text-xs text-slate-500 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
@@ -1736,15 +1737,43 @@ export default function PassengersPage() {
   );
 }
 
-/* =========================================================
-   BOOKING STEP
+export default function PassengersPage() {
+  return (
+    <Suspense fallback={<PassengersPageLoading />}>
+      <PassengersPageContent />
+    </Suspense>
+  );
+}
+
+function PassengersPageLoading() {
+  return (
+    <>
+      <Navbar />
+
+      <main className="min-h-screen bg-[#f6f7f9]">
+        <div className="mx-auto max-w-[1240px] px-4 py-16 sm:px-6 lg:px-8">
+          <div className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
+            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+
+            <p className="mt-4 text-sm font-medium text-slate-700">
+              Loading traveler information...
+            </p>
+          </div>
+        </div>
+      </main>
+    </>
+  );
+}
+
+/* =========================================================*
+   *BOOKING STEP*
 ========================================================= */
 
 function BookingStep({
-  number,
-  label,
-  active = false,
-  completed = false,
+number,
+label,
+active = false,
+completed = false,
 }: {
   number: string;
   label: string;
@@ -1754,7 +1783,7 @@ function BookingStep({
   return (
     <div className="flex shrink-0 items-center gap-2">
       <div
-        className={[
+className={[
           "flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold",
 
           active
@@ -1772,7 +1801,7 @@ function BookingStep({
       </div>
 
       <span
-        className={[
+className={[
           "whitespace-nowrap text-xs sm:text-sm",
 
           active
@@ -1794,17 +1823,17 @@ function StepDivider() {
   );
 }
 
-/* =========================================================
-   FLIGHT ENDPOINT
+/* =========================================================*
+   *FLIGHT ENDPOINT*
 ========================================================= */
 
 function FlightEndpoint({
-  time,
-  code,
-  city,
-  airport,
-  date,
-  alignRight = false,
+time,
+code,
+city,
+airport,
+date,
+alignRight = false,
 }: {
   time: string;
   code: string;
@@ -1815,14 +1844,14 @@ function FlightEndpoint({
 }) {
   return (
     <div
-      className={
+className={
         alignRight
           ? "md:text-right"
           : ""
       }
     >
       <div
-        className={[
+className={[
           "flex flex-wrap items-baseline gap-2",
 
           alignRight
@@ -1858,14 +1887,14 @@ function FlightEndpoint({
   );
 }
 
-/* =========================================================
+/* =========================================================*
    FIELD
 ========================================================= */
 
 function Field({
-  label,
-  required = false,
-  children,
+label,
+required = false,
+children,
 }: {
   label: string;
   required?: boolean;
@@ -1888,20 +1917,20 @@ function Field({
   );
 }
 
-/* =========================================================
-   DESKTOP FARE SUMMARY
+/* =========================================================*
+   *DESKTOP FARE SUMMARY*
 ========================================================= */
 
 function FareSummary({
-  isEditMode,
-  originCode,
-  destinationCode,
-  departureTime,
-  passengersCount,
-  pricePerPassenger,
-  estimatedTotal,
-  currency,
-  submitting,
+isEditMode,
+originCode,
+destinationCode,
+departureTime,
+passengersCount,
+pricePerPassenger,
+estimatedTotal,
+currency,
+submitting,
 }: {
   isEditMode: boolean;
   originCode: string;
@@ -1994,9 +2023,9 @@ function FareSummary({
         </div>
 
         <button
-          type="submit"
-          disabled={submitting}
-          className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+type="submit"
+disabled={submitting}
+className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           {submitting
             ? isEditMode
@@ -2024,17 +2053,17 @@ function FareSummary({
   );
 }
 
-/* =========================================================
-   MOBILE FARE SUMMARY
+/* =========================================================*
+   *MOBILE FARE SUMMARY*
 ========================================================= */
 
 function MobileFareSummary({
-  isEditMode,
-  passengersCount,
-  pricePerPassenger,
-  estimatedTotal,
-  currency,
-  submitting,
+isEditMode,
+passengersCount,
+pricePerPassenger,
+estimatedTotal,
+currency,
+submitting,
 }: {
   isEditMode: boolean;
   passengersCount: number;
@@ -2078,9 +2107,9 @@ function MobileFareSummary({
       </div>
 
       <button
-        type="submit"
-        disabled={submitting}
-        className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+type="submit"
+disabled={submitting}
+className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         {submitting
           ? isEditMode
@@ -2098,8 +2127,8 @@ function MobileFareSummary({
   );
 }
 
-/* =========================================================
-   INPUT CLASS
+/* =========================================================*
+   *INPUT CLASS*
 ========================================================= */
 
 const inputClass = [
@@ -2121,12 +2150,12 @@ const inputClass = [
   "focus:ring-blue-600",
 ].join(" ");
 
-/* =========================================================
+/* =========================================================*
    HELPERS
 ========================================================= */
 
 function isValidEmail(
-  value: string
+value: string
 ) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
     value.trim()
@@ -2172,17 +2201,17 @@ function getTomorrowDateInput() {
 }
 
 function toDateInputValue(
-  value?: string | null
+value?: string | null
 ) {
   if (!value) {
     return "";
   }
 
-  /*
-    Prisma normally sends DateTime as an
-    ISO string such as:
+/**
+    *Prisma normally sends DateTime as an*
+    *ISO string such as:*
 
-    2026-08-10T00:00:00.000Z
+    *2026-08-10T00:00:00.000Z*
   */
 
   const date = new Date(value);
@@ -2201,7 +2230,7 @@ function toDateInputValue(
 }
 
 function formatTime(
-  value: string
+value: string
 ) {
   if (!value) {
     return "--";
@@ -2229,7 +2258,7 @@ function formatTime(
 }
 
 function formatDate(
-  value: string
+value: string
 ) {
   if (!value) {
     return "--";
@@ -2259,7 +2288,7 @@ function formatDate(
 }
 
 function formatShortDate(
-  value: string
+value: string
 ) {
   if (!value) {
     return "";
@@ -2288,8 +2317,8 @@ function formatShortDate(
 }
 
 function calculateDuration(
-  departureTime: string,
-  arrivalTime: string
+departureTime: string,
+arrivalTime: string
 ) {
   if (
     !departureTime ||
@@ -2352,8 +2381,8 @@ function calculateDuration(
 }
 
 function formatCurrency(
-  value: number,
-  currency: string
+value: number,
+currency: string
 ) {
   try {
     return new Intl.NumberFormat(
@@ -2361,7 +2390,7 @@ function formatCurrency(
       {
         style: "currency",
         currency:
-          currency || "USD",
+currency || "USD",
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
       }

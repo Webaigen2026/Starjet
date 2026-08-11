@@ -112,39 +112,45 @@ export default async function FlightResultsPage({
   let flights: Flight[] = [];
   let errorMessage = "";
 
-  /* =======================================================
+    /* =======================================================
      FETCH FLIGHTS
   ======================================================= */
 
   try {
-    /*
+    /**
      * IMPORTANT:
      *
-     * The API is the source of truth.
+     * NEXTAUTH_URL comes from the environment.
      *
-     * Airline
-     * Flight number
-     * Aircraft
-     * Airports
-     * Departure time
-     * Arrival time
-     * Fare
-     * Status
-     * Terminal
-     * Gate
-     * Availability
+     * Local:
+     * NEXTAUTH_URL=http://localhost:3000
      *
-     * must come from the database through this API.
+     * Vercel:
+     * NEXTAUTH_URL=https://starjet.vercel.app
+     *
+     * This prevents Vercel from trying to call localhost.
      */
 
-    const response = await fetch(
-      `http://localhost:3000/api/flights/search?${query.toString()}`,
-      {
-        cache: "no-store",
-      }
-    );
+    const baseUrl =
+      process.env.NEXTAUTH_URL?.replace(/\/$/, "") ||
+      "http://localhost:3000";
 
-    const result = await response.json();
+    const apiUrl =
+      `${baseUrl}/api/flights/search?${query.toString()}`;
+
+    const response = await fetch(apiUrl, {
+      cache: "no-store",
+    });
+
+    let result;
+
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error(
+        `Flight search API returned an invalid response (${response.status}).`
+      );
+    }
 
     if (response.ok && result.success) {
       flights = Array.isArray(result.data)

@@ -90,59 +90,18 @@ const footerColumns: FooterColumn[] = [
     title: "Book",
     links: [
       { label: "Search Flights", href: "/flights" },
-      { label: "Travel Deals", href: "/deals" },
-      { label: "Manage Booking", href: "/manage-booking" },
-      { label: "Online Check-in", href: "/check-in" },
-      { label: "Flight Status", href: "/flight-status" },
-    ],
-  },
-  {
-    title: "Travel Info",
-    links: [
-      { label: "Baggage Policy", href: "/baggage" },
-      {
-        label: "Travel Requirements",
-        href: "/travel-requirements",
-      },
-      { label: "Destinations", href: "/destinations" },
-      {
-        label: "In-Flight Experience",
-        href: "/experience",
-      },
-      {
-        label: "Frequently Asked Questions",
-        href: "/faqs",
-      },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "About StarJet", href: "/about" },
-      { label: "Careers", href: "/careers" },
-      { label: "Newsroom", href: "/news" },
-      { label: "Sustainability", href: "/sustainability" },
-      { label: "Investor Relations", href: "/investors" },
+      { label: "Manage Booking", href: "/my-trips" },
     ],
   },
   {
     title: "Support",
     links: [
       { label: "Contact Us", href: "/contact" },
-      { label: "Help Center", href: "/help" },
-      { label: "Refunds", href: "/refunds" },
-      { label: "Accessibility", href: "/accessibility" },
-      { label: "Share Feedback", href: "/feedback" },
     ],
   },
 ];
 
-const legalLinks: FooterLink[] = [
-  { label: "Privacy", href: "/privacy" },
-  { label: "Terms", href: "/terms" },
-  { label: "Cookies", href: "/cookies" },
-  { label: "Accessibility", href: "/accessibility" },
-];
+const legalLinks: FooterLink[] = [];
 
 const socialLinks: SocialLink[] = [
   {
@@ -370,18 +329,20 @@ export default function SiteFooter() {
               © {currentYear} StarJet. All rights reserved.
             </p>
 
-            <ul className="flex flex-wrap gap-x-5 gap-y-2">
-              {legalLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="rounded text-xs font-medium text-gray-500 transition-colors hover:text-[#020E63] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#020E63] sm:text-sm dark:text-white/50 dark:hover:text-white dark:focus-visible:ring-white"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {legalLinks.length > 0 && (
+              <ul className="flex flex-wrap gap-x-5 gap-y-2">
+                {legalLinks.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="rounded text-xs font-medium text-gray-500 transition-colors hover:text-[#020E63] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#020E63] sm:text-sm dark:text-white/50 dark:hover:text-white dark:focus-visible:ring-white"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">

@@ -4,21 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
-  BellRing,
-  Briefcase,
   Compass,
-  DollarSign,
-  Globe,
   Heart,
   Luggage,
   Menu,
-  MessageSquare,
-  Newspaper,
   PackageCheck,
   PanelLeftClose,
   PanelLeftOpen,
   PlaneTakeoff,
-  Radar,
 } from "lucide-react";
 
 import { cn } from "@/app/lib/utils";
@@ -34,16 +27,12 @@ interface NavItem {
 
 const primaryNavItems: NavItem[] = [
   { label: "Flights", href: "/flights", icon: PlaneTakeoff },
-  { label: "Manage Booking", href: "/manage-booking", icon: Luggage },
+  { label: "Manage Booking", href: "/my-trips", icon: Luggage },
   { label: "Cargo Services", href: "/cargo", icon: PackageCheck },
-  { label: "Flight Alerts", href: "/flight-alerts", icon: BellRing },
 ];
 
 const secondaryNavItems: NavItem[] = [
-  { label: "Flight Tracker", href: "/flight-tracker", icon: Radar },
-  { label: "Explore", href: "/explore", icon: Compass },
-  { label: "Travel Tips", href: "/travel-tips", icon: Newspaper },
-  { label: "StarJet for Business", href: "/business", icon: Briefcase, badge: "NEW" },
+  { label: "Explore", href: "/flights", icon: Compass },
 ];
 
 export default function SidebarNav() {
@@ -120,36 +109,14 @@ export default function SidebarNav() {
           ))}
 
           <SidebarLink
-            item={{ label: "Trips", href: "/trips", icon: Heart }}
-            active={pathname === "/trips"}
+            item={{ label: "Trips", href: "/my-trips", icon: Heart }}
+            active={pathname === "/my-trips"}
             collapsed={collapsed}
           />
         </nav>
 
-        {/* Footer: locale, currency, feedback, theme */}
+        {/* Footer: theme */}
         <div className="flex flex-col gap-1 px-3 pt-3">
-          <SidebarLink
-            item={{ label: "English", href: "/settings/language", icon: Globe }}
-            active={pathname === "/settings/language"}
-            collapsed={collapsed}
-          />
-
-          <SidebarLink
-            item={{
-              label: "United States dollar",
-              href: "/settings/currency",
-              icon: DollarSign,
-            }}
-            active={pathname === "/settings/currency"}
-            collapsed={collapsed}
-          />
-
-          <SidebarLink
-            item={{ label: "Feedback", href: "/feedback", icon: MessageSquare }}
-            active={pathname === "/feedback"}
-            collapsed={collapsed}
-          />
-
           <div
             className={cn(
               "mt-2 flex items-center gap-2 px-2",

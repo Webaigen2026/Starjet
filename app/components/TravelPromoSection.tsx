@@ -1,13 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useRef, useState } from "react";
 import {
   Bell,
   MessageCircleMore,
   Pause,
   PlaneTakeoff,
-  ArrowRight,
   Play,
   Star,
 } from "lucide-react";
@@ -158,49 +156,6 @@ function PromoCard() {
             change on your route—so you can book at the right time without
             repeatedly checking.
           </p>
-
-          <Link
-            href="/flight-alerts"
-            className="
-              mt-6
-              inline-flex
-              min-h-12
-              items-center
-              justify-center
-              gap-2
-              rounded-full
-              bg-white
-              px-6
-              py-3
-              text-sm
-              font-black
-              text-[#020e63]
-              shadow-[-4px_-4px_10px_var(--color-neu-highlight),4px_4px_10px_var(--color-neu-shadow)]
-              transition-all
-              duration-200
-
-              hover:-translate-y-0.5
-              hover:shadow-[-5px_-5px_12px_var(--color-neu-highlight),5px_5px_12px_var(--color-neu-shadow)]
-
-              focus-visible:outline-none
-              focus-visible:ring-2
-              focus-visible:ring-[#020e63]
-              focus-visible:ring-offset-2
-              focus-visible:ring-offset-[#ecf0f3]
-
-              active:translate-y-0
-
-              dark:bg-white/10
-              dark:text-white
-              dark:shadow-none
-              dark:hover:bg-white/15
-              dark:focus-visible:ring-white
-              dark:focus-visible:ring-offset-surface
-            "
-          >
-            Turn on alerts
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
         </div>
       </div>
     </article>

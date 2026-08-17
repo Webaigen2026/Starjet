@@ -110,18 +110,6 @@ export default function TravelDealsCarousel() {
           <h2 className="section-title text-black dark:text-white lg:text-[clamp(1.75rem,1.2rem+1.5vw,2.25rem)]">
             Travel deals under $192
           </h2>
-
-          <Link
-            href="/deals"
-            className="group inline-flex w-fit items-center gap-2 text-sm font-bold text-primary dark:text-white transition hover:text-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4"
-          >
-            Explore all deals
-
-            <ArrowUpRight
-              className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-              aria-hidden="true"
-            />
-          </Link>
         </div>
 
         {/* Carousel */}

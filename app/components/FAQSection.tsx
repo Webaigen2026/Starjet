@@ -69,13 +69,6 @@ export default function FAQSection() {
                 Frequently asked questions about StarJet
               </h2>
             </div>
-
-            <Link
-              href="/faqs"
-              className="inline-flex w-fit items-center text-sm font-black text-[#020E63] transition-colors duration-200 hover:text-[#0A1C9E] focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#020E63] focus-visible:ring-offset-4 dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
-            >
-              View all FAQs
-            </Link>
           </div>
         </div>
 

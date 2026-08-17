@@ -25,7 +25,7 @@ const services = [
     icon: PackageCheck,
   },
   {
-    title: "Private Charter 'H' Program",
+    title: "Private Charter",
     description:
       "Request aircraft availability for family travel, business trips, and custom itineraries.",
     href: "/charter",

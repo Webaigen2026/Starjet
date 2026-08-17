@@ -63,7 +63,6 @@ export default async function CustomerDashboardPage() {
             <p className="px-4 pt-6 text-xs font-bold uppercase tracking-wide text-slate-400">
               Account
             </p>
-            <SidebarLink href="/profile" icon="♙" label="Profile" />
             <SidebarLink href="/contact" icon="☏" label="Support" />
           </nav>
 

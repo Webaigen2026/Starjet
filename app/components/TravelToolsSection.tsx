@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  BellRing,
   ChevronLeft,
   ChevronRight,
   Luggage,
@@ -38,7 +37,7 @@ const travelTools: TravelTool[] = [
     title: "Manage Booking",
     description:
       "Review your itinerary, update your trip, and manage your reservation.",
-    href: "/manage-booking",
+    href: "/my-trips",
     imageUrl: "/travels/caraibe.jpg",
     imageAlt: "Traveler destination representing airline booking management",
     icon: <Luggage className="h-5 w-5" aria-hidden="true" />,
@@ -51,15 +50,6 @@ const travelTools: TravelTool[] = [
     imageUrl: "/travels/caraibe2.png",
     imageAlt: "Travel destination representing StarJet cargo services",
     icon: <PackageCheck className="h-5 w-5" aria-hidden="true" />,
-  },
-  {
-    title: "Flight Alerts",
-    description:
-      "Stay informed with important departure, arrival, and schedule updates.",
-    href: "/flight-alerts",
-    imageUrl: "/travels/haiti.jpg",
-    imageAlt: "Travel destination representing airline flight alerts",
-    icon: <BellRing className="h-5 w-5" aria-hidden="true" />,
   },
 ];
 
@@ -119,18 +109,6 @@ export default function TravelToolsSection() {
               Travel with confidence
             </h2>
           </div>
-
-          <Link
-            href="/services"
-            className="group inline-flex w-fit items-center gap-2 text-sm font-black text-black dark:text-white transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
-          >
-            View all services
-
-            <ChevronRight
-              className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1"
-              aria-hidden="true"
-            />
-          </Link>
         </div>
 
         {/* Carousel */}

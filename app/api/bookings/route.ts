@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma";
-import { requireOperationsStaff } from "../../lib/authorization";
+import {
+  getOptionalAuthUser,
+  requireOperationsStaff,
+} from "../../lib/authorization";
+import { calculateBookingTotal } from "../../lib/bookingPricing";
 
 /* =========================================================
    TYPES
@@ -162,7 +166,12 @@ export async function POST(request: NextRequest) {
   try {
     /* -----------------------------------------------------
        READ REQUEST
+
+       Ownership is taken only from the authenticated
+       session. The request body must never supply userId.
     ----------------------------------------------------- */
+
+    const sessionUser = await getOptionalAuthUser();
 
     const body: CreateBookingBody = await request.json();
 
@@ -728,10 +737,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const baseFareTotal =
-      baseFarePerPassenger *
-      passengersCount;
-
     /*
      * Tax engine can be connected later.
      */
@@ -740,10 +745,14 @@ export async function POST(request: NextRequest) {
 
     const serviceFee = 0;
 
-    const totalAmount =
-      baseFareTotal +
-      taxes +
-      serviceFee;
+    const totalAmount = calculateBookingTotal({
+      baseFarePerPassenger,
+      passengersCount,
+      taxes,
+      serviceFee,
+      travelProtectionAmount: 0,
+      discountAmount: 0,
+    });
 
     /* -----------------------------------------------------
        DATABASE FLIGHT INFORMATION
@@ -829,7 +838,13 @@ export async function POST(request: NextRequest) {
                 /*
                  * Booking.baseFare currently stores
                  * the PER-PASSENGER fare.
+                 *
+                 * Booking.userId is assigned only from
+                 * the authenticated session, never from
+                 * the request body. Guests stay null.
                  */
+
+                userId: sessionUser?.id ?? null,
 
                 baseFare:
                   baseFarePerPassenger,

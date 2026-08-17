@@ -4,6 +4,10 @@ import {
   authorizeBookingAccess,
   requireAuthenticatedUser
 } from "../../../../lib/authorization";
+import {
+  calculateBookingTotal,
+  calculateTravelProtectionAmount,
+} from "../../../../lib/bookingPricing";
 
 type RouteProps = {
   params: Promise<{
@@ -53,34 +57,32 @@ export async function PATCH(
     const travelProtection =
       Boolean(body.travelProtection);
 
+    const passengersCount = Number(
+      booking.passengersCount ?? 0
+    );
+
     const travelProtectionAmount =
-      Number(
-        body.travelProtectionPrice ??
-          body.travelProtectionAmount ??
-          0
+      calculateTravelProtectionAmount(
+        travelProtection,
+        passengersCount
       );
 
-    const discountAmount =
-      Number(body.discountAmount ?? 0);
+    const discountAmount = 0;
 
-    const baseFare =
-      Number(booking.baseFare ?? 0);
+    const promoCode =
+      typeof body.promoCode === "string" &&
+      body.promoCode.trim()
+        ? body.promoCode.trim().toUpperCase()
+        : null;
 
-    const taxes =
-      Number(booking.taxes ?? 0);
-
-    const serviceFee =
-      Number(booking.serviceFee ?? 0);
-
-    const calculatedTotal =
-      Math.max(
-        baseFare +
-          taxes +
-          serviceFee +
-          travelProtectionAmount -
-          discountAmount,
-        0
-      );
+    const calculatedTotal = calculateBookingTotal({
+      baseFarePerPassenger: Number(booking.baseFare ?? 0),
+      passengersCount,
+      taxes: Number(booking.taxes ?? 0),
+      serviceFee: Number(booking.serviceFee ?? 0),
+      travelProtectionAmount,
+      discountAmount,
+    });
 
     const updatedBooking =
       await prisma.booking.update({
@@ -96,13 +98,7 @@ export async function PATCH(
               ? travelProtectionAmount
               : 0,
 
-          promoCode:
-            typeof body.promoCode === "string" &&
-            body.promoCode.trim()
-              ? body.promoCode
-                  .trim()
-                  .toUpperCase()
-              : null,
+          promoCode,
 
           discountAmount,
 

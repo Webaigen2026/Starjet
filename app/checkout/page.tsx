@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
 
 import {
   ArrowLeft,
@@ -11,8 +12,10 @@ import {
   Plane,
 } from "lucide-react";
 
+import { authOptions } from "../api/auth/[...nextauth]/route";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { authorizeBookingAccess } from "../lib/authorization";
 import { prisma } from "../lib/prisma";
 
 /* =========================================================
@@ -38,6 +41,12 @@ export default async function CheckoutPage({
 
   if (!bookingId) {
     notFound();
+  }
+
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    redirect("/login");
   }
 
   /* =======================================================
@@ -75,6 +84,15 @@ export default async function CheckoutPage({
   });
 
   if (!booking) {
+    notFound();
+  }
+
+  const access = authorizeBookingAccess(
+    session.user as { id?: string; role?: "ADMIN" | "STAFF" | "CUSTOMER" },
+    booking
+  );
+
+  if (!access.authorized) {
     notFound();
   }
 

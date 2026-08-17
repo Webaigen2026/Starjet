@@ -70,6 +70,32 @@ export async function requireAuthenticatedUser() {
   return requireRole(["ADMIN", "STAFF", "CUSTOMER"]);
 }
 
+export async function getOptionalAuthUser() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return null;
+  }
+
+  const user = session.user as {
+    id?: string;
+    name?: string | null;
+    email?: string | null;
+    role?: AllowedRole;
+  };
+
+  if (!user.id || typeof user.id !== "string") {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
+}
+
 function isStaffRole(
   role: AllowedRole | undefined
 ): role is "ADMIN" | "STAFF" {

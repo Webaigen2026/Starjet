@@ -12,6 +12,11 @@ import {
   Tag,
 } from "lucide-react";
 
+import {
+  calculateBookingTotal,
+  TRAVEL_PROTECTION_PRICE_PER_TRAVELER,
+} from "../lib/bookingPricing";
+
 /* =========================================================
    TYPES
 ========================================================= */
@@ -27,12 +32,6 @@ type ReviewActionsProps = {
 };
 
 type ProtectionChoice = "PROTECTED" | "DECLINED" | null;
-
-/* =========================================================
-   CONSTANTS
-========================================================= */
-
-const PROTECTION_PRICE_PER_TRAVELER = 24.99;
 
 /* =========================================================
    HELPERS
@@ -116,21 +115,21 @@ export default function ReviewActions({
 
   const protectionAmount =
     protectionChoice === "PROTECTED"
-      ? PROTECTION_PRICE_PER_TRAVELER *
+      ? TRAVEL_PROTECTION_PRICE_PER_TRAVELER *
         travelerCount
       : 0;
 
   const estimatedTotal = useMemo(() => {
-    const amount =
-      baseFare +
-      protectionAmount -
-      discountAmount;
-
-    return Math.max(amount, 0);
+    return calculateBookingTotal({
+      baseFarePerPassenger: baseFare,
+      passengersCount: travelerCount,
+      travelProtectionAmount: protectionAmount,
+      discountAmount: 0,
+    });
   }, [
     baseFare,
+    travelerCount,
     protectionAmount,
-    discountAmount,
   ]);
 
   /* =======================================================
@@ -166,38 +165,10 @@ export default function ReviewActions({
       return;
     }
 
-    /*
-      TEMPORARY DEVELOPMENT PROMO
-
-      This lets you test the UI.
-
-      Later, promo validation should happen through
-      your backend/database instead of trusting the
-      browser.
-    */
-
-    if (normalizedCode === "STARJET10") {
-      const calculatedDiscount =
-        Math.min(baseFare * 0.1, 50);
-
-      setAppliedPromoCode(normalizedCode);
-      setDiscountAmount(calculatedDiscount);
-
-      setPromoSuccess(
-        `${formatMoney(
-          calculatedDiscount,
-          currency
-        )} discount applied.`
-      );
-
-      return;
-    }
-
-    setAppliedPromoCode("");
+    setAppliedPromoCode(normalizedCode);
     setDiscountAmount(0);
-
-    setPromoError(
-      "This promotional code is not valid."
+    setPromoSuccess(
+      "Code saved. Promotional discounts are not currently applied."
     );
   }
 
@@ -269,13 +240,8 @@ export default function ReviewActions({
               protectionChoice ===
               "PROTECTED",
 
-            travelProtectionPrice:
-              protectionAmount,
-
             promoCode:
               appliedPromoCode || null,
-
-            discountAmount,
 
             travelerConfirmed:
               travelerInformationConfirmed,
@@ -369,7 +335,7 @@ export default function ReviewActions({
 
             <p className="text-[16px] font-semibold text-slate-950">
               {formatMoney(
-                baseFare,
+                baseFare * travelerCount,
                 currency
               )}
             </p>
@@ -480,7 +446,7 @@ export default function ReviewActions({
                     <div className="shrink-0 text-right">
                       <p className="font-semibold text-slate-950">
                         {formatMoney(
-                          PROTECTION_PRICE_PER_TRAVELER,
+                          TRAVEL_PROTECTION_PRICE_PER_TRAVELER,
                           currency
                         )}
                       </p>
@@ -695,11 +661,7 @@ export default function ReviewActions({
                         </p>
 
                         <p className="mt-0.5 text-xs text-emerald-700">
-                          {formatMoney(
-                            discountAmount,
-                            currency
-                          )}{" "}
-                          discount applied
+                          Code saved. No discount applied.
                         </p>
                       </div>
                     </div>

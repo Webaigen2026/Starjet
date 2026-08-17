@@ -12,6 +12,18 @@ export async function GET() {
 
     const userId = auth.user.id;
 
+    if (!userId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Authentication required.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
     const bookings = await prisma.booking.findMany({
       where: {
         userId,

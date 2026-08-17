@@ -731,6 +731,10 @@ event: FormEvent<HTMLFormElement>
 
     setErrorMessage("");
 
+    if (submitting) {
+      return;
+    }
+
     if (!isEditMode && !scheduleId) {
       setErrorMessage(
         "Flight information is missing. Please return to flight search and select your flight again."

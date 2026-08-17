@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
 import {
   ArrowLeft,
   CalendarDays,
@@ -9,6 +10,8 @@ import {
   Plane,
 } from "lucide-react";
 
+import { authOptions } from "../api/auth/[...nextauth]/route";
+import { authorizeBookingAccess } from "../lib/authorization";
 import prisma from "../lib/prisma";
 import ReviewActions from "./ReviewActions";
 
@@ -136,6 +139,12 @@ export default async function ReviewPage({
     redirect("/flights");
   }
 
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
   /* =======================================================
      LOAD COMPLETE BOOKING
 
@@ -178,6 +187,15 @@ export default async function ReviewPage({
   });
 
   if (!booking) {
+    redirect("/flights");
+  }
+
+  const access = authorizeBookingAccess(
+    session.user as { id?: string; role?: "ADMIN" | "STAFF" | "CUSTOMER" },
+    booking
+  );
+
+  if (!access.authorized) {
     redirect("/flights");
   }
 

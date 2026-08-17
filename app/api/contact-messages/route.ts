@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma";
+import { requireAdmin } from "../../lib/authorization";
 
 export async function GET() {
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const messages = await prisma.contactMessage.findMany({
       orderBy: {
         createdAt: "desc",

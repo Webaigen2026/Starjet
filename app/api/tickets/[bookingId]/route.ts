@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import {
+  authorizeBookingAccess,
+  requireAuthenticatedUser
+} from "../../../lib/authorization";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ bookingId: string }> }
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { bookingId } = await params;
 
     const booking = await prisma.booking.findUnique({
@@ -61,6 +71,12 @@ export async function GET(
           status: 404,
         }
       );
+    }
+
+    const access = authorizeBookingAccess(auth.user, booking);
+
+    if (!access.authorized) {
+      return access.response;
     }
 
     return NextResponse.json({

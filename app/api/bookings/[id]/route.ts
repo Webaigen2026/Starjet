@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import {
+  authorizeBookingAccess,
+  requireAuthenticatedUser,
+} from "../../../lib/authorization";
 
 type RouteProps = {
   params: Promise<{
@@ -16,6 +20,12 @@ export async function GET(
   { params }: RouteProps
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
 
     const booking =
@@ -62,6 +72,12 @@ export async function GET(
       );
     }
 
+    const access = authorizeBookingAccess(auth.user, booking);
+
+    if (!access.authorized) {
+      return access.response;
+    }
+
     return NextResponse.json({
       success: true,
       data: booking,
@@ -94,6 +110,12 @@ export async function PATCH(
   { params }: RouteProps
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
 
     const body = await request.json();
@@ -125,6 +147,15 @@ export async function PATCH(
       );
     }
 
+    const access = authorizeBookingAccess(auth.user, existingBooking);
+
+    if (!access.authorized) {
+      return access.response;
+    }
+
+    const isStaff =
+      auth.user.role === "ADMIN" || auth.user.role === "STAFF";
+
     /* =====================================================
        BUILD BOOKING UPDATE
 
@@ -151,14 +182,13 @@ export async function PATCH(
        EXISTING ADMIN STATUS LOGIC
     ----------------------------------------------------- */
 
-    if (
-      body.status !== undefined
-    ) {
+    if (isStaff && body.status !== undefined) {
       bookingUpdateData.status =
         body.status;
     }
 
     if (
+      isStaff &&
       body.paymentStatus !==
       undefined
     ) {

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { prisma } from "../../../lib/prisma";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { requireOperationsStaff } from "../../../lib/authorization";
 
 type RouteProps = {
   params: Promise<{
@@ -11,22 +10,10 @@ type RouteProps = {
 
 export async function PATCH(request: Request, { params }: RouteProps) {
   try {
-    const session = await getServerSession(authOptions);
+    const auth = await requireOperationsStaff();
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const role = (session.user as any).role;
-
-    if (role !== "ADMIN" && role !== "STAFF") {
-      return NextResponse.json(
-        { success: false, message: "Forbidden" },
-        { status: 403 }
-      );
+    if (!auth.authorized) {
+      return auth.response;
     }
 
     const { id } = await params;

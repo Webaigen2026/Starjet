@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import {
+  authorizeBookingAccess,
+  requireAuthenticatedUser
+} from "../../../../lib/authorization";
 
 type RouteProps = {
   params: Promise<{
@@ -12,6 +16,12 @@ export async function PATCH(
   { params }: RouteProps
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -32,6 +42,12 @@ export async function PATCH(
           status: 404,
         }
       );
+    }
+
+    const access = authorizeBookingAccess(auth.user, booking);
+
+    if (!access.authorized) {
+      return access.response;
     }
 
     const travelProtection =

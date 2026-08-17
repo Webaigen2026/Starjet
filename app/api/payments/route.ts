@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma";
+import { requireAdmin } from "../../lib/authorization";
 
 //
 // CREATE PAYMENT
 //
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const body = await request.json();
 
     //

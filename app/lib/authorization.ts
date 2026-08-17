@@ -69,3 +69,77 @@ export async function requireOperationsStaff() {
 export async function requireAuthenticatedUser() {
   return requireRole(["ADMIN", "STAFF", "CUSTOMER"]);
 }
+
+function isStaffRole(
+  role: AllowedRole | undefined
+): role is "ADMIN" | "STAFF" {
+  return role === "ADMIN" || role === "STAFF";
+}
+
+export function bookingNotFoundResponse() {
+  return NextResponse.json(
+    {
+      success: false,
+      message: "Booking not found.",
+    },
+    {
+      status: 404,
+    }
+  );
+}
+
+export function authorizeBookingAccess(
+  user: {
+    id?: string;
+    role?: AllowedRole;
+  },
+  booking: {
+    userId: string | null;
+  }
+) {
+  if (isStaffRole(user.role)) {
+    return {
+      authorized: true as const,
+      via: "staff" as const,
+    };
+  }
+
+  if (!booking.userId || !user.id || booking.userId !== user.id) {
+    return {
+      authorized: false as const,
+      response: bookingNotFoundResponse(),
+      via: "denied" as const,
+    };
+  }
+
+  return {
+    authorized: true as const,
+    via: "owner" as const,
+  };
+}
+
+export async function requireBookingOwnerOrStaff(booking: {
+  userId: string | null;
+}) {
+  const auth = await requireAuthenticatedUser();
+
+  if (!auth.authorized) {
+    return auth;
+  }
+
+  const access = authorizeBookingAccess(auth.user, booking);
+
+  if (!access.authorized) {
+    return {
+      authorized: false as const,
+      response: access.response,
+      via: access.via,
+    };
+  }
+
+  return {
+    authorized: true as const,
+    user: auth.user,
+    via: access.via,
+  };
+}

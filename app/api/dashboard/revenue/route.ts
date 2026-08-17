@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import { requireOperationsStaff } from "../../../lib/authorization";
 
 export async function GET() {
   try {
+    const auth = await requireOperationsStaff();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     //----------------------------------------------------------
     // Revenue Statistics
     //----------------------------------------------------------

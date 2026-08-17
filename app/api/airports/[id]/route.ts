@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import { requireAdmin } from "@/app/lib/authorization";
 
 interface RouteParams {
   params: Promise<{
@@ -43,6 +44,12 @@ export async function PUT(
   { params }: RouteParams
 ) {
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -79,6 +86,12 @@ export async function DELETE(
   { params }: RouteParams
 ) {
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
 
     await prisma.airport.delete({

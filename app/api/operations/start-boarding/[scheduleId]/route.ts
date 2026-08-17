@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import { requireOperationsStaff } from "../../../../lib/authorization";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ scheduleId: string }> }
 ) {
   try {
+    const auth = await requireOperationsStaff();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { scheduleId } = await params;
 
     console.log("====================================");

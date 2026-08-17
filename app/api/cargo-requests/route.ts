@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 import { CargoType } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import {
+  requireAdmin,
+  requireAuthenticatedUser,
+  requireOperationsStaff,
+} from "../../lib/authorization";
 
 export async function GET() {
   try {
+    const auth = await requireOperationsStaff();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const cargoRequests = await prisma.cargoRequest.findMany({
       orderBy: {
         createdAt: "desc",
@@ -33,16 +42,10 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const session = await getServerSession(authOptions);
+    const auth = await requireAuthenticatedUser();
 
-    if (!session?.user || !(session.user as any).id) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Unauthorized",
-        },
-        { status: 401 }
-      );
+    if (!auth.authorized) {
+      return auth.response;
     }
 
     if (
@@ -66,7 +69,7 @@ export async function POST(request: Request) {
       data: {
         requestCode: `CG-${Date.now()}`,
 
-        userId: session?.user ? (session.user as any).id : null,
+        userId: auth.user.id ?? null,
 
         fullName: body.fullName,
         email: body.email,
@@ -116,6 +119,12 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     await prisma.cargoRequest.deleteMany();
 
     return NextResponse.json({

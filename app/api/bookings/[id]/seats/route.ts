@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import {
+  authorizeBookingAccess,
+  requireAuthenticatedUser
+} from "../../../../lib/authorization";
 
 // ========================================================
 // GET BOOKING SEATS
@@ -10,6 +14,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
 
     if (!id) {
@@ -28,6 +38,7 @@ export async function GET(
       },
       select: {
         id: true,
+        userId: true,
         bookingCode: true,
         scheduleId: true,
         status: true,
@@ -50,6 +61,13 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    const access = authorizeBookingAccess(auth.user, booking);
+
+    if (!access.authorized) {
+      return access.response;
+    }
+
 
     const seats = await prisma.seat.findMany({
       where: {
@@ -97,6 +115,12 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id: bookingId } = await params;
 
     const body = await request.json();
@@ -150,6 +174,13 @@ export async function PATCH(
         { status: 404 }
       );
     }
+
+    const access = authorizeBookingAccess(auth.user, booking);
+
+    if (!access.authorized) {
+      return access.response;
+    }
+
 
     // ----------------------------------------------------
     // Prevent seat changes for closed bookings

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma";
+import { requireOperationsStaff } from "../../lib/authorization";
 
 /* =========================================================
    TYPES
@@ -1243,6 +1244,12 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    const auth = await requireOperationsStaff();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const bookings =
       await prisma.booking.findMany({
         orderBy: {

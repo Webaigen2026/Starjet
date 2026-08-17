@@ -1,5 +1,5 @@
 import { prisma } from "../../../lib/prisma";
-import StatusUpdateForm from "../../../api/bookings/[id]/StatusUpdateForm";
+import BookingLifecycleActions from "./BookingLifecycleActions";
 
 type BookingDetailsPageProps = {
   params: Promise<{
@@ -118,11 +118,10 @@ export default async function BookingDetailsPage({
           <h2 className="mb-6 text-2xl font-bold">
             Passengers
           </h2>
-          <StatusUpdateForm
+          <BookingLifecycleActions
             bookingId={booking.id}
             currentStatus={booking.status}
-            currentPaymentStatus={booking.paymentStatus}
-          />    
+          />
 
           <div className="space-y-4">
             {booking.passengers.map((passenger) => (

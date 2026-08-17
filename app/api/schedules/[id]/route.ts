@@ -62,6 +62,44 @@ export async function PUT(
 
     const body = await request.json();
 
+    const existingSchedule =
+      await prisma.flightSchedule.findUnique({
+        where: {
+          id,
+        },
+        select: {
+          id: true,
+          aircraftId: true,
+        },
+      });
+
+    if (!existingSchedule) {
+      return NextResponse.json(
+        {
+          message: "Schedule not found.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    if (
+      typeof body.aircraftId === "string" &&
+      body.aircraftId !== existingSchedule.aircraftId
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Aircraft cannot be changed from the generic schedule update. Use the change-aircraft operations endpoint so inventory can be reconciled.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
     const schedule = await prisma.flightSchedule.update({
       where: {
         id,
@@ -69,17 +107,12 @@ export async function PUT(
 
       data: {
         routeId: body.routeId,
-        aircraftId: body.aircraftId,
         departureTime: body.departureTime
           ? new Date(body.departureTime)
           : undefined,
         arrivalTime: body.arrivalTime
           ? new Date(body.arrivalTime)
           : undefined,
-        availableSeats:
-          body.availableSeats !== undefined
-            ? Number(body.availableSeats)
-            : undefined,
         baseFare: body.baseFare,
         status: body.status,
       },

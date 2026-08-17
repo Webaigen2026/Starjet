@@ -5,6 +5,10 @@ import {
   requireOperationsStaff,
 } from "../../lib/authorization";
 import { calculateBookingTotal } from "../../lib/bookingPricing";
+import {
+  InsufficientInventoryError,
+  reserveScheduleSeats,
+} from "../../lib/scheduleInventory";
 
 /* =========================================================
    TYPES
@@ -675,38 +679,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    /* -----------------------------------------------------
-       INVENTORY
-    ----------------------------------------------------- */
-
-    if (
-      schedule.availableSeats <
-      passengersCount
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-
-          message:
-            schedule.availableSeats === 0
-              ? "This flight is sold out."
-              : `Only ${schedule.availableSeats} seat${
-                  schedule.availableSeats === 1
-                    ? ""
-                    : "s"
-                } remain on this flight.`,
-
-          availableSeats:
-            schedule.availableSeats,
-
-          requestedSeats:
-            passengersCount,
-        },
-        {
-          status: 409,
-        }
-      );
-    }
+    /* Inventory is reserved atomically inside the
+       transaction. A pre-read here is not authoritative. */
 
     /* =====================================================
        FARE
@@ -780,6 +754,25 @@ export async function POST(request: NextRequest) {
     const createdBooking =
       await prisma.$transaction(
         async (tx) => {
+          /* ---------------------------------------------
+             RESERVE AGGREGATE INVENTORY
+
+             Atomic:
+             UPDATE FlightSchedule
+             SET availableSeats = availableSeats - N
+             WHERE id = scheduleId
+               AND availableSeats >= N
+
+             This reserves N seats even when no Seat
+             rows have been generated.
+          --------------------------------------------- */
+
+          await reserveScheduleSeats(
+            tx,
+            schedule.id,
+            passengersCount
+          );
+
           /* ---------------------------------------------
              CREATE BOOKING
           --------------------------------------------- */
@@ -1037,42 +1030,6 @@ export async function POST(request: NextRequest) {
             reservedSeats++;
           }
 
-          /* ---------------------------------------------
-             UPDATE INVENTORY WHEN SEAT MAP EXISTS
-          --------------------------------------------- */
-
-          const totalSeatRecords =
-            await tx.seat.count({
-              where: {
-                scheduleId:
-                  schedule.id,
-              },
-            });
-
-          if (totalSeatRecords > 0) {
-            const availableSeatCount =
-              await tx.seat.count({
-                where: {
-                  scheduleId:
-                    schedule.id,
-
-                  status:
-                    "AVAILABLE",
-                },
-              });
-
-            await tx.flightSchedule.update({
-              where: {
-                id: schedule.id,
-              },
-
-              data: {
-                availableSeats:
-                  availableSeatCount,
-              },
-            });
-          }
-
           return {
             booking,
             createdPassengers,
@@ -1160,6 +1117,24 @@ export async function POST(request: NextRequest) {
       error instanceof Error
         ? error.message
         : String(error);
+
+    if (error instanceof InsufficientInventoryError) {
+      const remaining = error.availableSeats ?? 0;
+
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            remaining === 0
+              ? "This flight is sold out."
+              : "Not enough seats available",
+          availableSeats: remaining,
+        },
+        {
+          status: 409,
+        }
+      );
+    }
 
     /* -----------------------------------------------------
        SEAT ERRORS

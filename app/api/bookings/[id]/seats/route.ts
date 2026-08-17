@@ -344,26 +344,6 @@ export async function PATCH(
         throw new Error("SEAT_ALREADY_TAKEN");
       }
 
-      // Count actual available seats
-      const availableSeats = await tx.seat.count({
-        where: {
-          scheduleId: booking.scheduleId,
-          status: "AVAILABLE",
-          bookingId: null,
-          passengerId: null,
-        },
-      });
-
-      // Synchronize schedule inventory
-      await tx.flightSchedule.update({
-        where: {
-          id: booking.scheduleId,
-        },
-        data: {
-          availableSeats,
-        },
-      });
-
       const assignedSeat = await tx.seat.findUnique({
         where: {
           id: seatId,
@@ -373,7 +353,6 @@ export async function PATCH(
       return {
         assignedSeat,
         previousSeat: existingSeat,
-        availableSeats,
       };
     });
 
@@ -407,10 +386,6 @@ export async function PATCH(
                 seatNumber: result.previousSeat.seatNumber,
               }
             : null,
-
-        inventory: {
-          availableSeats: result.availableSeats,
-        },
       },
     });
   } catch (error) {

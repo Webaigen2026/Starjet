@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../../../lib/prisma";
 import { requireOperationsStaff } from "../../../../lib/authorization";
+import { syncAvailableSeatsToHeldBookings } from "../../../../lib/scheduleInventory";
 
 export async function POST(
   request: NextRequest,
@@ -231,25 +232,28 @@ export async function POST(
         data: seats,
       });
 
-      const updatedSchedule = await tx.flightSchedule.update({
+      const availableSeats = await syncAvailableSeatsToHeldBookings(
+        tx,
+        id
+      );
+
+      const updatedSchedule = await tx.flightSchedule.findUnique({
         where: {
           id,
-        },
-        data: {
-          availableSeats: seats.length,
         },
       });
 
       return {
         created,
         updatedSchedule,
+        availableSeats,
       };
     });
 
     console.log("Seats created:", result.created.count);
     console.log(
       "availableSeats synchronized:",
-      result.updatedSchedule.availableSeats
+      result.availableSeats
     );
 
     // --------------------------------------------------
@@ -271,7 +275,7 @@ export async function POST(
 
         inventory: {
           totalSeats: result.created.count,
-          availableSeats: result.updatedSchedule.availableSeats,
+          availableSeats: result.availableSeats,
           firstClass: schedule.aircraft.firstClassSeats,
           business: schedule.aircraft.businessSeats,
           premium: schedule.aircraft.premiumSeats,

@@ -515,39 +515,6 @@ export async function PATCH(
           status: "CONFIRMED",
         },
       });
-
-      // --------------------------------------------------
-      // Recalculate real inventory
-      // --------------------------------------------------
-
-      const availableSeatCount =
-        await tx.seat.count({
-          where: {
-            scheduleId:
-              booking.scheduleId,
-
-            status: "AVAILABLE",
-
-            bookingId: null,
-
-            passengerId: null,
-          },
-        });
-
-      // --------------------------------------------------
-      // Synchronize schedule inventory
-      // --------------------------------------------------
-
-      await tx.flightSchedule.update({
-        where: {
-          id: booking.scheduleId,
-        },
-
-        data: {
-          availableSeats:
-            availableSeatCount,
-        },
-      });
     });
 
     // ====================================================

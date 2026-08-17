@@ -270,32 +270,6 @@ export async function PATCH(
         throw new Error("SEAT_NO_LONGER_AVAILABLE");
       }
 
-      // ------------------------------------------------
-      // Instead of blindly doing:
-      //
-      // availableSeats: { decrement: 1 }
-      //
-      // calculate the actual AVAILABLE seat count.
-      //
-      // This repairs old incorrect counters too.
-      // ------------------------------------------------
-
-      const actualAvailableSeats = await tx.seat.count({
-        where: {
-          scheduleId: booking.scheduleId!,
-          status: "AVAILABLE",
-        },
-      });
-
-      const updatedSchedule = await tx.flightSchedule.update({
-        where: {
-          id: booking.scheduleId!,
-        },
-        data: {
-          availableSeats: actualAvailableSeats,
-        },
-      });
-
       const updatedSeat = await tx.seat.findUnique({
         where: {
           id: seat.id,
@@ -308,8 +282,6 @@ export async function PATCH(
 
       return {
         updatedSeat,
-        updatedSchedule,
-        actualAvailableSeats,
       };
     });
 
@@ -322,10 +294,6 @@ export async function PATCH(
       message: "Seat assigned successfully.",
       data: {
         ...result.updatedSeat,
-
-        inventory: {
-          availableSeats: result.actualAvailableSeats,
-        },
       },
     });
   } catch (error) {

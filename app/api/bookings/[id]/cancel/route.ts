@@ -4,6 +4,7 @@ import {
   authorizeBookingAccess,
   requireAuthenticatedUser
 } from "../../../../lib/authorization";
+import { releaseScheduleSeats } from "../../../../lib/scheduleInventory";
 
 export async function PATCH(
   request: NextRequest,
@@ -134,12 +135,15 @@ export async function PATCH(
 
     await prisma.$transaction(async (tx) => {
       // ------------------------------------------------------
-      // Cancel Booking
+      // Cancel Booking once. Concurrent cancels lose here.
       // ------------------------------------------------------
 
-      await tx.booking.update({
+      const cancelled = await tx.booking.updateMany({
         where: {
           id: booking.id,
+          status: {
+            notIn: ["CANCELLED", "BOARDED", "COMPLETED"],
+          },
         },
         data: {
           status: "CANCELLED",
@@ -153,6 +157,10 @@ export async function PATCH(
             : {}),
         },
       });
+
+      if (cancelled.count !== 1) {
+        throw new Error("BOOKING_ALREADY_CANCELLED");
+      }
 
       // ------------------------------------------------------
       // Release Assigned Seats
@@ -196,34 +204,17 @@ export async function PATCH(
       }
 
       // ------------------------------------------------------
-      // Recalculate Available Seats
-      // ------------------------------------------------------
-      //
-      // We calculate this from the real Seat table instead
-      // of blindly incrementing availableSeats.
-      // ------------------------------------------------------
-
-      const availableSeatCount = await tx.seat.count({
-        where: {
-          scheduleId: booking.scheduleId,
-          status: "AVAILABLE",
-          bookingId: null,
-          passengerId: null,
-        },
-      });
-
-      // ------------------------------------------------------
-      // Synchronize Flight Schedule
+      // Release aggregate inventory exactly once.
+      // Do not recount from Seat rows — those may not exist,
+      // and assigned-seat count can be smaller than the
+      // passengers reserved at booking creation.
       // ------------------------------------------------------
 
-      await tx.flightSchedule.update({
-        where: {
-          id: booking.scheduleId,
-        },
-        data: {
-          availableSeats: availableSeatCount,
-        },
-      });
+      await releaseScheduleSeats(
+        tx,
+        booking.scheduleId,
+        booking.passengersCount
+      );
     });
 
     // --------------------------------------------------------
@@ -276,14 +267,7 @@ export async function PATCH(
     // --------------------------------------------------------
 
     const availableSeats =
-      await prisma.seat.count({
-        where: {
-          scheduleId: booking.scheduleId,
-          status: "AVAILABLE",
-          bookingId: null,
-          passengerId: null,
-        },
-      });
+      result.schedule?.availableSeats ?? 0;
 
     console.log("Booking cancelled successfully.");
     console.log("Booking:", booking.bookingCode);
@@ -335,6 +319,22 @@ export async function PATCH(
     console.error("CANCEL BOOKING ERROR");
     console.error(error);
     console.error("========================================");
+
+    if (
+      error instanceof Error &&
+      error.message === "BOOKING_ALREADY_CANCELLED"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Booking cannot be cancelled because its status is CANCELLED.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
 
     return NextResponse.json(
       {

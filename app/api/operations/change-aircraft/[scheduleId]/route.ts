@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { requireOperationsStaff } from "../../../../lib/authorization";
+import { syncAvailableSeatsToHeldBookings } from "../../../../lib/scheduleInventory";
 
 export async function PATCH(
   request: NextRequest,
@@ -347,26 +348,10 @@ export async function PATCH(
         },
       });
 
-      const availableSeatCount = await tx.seat.count({
-        where: {
-          scheduleId,
-          status: "AVAILABLE",
-        },
-      });
-
-      // ------------------------------------------------------
-      // Update Available Seats
-      // ------------------------------------------------------
-
-      await tx.flightSchedule.update({
-        where: {
-          id: scheduleId,
-        },
-
-        data: {
-          availableSeats: availableSeatCount,
-        },
-      });
+      const availableSeatCount = await syncAvailableSeatsToHeldBookings(
+        tx,
+        scheduleId
+      );
 
       return {
         seatCount,

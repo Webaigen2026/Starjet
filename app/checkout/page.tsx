@@ -16,6 +16,7 @@ import { authOptions } from "../api/auth/[...nextauth]/route";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { authorizeBookingAccess } from "../lib/authorization";
+import { expireUnpaidReservation } from "../lib/reservationLifecycle";
 import { prisma } from "../lib/prisma";
 
 /* =========================================================
@@ -49,9 +50,7 @@ export default async function CheckoutPage({
     redirect("/login");
   }
 
-  /* =======================================================
-     FETCH BOOKING FROM DATABASE
-  ======================================================= */
+  await expireUnpaidReservation(prisma, bookingId);
 
   const booking = await prisma.booking.findUnique({
     where: {
@@ -84,6 +83,10 @@ export default async function CheckoutPage({
   });
 
   if (!booking) {
+    notFound();
+  }
+
+  if (booking.status === "FAILED" || booking.status === "CANCELLED") {
     notFound();
   }
 

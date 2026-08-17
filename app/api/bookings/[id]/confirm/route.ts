@@ -4,6 +4,7 @@ import {
   authorizeBookingAccess,
   requireAuthenticatedUser
 } from "../../../../lib/authorization";
+import { expireUnpaidReservation } from "../../../../lib/reservationLifecycle";
 
 export async function PATCH(
   request: NextRequest,
@@ -95,6 +96,41 @@ export async function PATCH(
 
     if (!access.authorized) {
       return access.response;
+    }
+
+    const expiration = await expireUnpaidReservation(prisma, booking.id);
+
+    const currentBooking =
+      expiration === "expired"
+        ? await prisma.booking.findUnique({
+            where: {
+              id: booking.id,
+            },
+            include: {
+              schedule: true,
+              passengers: {
+                include: {
+                  seat: true,
+                },
+              },
+              seats: true,
+              payments: true,
+              user: true,
+            },
+          })
+        : booking;
+
+    if (!currentBooking || currentBooking.status === "FAILED") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "This reservation has expired and can no longer be confirmed.",
+        },
+        {
+          status: 409,
+        }
+      );
     }
 
     // ====================================================

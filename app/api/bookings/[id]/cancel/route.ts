@@ -4,7 +4,7 @@ import {
   authorizeBookingAccess,
   requireAuthenticatedUser
 } from "../../../../lib/authorization";
-import { releaseScheduleSeats } from "../../../../lib/scheduleInventory";
+import { claimAndReleaseInventory } from "../../../../lib/reservationLifecycle";
 
 export async function PATCH(
   request: NextRequest,
@@ -67,6 +67,7 @@ export async function PATCH(
       "BOARDED",
       "COMPLETED",
       "CANCELLED",
+      "FAILED",
     ];
 
     if (nonCancellableBookingStatuses.includes(booking.status)) {
@@ -138,45 +139,31 @@ export async function PATCH(
       // Cancel Booking once. Concurrent cancels lose here.
       // ------------------------------------------------------
 
-      const cancelled = await tx.booking.updateMany({
-        where: {
+      const claimed = await claimAndReleaseInventory(tx, {
+        bookingId: booking.id,
+        scheduleId: booking.scheduleId,
+        passengersCount: booking.passengersCount,
+        fromWhere: {
           id: booking.id,
           status: {
-            notIn: ["CANCELLED", "BOARDED", "COMPLETED"],
+            notIn: [
+              "CANCELLED",
+              "BOARDED",
+              "COMPLETED",
+              "FAILED",
+            ],
           },
         },
-        data: {
-          status: "CANCELLED",
-
-          // Only mark the booking as refunded when an actual
-          // PAID payment exists.
-          ...(hasPaidPayment
-            ? {
-                paymentStatus: "REFUNDED",
-              }
-            : {}),
-        },
+        toStatus: "CANCELLED",
+        extraData: hasPaidPayment
+          ? {
+              paymentStatus: "REFUNDED",
+            }
+          : undefined,
       });
 
-      if (cancelled.count !== 1) {
+      if (claimed !== "won") {
         throw new Error("BOOKING_ALREADY_CANCELLED");
-      }
-
-      // ------------------------------------------------------
-      // Release Assigned Seats
-      // ------------------------------------------------------
-
-      if (releasedSeatCount > 0) {
-        await tx.seat.updateMany({
-          where: {
-            bookingId: booking.id,
-          },
-          data: {
-            bookingId: null,
-            passengerId: null,
-            status: "AVAILABLE",
-          },
-        });
       }
 
       // ------------------------------------------------------
@@ -202,19 +189,6 @@ export async function PATCH(
           },
         });
       }
-
-      // ------------------------------------------------------
-      // Release aggregate inventory exactly once.
-      // Do not recount from Seat rows — those may not exist,
-      // and assigned-seat count can be smaller than the
-      // passengers reserved at booking creation.
-      // ------------------------------------------------------
-
-      await releaseScheduleSeats(
-        tx,
-        booking.scheduleId,
-        booking.passengersCount
-      );
     });
 
     // --------------------------------------------------------

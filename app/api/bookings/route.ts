@@ -9,6 +9,10 @@ import {
   InsufficientInventoryError,
   reserveScheduleSeats,
 } from "../../lib/scheduleInventory";
+import {
+  calculateReservationExpiresAt,
+  expireExpiredDraftsOnSchedules,
+} from "../../lib/reservationLifecycle";
 
 /* =========================================================
    TYPES
@@ -680,7 +684,14 @@ export async function POST(request: NextRequest) {
     }
 
     /* Inventory is reserved atomically inside the
-       transaction. A pre-read here is not authoritative. */
+       transaction. A pre-read here is not authoritative.
+       Stale DRAFT holds on this schedule are expired first
+       in a bounded batch so abandoned reservations can
+       free seats before a new booking attempts reserve. */
+
+    await expireExpiredDraftsOnSchedules(prisma, [
+      schedule.id,
+    ]);
 
     /* =====================================================
        FARE
@@ -856,6 +867,9 @@ export async function POST(request: NextRequest) {
 
                 paymentStatus:
                   "PENDING",
+
+                reservationExpiresAt:
+                  calculateReservationExpiresAt(),
               },
             });
 

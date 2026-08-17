@@ -60,6 +60,7 @@ model Booking {
 
   status                  BookingStatus @default(DRAFT)
   paymentStatus           PaymentStatus @default(PENDING)
+  reservationExpiresAt    DateTime?
 
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt

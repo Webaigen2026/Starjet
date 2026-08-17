@@ -8,6 +8,7 @@ import {
   calculateBookingTotal,
   calculateTravelProtectionAmount,
 } from "../../../../lib/bookingPricing";
+import { expireUnpaidReservation } from "../../../../lib/reservationLifecycle";
 
 type RouteProps = {
   params: Promise<{
@@ -52,6 +53,21 @@ export async function PATCH(
 
     if (!access.authorized) {
       return access.response;
+    }
+
+    const expiration = await expireUnpaidReservation(prisma, booking.id);
+
+    if (expiration === "expired" || booking.status === "FAILED") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "This reservation has expired and can no longer be updated.",
+        },
+        {
+          status: 409,
+        }
+      );
     }
 
     const travelProtection =

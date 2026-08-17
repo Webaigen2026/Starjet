@@ -12,6 +12,7 @@ import {
 
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import { authorizeBookingAccess } from "../lib/authorization";
+import { expireUnpaidReservation } from "../lib/reservationLifecycle";
 import prisma from "../lib/prisma";
 import ReviewActions from "./ReviewActions";
 
@@ -145,18 +146,7 @@ export default async function ReviewPage({
     redirect("/login");
   }
 
-  /* =======================================================
-     LOAD COMPLETE BOOKING
-
-     Booking
-       -> passengers
-       -> schedule
-           -> route
-               -> airline
-               -> originAirport
-               -> destinationAirport
-           -> aircraft
-  ======================================================= */
+  await expireUnpaidReservation(prisma, bookingId);
 
   const booking = await prisma.booking.findUnique({
     where: {
@@ -187,6 +177,10 @@ export default async function ReviewPage({
   });
 
   if (!booking) {
+    redirect("/flights");
+  }
+
+  if (booking.status === "FAILED" || booking.status === "CANCELLED") {
     redirect("/flights");
   }
 

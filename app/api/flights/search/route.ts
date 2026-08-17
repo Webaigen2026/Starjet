@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import { expireExpiredDraftsOnSchedules } from "../../../lib/reservationLifecycle";
 
 export async function GET(request: Request) {
   try {
@@ -107,6 +108,47 @@ export async function GET(request: Request) {
     // =====================================================
     // SEARCH REAL FLIGHT SCHEDULES
     // =====================================================
+
+    const candidateSchedules =
+      await prisma.flightSchedule.findMany({
+        where: {
+          departureTime: {
+            gte: startDate,
+            lte: endDate,
+          },
+
+          status: "SCHEDULED",
+
+          route: {
+            isActive: true,
+
+            originAirport: {
+              iataCode: originCode,
+            },
+
+            destinationAirport: {
+              iataCode: destinationCode,
+            },
+
+            airline: {
+              isActive: true,
+            },
+          },
+
+          aircraft: {
+            status: "ACTIVE",
+          },
+        },
+        select: {
+          id: true,
+        },
+        take: 100,
+      });
+
+    await expireExpiredDraftsOnSchedules(
+      prisma,
+      candidateSchedules.map((schedule) => schedule.id)
+    );
 
     const schedules =
       await prisma.flightSchedule.findMany({

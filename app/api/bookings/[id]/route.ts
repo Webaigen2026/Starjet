@@ -4,6 +4,10 @@ import {
   authorizeBookingAccess,
   requireAuthenticatedUser,
 } from "../../../lib/authorization";
+import {
+  expireUnpaidReservation,
+  requestTouchesLifecycleStatus,
+} from "../../../lib/reservationLifecycle";
 
 type RouteProps = {
   params: Promise<{
@@ -27,6 +31,8 @@ export async function GET(
     }
 
     const { id } = await params;
+
+    await expireUnpaidReservation(prisma, id);
 
     const booking =
       await prisma.booking.findUnique({
@@ -153,8 +159,18 @@ export async function PATCH(
       return access.response;
     }
 
-    const isStaff =
-      auth.user.role === "ADMIN" || auth.user.role === "STAFF";
+    if (requestTouchesLifecycleStatus(body)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Booking status and paymentStatus cannot be changed on this endpoint. Use the dedicated cancel, confirm, or operations routes.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
 
     /* =====================================================
        BUILD BOOKING UPDATE
@@ -167,34 +183,12 @@ export async function PATCH(
     ===================================================== */
 
     const bookingUpdateData: {
-      status?: typeof existingBooking.status;
-
-      paymentStatus?: typeof existingBooking.paymentStatus;
-
       customerName?: string;
 
       customerEmail?: string;
 
       customerPhone?: string | null;
     } = {};
-
-    /* -----------------------------------------------------
-       EXISTING ADMIN STATUS LOGIC
-    ----------------------------------------------------- */
-
-    if (isStaff && body.status !== undefined) {
-      bookingUpdateData.status =
-        body.status;
-    }
-
-    if (
-      isStaff &&
-      body.paymentStatus !==
-      undefined
-    ) {
-      bookingUpdateData.paymentStatus =
-        body.paymentStatus;
-    }
 
     /* -----------------------------------------------------
        CONTACT EDIT LOGIC

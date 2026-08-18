@@ -5,6 +5,7 @@ import {
   requireAuthenticatedUser
 } from "../../../../lib/authorization";
 import { expireUnpaidReservation } from "../../../../lib/reservationLifecycle";
+import { bookingHasPaidCapture } from "../../../../lib/checkoutSession";
 
 export async function PATCH(
   request: NextRequest,
@@ -126,6 +127,19 @@ export async function PATCH(
           success: false,
           message:
             "This reservation has expired and can no longer be confirmed.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    if (!bookingHasPaidCapture(currentBooking)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Booking cannot be confirmed until payment is completed.",
         },
         {
           status: 409,

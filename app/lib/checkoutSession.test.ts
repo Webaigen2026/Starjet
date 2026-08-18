@@ -1,0 +1,668 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
+import { authorizeBookingAccess } from "./authorization";
+import {
+  bookingHasPaidCapture,
+  getCheckoutIdempotencyKey,
+  getPaymentStartRejection,
+  isReusableCheckoutSession,
+  isUniqueConstraintError,
+  PaymentStartError,
+  PENDING_STRIPE_UNIQUE_INDEX,
+  startBookingCheckoutSession,
+  type PaymentAttempt,
+  type PaymentStartBooking,
+  type StripeCheckoutSessionView,
+} from "./checkoutSession";
+import {
+  resolveChargeFromBooking,
+  toUsdCents,
+} from "./stripeMoney";
+
+const root = path.join(import.meta.dirname, "..", "..");
+
+function readProjectFile(relativePath: string) {
+  return readFileSync(path.join(root, relativePath), "utf8");
+}
+
+function draftBooking(
+  overrides: Partial<PaymentStartBooking> = {}
+): PaymentStartBooking {
+  return {
+    id: "booking-1",
+    bookingCode: "BK123",
+    status: "DRAFT",
+    paymentStatus: "PENDING",
+    reservationExpiresAt: new Date("2026-08-17T21:20:00.000Z"),
+    totalAmount: "123.45",
+    currency: "USD",
+    payments: [],
+    ...overrides,
+  };
+}
+
+describe("checkout authorization boundaries", () => {
+  it("wrong owner cannot start payment", () => {
+    const access = authorizeBookingAccess(
+      { id: "user-2", role: "CUSTOMER" },
+      { userId: "user-1" }
+    );
+
+    assert.equal(access.authorized, false);
+  });
+
+  it("userId:null cannot be claimed by email", () => {
+    const access = authorizeBookingAccess(
+      {
+        id: "user-1",
+        role: "CUSTOMER",
+        email: "guest@example.com",
+      } as { id?: string; role?: "CUSTOMER" },
+      { userId: null }
+    );
+
+    assert.equal(access.authorized, false);
+  });
+});
+
+describe("checkout eligibility", () => {
+  const now = new Date("2026-08-17T21:16:00.000Z");
+
+  it("rejects an expired DRAFT booking", () => {
+    const rejection = getPaymentStartRejection(
+      draftBooking({
+        reservationExpiresAt: new Date("2026-08-17T21:00:00.000Z"),
+      }),
+      now
+    );
+
+    assert.equal(rejection?.status, 409);
+  });
+
+  it("rejects FAILED bookings", () => {
+    const rejection = getPaymentStartRejection(
+      draftBooking({ status: "FAILED" }),
+      now
+    );
+
+    assert.equal(rejection?.status, 409);
+  });
+
+  it("rejects CANCELLED bookings", () => {
+    const rejection = getPaymentStartRejection(
+      draftBooking({ status: "CANCELLED" }),
+      now
+    );
+
+    assert.equal(rejection?.status, 409);
+  });
+
+  it("rejects CONFIRMED bookings", () => {
+    const rejection = getPaymentStartRejection(
+      draftBooking({ status: "CONFIRMED" }),
+      now
+    );
+
+    assert.equal(rejection?.status, 409);
+  });
+
+  it("rejects already-paid bookings", () => {
+    const rejection = getPaymentStartRejection(
+      draftBooking({ paymentStatus: "PAID" }),
+      now
+    );
+
+    assert.equal(rejection?.status, 409);
+  });
+
+  it("rejects when a PAID Payment row already exists", () => {
+    const rejection = getPaymentStartRejection(
+      draftBooking({
+        payments: [
+          {
+            id: "pay-paid",
+            status: "PAID",
+            provider: "STRIPE",
+            providerRef: "cs_paid",
+          },
+        ],
+      }),
+      now
+    );
+
+    assert.equal(rejection?.status, 409);
+  });
+});
+
+describe("pricing authority", () => {
+  it("uses Booking.totalAmount and Booking.currency", () => {
+    const charge = resolveChargeFromBooking({
+      totalAmount: "123.45",
+      currency: "USD",
+    });
+
+    assert.equal(charge.amount, "123.45");
+    assert.equal(charge.currency, "USD");
+    assert.equal(charge.amountCents, 12345);
+  });
+
+  it("ignores a request amount override", () => {
+    const charge = resolveChargeFromBooking(
+      {
+        totalAmount: "80.00",
+        currency: "USD",
+      },
+      {
+        amount: 1,
+        totalAmount: "1.00",
+      }
+    );
+
+    assert.equal(charge.amount, "80.00");
+    assert.equal(charge.amountCents, 8000);
+  });
+
+  it("ignores a request currency override", () => {
+    const charge = resolveChargeFromBooking(
+      {
+        totalAmount: "80.00",
+        currency: "USD",
+      },
+      {
+        currency: "EUR",
+      }
+    );
+
+    assert.equal(charge.currency, "USD");
+  });
+
+  it("converts Decimal USD amounts to cents exactly", () => {
+    assert.equal(toUsdCents("123.45"), 12345);
+    assert.equal(toUsdCents("0.01"), 1);
+    assert.equal(toUsdCents("100"), 10000);
+    assert.equal(toUsdCents("123.45000"), 12345);
+  });
+});
+
+describe("startBookingCheckoutSession", () => {
+  const now = new Date("2026-08-17T21:10:00.000Z");
+
+  function createPayments(initial: PaymentAttempt[] = []) {
+    const rows = [...initial];
+    const writes: Array<{ op: string; data: Record<string, unknown> }> = [];
+    let created = 0;
+
+    function uniqueError() {
+      return Object.assign(new Error("Unique constraint failed"), {
+        code: "P2002",
+        meta: {
+          target: [PENDING_STRIPE_UNIQUE_INDEX],
+        },
+      });
+    }
+
+    return {
+      rows,
+      writes,
+      store: {
+        create: async ({
+          data,
+        }: {
+          data: {
+            bookingId: string;
+            amount: unknown;
+            currency: string;
+            status: string;
+            provider: string;
+          };
+        }) => {
+          const pendingExists = rows.some(
+            (payment) =>
+              payment.status === "PENDING" &&
+              payment.provider === "STRIPE" &&
+              payment.bookingId === data.bookingId
+          );
+
+          if (
+            pendingExists &&
+            data.status === "PENDING" &&
+            data.provider === "STRIPE"
+          ) {
+            throw uniqueError();
+          }
+
+          created += 1;
+          const row: PaymentAttempt = {
+            id: `pay-${created}`,
+            bookingId: data.bookingId,
+            status: data.status,
+            provider: data.provider,
+            providerRef: null,
+            amount: data.amount,
+            currency: data.currency,
+          };
+
+          assert.equal(data.status, "PENDING");
+          writes.push({ op: "create", data: { ...data } });
+          rows.push(row);
+          return row;
+        },
+        update: async ({
+          where,
+          data,
+        }: {
+          where: { id: string };
+          data: Record<string, unknown>;
+        }) => {
+          assert.notEqual(data.status, "PAID");
+          writes.push({ op: "update", data });
+
+          const row = rows.find((payment) => payment.id === where.id);
+
+          assert.ok(row);
+          Object.assign(row, data);
+          return row;
+        },
+        findFirst: async ({
+          where,
+        }: {
+          where: { bookingId: string; status: string; provider: string };
+        }) => {
+          return (
+            rows.find(
+              (payment) =>
+                payment.bookingId === where.bookingId &&
+                payment.status === where.status &&
+                payment.provider === where.provider
+            ) ?? null
+          );
+        },
+      },
+    };
+  }
+
+  function createStripe(session: StripeCheckoutSessionView) {
+    let created = 0;
+    const retrieves: string[] = [];
+    const creates: Array<{
+      params: Record<string, unknown>;
+      options?: { idempotencyKey?: string };
+    }> = [];
+
+    return {
+      retrieves,
+      creates,
+      createdCount: () => created,
+      checkout: {
+        sessions: {
+          retrieve: async (id: string) => {
+            retrieves.push(id);
+            return session;
+          },
+          create: async (
+            params: Record<string, unknown>,
+            options?: { idempotencyKey?: string }
+          ) => {
+            created += 1;
+            creates.push({ params, options });
+            return {
+              id: "cs_new",
+              url: "https://checkout.stripe.test/cs_new",
+              status: "open",
+              payment_status: "unpaid",
+            };
+          },
+        },
+      },
+    };
+  }
+
+  it("creates a PENDING payment and does not mark money successful", async () => {
+    const payments = createPayments();
+    const stripe = createStripe({
+      id: "cs_open",
+      url: "https://checkout.stripe.test/cs_open",
+      status: "open",
+      payment_status: "unpaid",
+    });
+
+    const result = await startBookingCheckoutSession({
+      payments: payments.store,
+      stripe,
+      booking: draftBooking(),
+      origin: "http://localhost:3000",
+      now,
+    });
+
+    assert.equal(result.reused, false);
+    assert.equal(result.sessionId, "cs_new");
+    assert.equal(payments.rows[0]?.status, "PENDING");
+    assert.equal(payments.rows[0]?.providerRef, "cs_new");
+    assert.equal(payments.rows[0]?.amount, "123.45");
+    assert.equal(payments.rows[0]?.currency, "USD");
+
+    const lineItems = stripe.creates[0]?.params.line_items as Array<{
+      price_data: { unit_amount: number; currency: string };
+    }>;
+    assert.equal(lineItems[0]?.price_data.unit_amount, 12345);
+    assert.equal(lineItems[0]?.price_data.currency, "usd");
+    assert.equal(
+      stripe.creates[0]?.options?.idempotencyKey,
+      getCheckoutIdempotencyKey("booking-1", "pay-1")
+    );
+
+    assert.equal(
+      payments.writes.some((write) => write.data.status === "PAID"),
+      false
+    );
+    assert.equal(
+      JSON.stringify(payments.writes).includes("CONFIRMED"),
+      false
+    );
+  });
+
+  it("reuses a still-open unpaid Stripe session", async () => {
+    const pending: PaymentAttempt = {
+      id: "pay-existing",
+      bookingId: "booking-1",
+      status: "PENDING",
+      provider: "STRIPE",
+      providerRef: "cs_open",
+    };
+    const payments = createPayments([pending]);
+    const stripe = createStripe({
+      id: "cs_open",
+      url: "https://checkout.stripe.test/cs_open",
+      status: "open",
+      payment_status: "unpaid",
+    });
+
+    const result = await startBookingCheckoutSession({
+      payments: payments.store,
+      stripe,
+      booking: draftBooking({ payments: [pending] }),
+      origin: "http://localhost:3000",
+      now,
+    });
+
+    assert.equal(result.reused, true);
+    assert.equal(result.sessionId, "cs_open");
+    assert.equal(result.url, "https://checkout.stripe.test/cs_open");
+    assert.equal(stripe.createdCount(), 0);
+    assert.equal(payments.rows.length, 1);
+  });
+
+  it("does not reuse an expired Stripe session and allows a new PENDING attempt", async () => {
+    const pending: PaymentAttempt = {
+      id: "pay-old",
+      bookingId: "booking-1",
+      status: "PENDING",
+      provider: "STRIPE",
+      providerRef: "cs_expired",
+    };
+    const payments = createPayments([pending]);
+    const stripe = createStripe({
+      id: "cs_expired",
+      url: null,
+      status: "expired",
+      payment_status: "unpaid",
+    });
+
+    const result = await startBookingCheckoutSession({
+      payments: payments.store,
+      stripe,
+      booking: draftBooking({ payments: [pending] }),
+      origin: "http://localhost:3000",
+      now,
+    });
+
+    assert.equal(isReusableCheckoutSession({
+      id: "cs_expired",
+      status: "expired",
+      payment_status: "unpaid",
+    }), false);
+    assert.equal(result.reused, false);
+    assert.equal(result.sessionId, "cs_new");
+    assert.equal(payments.rows[0]?.status, "FAILED");
+    assert.equal(payments.rows[1]?.status, "PENDING");
+    assert.equal(payments.rows[1]?.providerRef, "cs_new");
+  });
+
+  it("does not return 500 when a unique PENDING race is lost", async () => {
+    const winner: PaymentAttempt = {
+      id: "pay-winner",
+      bookingId: "booking-1",
+      status: "PENDING",
+      provider: "STRIPE",
+      providerRef: "cs_open",
+    };
+    const payments = createPayments([winner]);
+    const stripe = createStripe({
+      id: "cs_open",
+      url: "https://checkout.stripe.test/cs_open",
+      status: "open",
+      payment_status: "unpaid",
+    });
+
+    const result = await startBookingCheckoutSession({
+      payments: payments.store,
+      stripe,
+      booking: draftBooking({ payments: [] }),
+      origin: "http://localhost:3000",
+      now,
+    });
+
+    assert.equal(result.reused, true);
+    assert.equal(result.sessionId, "cs_open");
+    assert.equal(stripe.createdCount(), 0);
+  });
+
+  it("does not create a second Stripe Session after losing the unique race", async () => {
+    const winner: PaymentAttempt = {
+      id: "pay-winner",
+      bookingId: "booking-1",
+      status: "PENDING",
+      provider: "STRIPE",
+      providerRef: "cs_open",
+    };
+    const payments = createPayments([winner]);
+    const stripe = createStripe({
+      id: "cs_open",
+      url: "https://checkout.stripe.test/cs_open",
+      status: "open",
+      payment_status: "unpaid",
+    });
+
+    await startBookingCheckoutSession({
+      payments: payments.store,
+      stripe,
+      booking: draftBooking({ payments: [] }),
+      origin: "http://localhost:3000",
+      now,
+    });
+
+    assert.equal(
+      payments.rows.filter((payment) => payment.status === "PENDING").length,
+      1
+    );
+    assert.equal(stripe.createdCount(), 0);
+  });
+
+  it("handles a PENDING attempt that still has providerRef = null", async () => {
+    const initializing: PaymentAttempt = {
+      id: "pay-init",
+      bookingId: "booking-1",
+      status: "PENDING",
+      provider: "STRIPE",
+      providerRef: null,
+    };
+    const payments = createPayments([initializing]);
+    const stripe = createStripe({
+      id: "cs_open",
+      url: "https://checkout.stripe.test/cs_open",
+      status: "open",
+      payment_status: "unpaid",
+    });
+
+    await assert.rejects(
+      () =>
+        startBookingCheckoutSession({
+          payments: payments.store,
+          stripe,
+          booking: draftBooking({ payments: [initializing] }),
+          origin: "http://localhost:3000",
+          now,
+        }),
+      (error: unknown) => {
+        assert.equal(error instanceof PaymentStartError, true);
+        assert.equal((error as PaymentStartError).status, 409);
+        return true;
+      }
+    );
+
+    assert.equal(stripe.createdCount(), 0);
+    assert.equal(payments.rows[0]?.status, "PENDING");
+    assert.equal(payments.rows[0]?.providerRef, null);
+  });
+
+  it("fails a PENDING attempt if Stripe Session creation throws", async () => {
+    const payments = createPayments();
+    const stripe = createStripe({
+      id: "cs_open",
+      url: "https://checkout.stripe.test/cs_open",
+      status: "open",
+      payment_status: "unpaid",
+    });
+
+    stripe.checkout.sessions.create = async () => {
+      throw new Error("stripe down");
+    };
+
+    await assert.rejects(
+      () =>
+        startBookingCheckoutSession({
+          payments: payments.store,
+          stripe,
+          booking: draftBooking(),
+          origin: "http://localhost:3000",
+          now,
+        }),
+      (error: unknown) => {
+        assert.equal(error instanceof PaymentStartError, true);
+        assert.equal((error as PaymentStartError).status, 502);
+        return true;
+      }
+    );
+
+    assert.equal(payments.rows[0]?.status, "FAILED");
+    assert.equal(payments.rows[0]?.providerRef, null);
+  });
+
+  it("allows a new PENDING attempt after a failed Stripe Session create", async () => {
+    const payments = createPayments();
+    const failingStripe = createStripe({
+      id: "cs_open",
+      url: "https://checkout.stripe.test/cs_open",
+      status: "open",
+      payment_status: "unpaid",
+    });
+    failingStripe.checkout.sessions.create = async () => {
+      throw new Error("stripe down");
+    };
+
+    await assert.rejects(() =>
+      startBookingCheckoutSession({
+        payments: payments.store,
+        stripe: failingStripe,
+        booking: draftBooking(),
+        origin: "http://localhost:3000",
+        now,
+      })
+    );
+
+    const stripe = createStripe({
+      id: "cs_new",
+      url: "https://checkout.stripe.test/cs_new",
+      status: "open",
+      payment_status: "unpaid",
+    });
+
+    const result = await startBookingCheckoutSession({
+      payments: payments.store,
+      stripe,
+      booking: draftBooking({ payments: [...payments.rows] }),
+      origin: "http://localhost:3000",
+      now,
+    });
+
+    assert.equal(result.reused, false);
+    assert.equal(payments.rows[0]?.status, "FAILED");
+    assert.equal(payments.rows[1]?.status, "PENDING");
+    assert.equal(payments.rows[1]?.providerRef, "cs_new");
+  });
+});
+
+describe("payment attempt database integrity", () => {
+  it("migration allows multiple FAILED attempts and blocks two PENDING Stripe attempts", () => {
+    const sql = readProjectFile(
+      "prisma/migrations/20260817224500_payment_attempt_integrity/migration.sql"
+    );
+
+    assert.equal(sql.includes('CREATE UNIQUE INDEX "Payment_one_pending_stripe_attempt"'), true);
+    assert.equal(sql.includes('ON "Payment" ("bookingId")'), true);
+    assert.equal(sql.includes('status = \'PENDING\'::"PaymentStatus"'), true);
+    assert.equal(sql.includes("provider = 'STRIPE'"), true);
+    assert.equal(sql.includes('CREATE UNIQUE INDEX "Payment_providerRef_key"'), true);
+    assert.equal(sql.includes('ON "Payment"("providerRef")'), true);
+    assert.equal(sql.includes('@@unique([bookingId, status])'), false);
+    assert.match(sql, /duplicate PENDING STRIPE payments exist/);
+  });
+
+  it("treats Prisma unique violations as a controlled race, not an unknown 500", () => {
+    assert.equal(
+      isUniqueConstraintError({ code: "P2002" }),
+      true
+    );
+    assert.equal(
+      isUniqueConstraintError({ code: "23505" }),
+      true
+    );
+    assert.equal(isUniqueConstraintError(new Error("boom")), false);
+  });
+});
+
+describe("unpaid confirmation and retired payment POST", () => {
+  it("treats unpaid DRAFT as not capturable", () => {
+    assert.equal(
+      bookingHasPaidCapture({
+        paymentStatus: "PENDING",
+        payments: [],
+      }),
+      false
+    );
+  });
+
+  it("blocks unpaid customer confirmation in the confirm route", () => {
+    const confirm = readProjectFile(
+      "app/api/bookings/[id]/confirm/route.ts"
+    );
+
+    assert.equal(confirm.includes("bookingHasPaidCapture"), true);
+    assert.equal(
+      confirm.includes(
+        "Booking cannot be confirmed until payment is completed."
+      ),
+      true
+    );
+  });
+
+  it("retires POST /api/payments so it cannot create payment rows", () => {
+    const payments = readProjectFile("app/api/payments/route.ts");
+
+    assert.equal(payments.includes("prisma.payment.create"), false);
+    assert.equal(payments.includes("status: 410"), true);
+  });
+});

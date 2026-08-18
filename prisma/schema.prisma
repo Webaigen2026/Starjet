@@ -118,10 +118,14 @@ model Payment {
   currency    String        @default("USD")
   status      PaymentStatus @default(PENDING)
   provider    String        @default("STRIPE")
-  providerRef String?
+  // Unique when non-null. PostgreSQL allows multiple NULL providerRef rows.
+  providerRef String?       @unique
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   booking     Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  // Prisma cannot express a partial unique index. SQL migration adds:
+  // UNIQUE ("bookingId") WHERE status = PENDING AND provider = STRIPE
 }
 
 model Flight {

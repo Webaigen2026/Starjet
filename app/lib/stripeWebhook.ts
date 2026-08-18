@@ -35,6 +35,7 @@ export type StripeCheckoutSessionLike = {
   amount_total?: number | null;
   currency?: string | null;
   metadata?: Record<string, string> | null;
+  payment_intent?: unknown;
 };
 
 export type StripeEventLike = {
@@ -49,6 +50,7 @@ export type WebhookPaymentRow = {
   bookingId: string;
   status: string;
   providerRef: string | null;
+  stripePaymentIntentId?: string | null;
   amount: unknown;
   currency: string;
 };
@@ -171,6 +173,32 @@ export function expiredDraftWhere(
   };
 }
 
+export function isValidStripePaymentIntentId(value: string): boolean {
+  return /^pi_[A-Za-z0-9]+$/.test(value);
+}
+
+export function extractCheckoutPaymentIntentId(
+  session: StripeCheckoutSessionLike
+): string | null {
+  const value = session.payment_intent;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return isValidStripePaymentIntentId(trimmed) ? trimmed : null;
+  }
+
+  if (value && typeof value === "object" && "id" in value) {
+    const id = (value as { id?: unknown }).id;
+
+    if (typeof id === "string") {
+      const trimmed = id.trim();
+      return isValidStripePaymentIntentId(trimmed) ? trimmed : null;
+    }
+  }
+
+  return null;
+}
+
 export function asCheckoutSession(
   value: unknown
 ): StripeCheckoutSessionLike | null {
@@ -251,16 +279,35 @@ function isPaidPaymentSession(session: StripeCheckoutSessionLike): boolean {
   return session.mode === "payment" && session.payment_status === "paid";
 }
 
+export class StripeWebhookRetryError extends Error {
+  code: string;
+
+  constructor(code: string) {
+    super(code);
+    this.name = "StripeWebhookRetryError";
+    this.code = code;
+  }
+}
+
 function logWebhookIntegrity(code: string, details: Record<string, unknown>) {
   console.error(code, details);
+}
+
+function failPaidCaptureForRetry(
+  code: string,
+  details: Record<string, unknown>
+): never {
+  logWebhookIntegrity(code, details);
+  throw new StripeWebhookRetryError(code);
 }
 
 async function markExactPaymentPaid(
   tx: StripeWebhookTx,
   payment: WebhookPaymentRow,
-  sessionId: string
+  sessionId: string,
+  paymentIntentId: string
 ) {
-  await tx.payment.updateMany({
+  const captured = await tx.payment.updateMany({
     where: {
       id: payment.id,
       providerRef: sessionId,
@@ -270,6 +317,23 @@ async function markExactPaymentPaid(
     },
     data: {
       status: "PAID",
+      stripePaymentIntentId: paymentIntentId,
+    },
+  });
+
+  if (captured.count === 1) {
+    return;
+  }
+
+  await tx.payment.updateMany({
+    where: {
+      id: payment.id,
+      providerRef: sessionId,
+      status: "PAID",
+      stripePaymentIntentId: null,
+    },
+    data: {
+      stripePaymentIntentId: paymentIntentId,
     },
   });
 }
@@ -352,9 +416,15 @@ async function applyVerifiedPaidSession(
   now: Date,
   options: {
     fulfillable: boolean;
+    paymentIntentId: string;
   }
 ) {
-  await markExactPaymentPaid(tx, payment, session.id);
+  await markExactPaymentPaid(
+    tx,
+    payment,
+    session.id,
+    options.paymentIntentId
+  );
 
   const current =
     (await tx.booking.findUnique({
@@ -437,6 +507,16 @@ async function processPaidCheckoutSession(
   }
 
   const { booking, ...payment } = paymentWithBooking;
+  const paymentIntentId = extractCheckoutPaymentIntentId(session);
+
+  if (!paymentIntentId) {
+    failPaidCaptureForRetry("STRIPE_WEBHOOK_MISSING_PAYMENT_INTENT", {
+      sessionId: session.id,
+      paymentId: payment.id,
+      bookingId: payment.bookingId,
+    });
+  }
+
   const metadataConflict = sessionMetadataConflictsWithPayment(
     session,
     payment
@@ -478,6 +558,17 @@ async function processPaidCheckoutSession(
       return;
     }
 
+    if (
+      lockedPayment.stripePaymentIntentId &&
+      lockedPayment.stripePaymentIntentId !== paymentIntentId
+    ) {
+      failPaidCaptureForRetry("STRIPE_WEBHOOK_PAYMENT_INTENT_CONFLICT", {
+        sessionId: session.id,
+        paymentId: lockedPayment.id,
+        bookingId: lockedPayment.bookingId,
+      });
+    }
+
     const lockedBooking = await tx.booking.findUnique({
       where: {
         id: booking.id,
@@ -496,6 +587,7 @@ async function processPaidCheckoutSession(
       now,
       {
         fulfillable,
+        paymentIntentId,
       }
     );
   });

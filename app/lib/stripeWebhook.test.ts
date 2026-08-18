@@ -8,11 +8,14 @@ import {
   asCheckoutSession,
   confirmableDraftWhere,
   expiredDraftWhere,
+  extractCheckoutPaymentIntentId,
   handleStripeWebhookRequest,
   isReservationHoldOpen,
+  isValidStripePaymentIntentId,
   processStripeWebhookEvent,
   sessionMatchesAuthoritativeCharge,
   sessionMetadataConflictsWithPayment,
+  StripeWebhookRetryError,
   type StripeCheckoutSessionLike,
   type StripeEventLike,
   type StripeWebhookStore,
@@ -139,6 +142,7 @@ function createWorld(options?: {
       bookingId: booking.id,
       status: "PENDING",
       providerRef: "cs_1",
+      stripePaymentIntentId: null,
       amount: "123.45",
       currency: "USD",
     },
@@ -375,6 +379,7 @@ function paidSession(
     payment_status: "paid",
     amount_total: 12345,
     currency: "usd",
+    payment_intent: "pi_1",
     metadata: {
       paymentId: "pay-1",
       bookingId: "booking-1",
@@ -405,6 +410,28 @@ async function deliverPaid(
     world.store,
     stripeEvent(eventType, session),
     now
+  );
+}
+
+async function postPaidWebhook(
+  world: World,
+  session: StripeCheckoutSessionLike = paidSession(),
+  eventType = "checkout.session.completed"
+) {
+  return handleStripeWebhookRequest(
+    new Request("http://localhost/api/webhooks/stripe", {
+      method: "POST",
+      headers: {
+        "stripe-signature": "sig_test",
+      },
+      body: "{}",
+    }),
+    {
+      getWebhookSecret: () => "whsec_test",
+      constructEvent: () => stripeEvent(eventType, session),
+      processEvent: (event) =>
+        processStripeWebhookEvent(world.store, event, NOW),
+    }
   );
 }
 
@@ -665,6 +692,7 @@ describe("paid checkout session application", () => {
     await deliverPaid(world);
 
     assert.equal(world.payments[0]?.status, "PAID");
+    assert.equal(world.payments[0]?.stripePaymentIntentId, "pi_1");
     assert.equal(world.booking.paymentStatus, "PAID");
     assert.equal(world.booking.status, "CONFIRMED");
     assert.equal(
@@ -691,6 +719,7 @@ describe("paid checkout session application", () => {
     await deliverPaid(world, "checkout.session.async_payment_succeeded");
 
     assert.equal(world.payments[0]?.status, "PAID");
+    assert.equal(world.payments[0]?.stripePaymentIntentId, "pi_1");
     assert.equal(world.booking.status, "CONFIRMED");
     assert.equal(world.decrementOps, 0);
     assert.equal(world.incrementBy, 0);
@@ -1049,6 +1078,230 @@ describe("paid checkout session application", () => {
 
     assert.equal(world.booking.status, "CONFIRMED");
     assert.equal(world.payments[0]?.status, "PAID");
+  });
+});
+
+describe("PaymentIntent identity", () => {
+  let errorSpy: typeof console.error;
+
+  beforeEach(() => {
+    errorSpy = console.error;
+    console.error = () => undefined;
+  });
+
+  afterEach(() => {
+    console.error = errorSpy;
+  });
+
+  it("stores a valid PaymentIntent id on the paid Payment attempt", async () => {
+    const world = createWorld();
+
+    await deliverPaid(
+      world,
+      "checkout.session.completed",
+      paidSession({
+        payment_intent: { id: "pi_expanded" },
+      })
+    );
+
+    assert.equal(isValidStripePaymentIntentId("pi_expanded"), true);
+    assert.equal(world.payments[0]?.id, "pay-1");
+    assert.equal(world.payments[0]?.stripePaymentIntentId, "pi_expanded");
+    assert.equal(world.payments[0]?.status, "PAID");
+  });
+
+  it("attaches the PaymentIntent only to the providerRef Payment", async () => {
+    const world = createWorld({
+      payments: [
+        {
+          id: "pay-1",
+          bookingId: "booking-1",
+          status: "PENDING",
+          providerRef: "cs_1",
+          stripePaymentIntentId: null,
+          amount: "123.45",
+          currency: "USD",
+        },
+        {
+          id: "pay-2",
+          bookingId: "booking-1",
+          status: "FAILED",
+          providerRef: "cs_old",
+          stripePaymentIntentId: null,
+          amount: "123.45",
+          currency: "USD",
+        },
+      ],
+    });
+
+    await deliverPaid(world);
+
+    assert.equal(world.payments[0]?.stripePaymentIntentId, "pi_1");
+    assert.equal(world.payments[1]?.stripePaymentIntentId, null);
+    assert.equal(world.payments[1]?.status, "FAILED");
+  });
+
+  it("stores PaymentIntent on late FAILED capture without resurrecting", async () => {
+    const world = createWorld({
+      booking: {
+        status: "FAILED",
+        reservationExpiresAt: EXPIRED_HOLD,
+      },
+    });
+
+    await deliverPaid(world);
+
+    assert.equal(world.payments[0]?.status, "PAID");
+    assert.equal(world.payments[0]?.stripePaymentIntentId, "pi_1");
+    assert.equal(world.booking.status, "FAILED");
+  });
+
+  it("stores PaymentIntent on cancelled late capture without resurrecting", async () => {
+    const world = createWorld({
+      booking: {
+        status: "CANCELLED",
+      },
+    });
+
+    await deliverPaid(world);
+
+    assert.equal(world.payments[0]?.status, "PAID");
+    assert.equal(world.payments[0]?.stripePaymentIntentId, "pi_1");
+    assert.equal(world.booking.status, "CANCELLED");
+  });
+
+  it("does not mark PAID or confirm when PaymentIntent is missing or invalid", async () => {
+    const missing = createWorld();
+    await assert.rejects(
+      () =>
+        deliverPaid(
+          missing,
+          "checkout.session.completed",
+          paidSession({ payment_intent: null })
+        ),
+      (error: unknown) =>
+        error instanceof StripeWebhookRetryError &&
+        error.code === "STRIPE_WEBHOOK_MISSING_PAYMENT_INTENT"
+    );
+    assert.equal(missing.payments[0]?.status, "PENDING");
+    assert.equal(missing.payments[0]?.stripePaymentIntentId, null);
+    assert.equal(missing.booking.status, "DRAFT");
+
+    const invalid = createWorld();
+    await assert.rejects(
+      () =>
+        deliverPaid(
+          invalid,
+          "checkout.session.completed",
+          paidSession({ payment_intent: "ch_not_a_payment_intent" })
+        ),
+      (error: unknown) =>
+        error instanceof StripeWebhookRetryError &&
+        error.code === "STRIPE_WEBHOOK_MISSING_PAYMENT_INTENT"
+    );
+    assert.equal(invalid.payments[0]?.status, "PENDING");
+    assert.equal(invalid.booking.status, "DRAFT");
+    assert.equal(extractCheckoutPaymentIntentId(paidSession({
+      payment_intent: "not-valid",
+    })), null);
+    assert.equal(
+      extractCheckoutPaymentIntentId(
+        paidSession({ payment_intent: { id: 123 } })
+      ),
+      null
+    );
+  });
+
+  it("returns 5xx for a paid event with missing PaymentIntent so Stripe can retry", async () => {
+    const world = createWorld();
+
+    const response = await postPaidWebhook(
+      world,
+      paidSession({ payment_intent: null })
+    );
+
+    assert.equal(response.status, 500);
+    assert.equal(world.payments[0]?.status, "PENDING");
+    assert.equal(world.payments[0]?.stripePaymentIntentId, null);
+    assert.equal(world.booking.status, "DRAFT");
+    assert.equal(world.decrementOps, 0);
+    assert.equal(world.incrementBy, 0);
+  });
+
+  it("returns 5xx for a paid event with a malformed PaymentIntent so Stripe can retry", async () => {
+    const world = createWorld();
+
+    const response = await postPaidWebhook(
+      world,
+      paidSession({ payment_intent: "ch_not_a_payment_intent" })
+    );
+
+    assert.equal(response.status, 500);
+    assert.equal(world.payments[0]?.status, "PENDING");
+    assert.equal(world.booking.status, "DRAFT");
+  });
+
+  it("returns 5xx for a stored PaymentIntent conflict without mutating the attempt", async () => {
+    const world = createWorld({
+      payments: [
+        {
+          id: "pay-1",
+          bookingId: "booking-1",
+          status: "PAID",
+          providerRef: "cs_1",
+          stripePaymentIntentId: "pi_stored",
+          amount: "123.45",
+          currency: "USD",
+        },
+      ],
+      booking: {
+        status: "FAILED",
+        paymentStatus: "PAID",
+      },
+    });
+
+    const response = await postPaidWebhook(world);
+
+    assert.equal(response.status, 500);
+    assert.equal(world.payments[0]?.status, "PAID");
+    assert.equal(world.payments[0]?.stripePaymentIntentId, "pi_stored");
+    assert.equal(world.booking.status, "FAILED");
+    assert.equal(world.incrementBy, 0);
+  });
+
+  it("returns 5xx when persisting PaymentIntent hits a database failure", async () => {
+    const world = createWorld();
+    world.store.$transaction = async () => {
+      throw new Error("db unavailable");
+    };
+
+    const response = await postPaidWebhook(world);
+
+    assert.equal(response.status, 500);
+    assert.equal(world.payments[0]?.status, "PENDING");
+    assert.equal(world.payments[0]?.stripePaymentIntentId, null);
+    assert.equal(world.booking.status, "DRAFT");
+  });
+
+  it("returns 2xx for a duplicate valid paid event", async () => {
+    const world = createWorld();
+
+    const first = await postPaidWebhook(world);
+    const second = await postPaidWebhook(world);
+    const third = await postPaidWebhook(
+      world,
+      paidSession(),
+      "checkout.session.async_payment_succeeded"
+    );
+
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 200);
+    assert.equal(third.status, 200);
+    assert.equal(world.payments[0]?.status, "PAID");
+    assert.equal(world.payments[0]?.stripePaymentIntentId, "pi_1");
+    assert.equal(world.booking.status, "CONFIRMED");
+    assert.equal(world.decrementOps, 0);
+    assert.equal(world.incrementBy, 0);
   });
 });
 

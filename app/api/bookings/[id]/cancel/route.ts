@@ -155,40 +155,14 @@ export async function PATCH(
           },
         },
         toStatus: "CANCELLED",
-        extraData: hasPaidPayment
-          ? {
-              paymentStatus: "REFUNDED",
-            }
-          : undefined,
       });
 
       if (claimed !== "won") {
         throw new Error("BOOKING_ALREADY_CANCELLED");
       }
 
-      // ------------------------------------------------------
-      // Update Payment Records
-      // ------------------------------------------------------
-      //
-      // NOTE:
-      // This is database-only refund handling.
-      //
-      // When Stripe is integrated later, the real Stripe
-      // refund must succeed BEFORE marking the payment
-      // REFUNDED in the database.
-      // ------------------------------------------------------
-
-      if (hasPaidPayment) {
-        await tx.payment.updateMany({
-          where: {
-            bookingId: booking.id,
-            status: "PAID",
-          },
-          data: {
-            status: "REFUNDED",
-          },
-        });
-      }
+      // Captured Payments stay PAID until a future Stripe-authoritative
+      // refund. Cancellation must not claim money was REFUNDED.
     });
 
     // --------------------------------------------------------
@@ -272,9 +246,7 @@ export async function PATCH(
 
             payment: {
               hadPaidPayment: hasPaidPayment,
-              refundStatus: hasPaidPayment
-                ? "REFUNDED"
-                : "NOT_REQUIRED",
+              refundStatus: "NOT_REFUNDED",
             },
 
             seatInventory: {

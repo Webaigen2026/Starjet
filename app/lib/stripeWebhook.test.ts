@@ -339,11 +339,22 @@ function createWorld(options?: {
       findUnique: async ({
         where,
       }: {
-        where: { providerRef: string };
+        where: { providerRef?: string; stripePaymentIntentId?: string };
       }) => {
-        const payment = world.payments.find(
-          (row) => row.providerRef === where.providerRef
-        );
+        const payment = world.payments.find((row) => {
+          if (
+            where.stripePaymentIntentId &&
+            row.stripePaymentIntentId !== where.stripePaymentIntentId
+          ) {
+            return false;
+          }
+
+          if (where.providerRef && row.providerRef !== where.providerRef) {
+            return false;
+          }
+
+          return Boolean(where.providerRef || where.stripePaymentIntentId);
+        });
 
         if (!payment) {
           return null;

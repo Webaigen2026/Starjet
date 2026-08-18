@@ -5,6 +5,10 @@ import {
   normalizeCheckoutCurrency,
   toUsdCents,
 } from "./stripeMoney";
+import {
+  isStripeRefundWebhookEvent,
+  processStripeRefundEvent,
+} from "./stripeRefundWebhook";
 
 export const STRIPE_WEBHOOK_SUCCESS_EVENTS = [
   "checkout.session.completed",
@@ -19,10 +23,17 @@ export const STRIPE_WEBHOOK_EXPIRED_EVENTS = [
   "checkout.session.expired",
 ] as const;
 
+export const STRIPE_WEBHOOK_REFUND_EVENTS = [
+  "refund.created",
+  "refund.updated",
+  "refund.failed",
+] as const;
+
 export const STRIPE_WEBHOOK_HANDLED_EVENTS = [
   ...STRIPE_WEBHOOK_SUCCESS_EVENTS,
   ...STRIPE_WEBHOOK_FAILURE_EVENTS,
   ...STRIPE_WEBHOOK_EXPIRED_EVENTS,
+  ...STRIPE_WEBHOOK_REFUND_EVENTS,
 ] as const;
 
 type HandledStripeEvent = (typeof STRIPE_WEBHOOK_HANDLED_EVENTS)[number];
@@ -39,6 +50,7 @@ export type StripeCheckoutSessionLike = {
 };
 
 export type StripeEventLike = {
+  id?: string;
   type: string;
   data: {
     object: unknown;
@@ -100,7 +112,7 @@ export type StripeWebhookTx = {
 export type StripeWebhookStore = {
   payment: {
     findUnique: (args: {
-      where: { providerRef: string };
+      where: { providerRef?: string; stripePaymentIntentId?: string };
       include?: { booking?: boolean };
     }) => Promise<(WebhookPaymentRow & { booking: WebhookBookingRow }) | null>;
   };
@@ -624,6 +636,11 @@ export async function processStripeWebhookEvent(
   now: Date = new Date()
 ): Promise<void> {
   if (!isHandledStripeEvent(event.type)) {
+    return;
+  }
+
+  if (isStripeRefundWebhookEvent(event.type)) {
+    await processStripeRefundEvent(db, event);
     return;
   }
 

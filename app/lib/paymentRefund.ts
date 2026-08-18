@@ -5,7 +5,6 @@ import {
   normalizeCheckoutCurrency,
   toUsdCents,
 } from "./stripeMoney";
-import { isValidStripePaymentIntentId } from "./stripeWebhook";
 
 export const FULL_REFUND_IDEMPOTENCY_VERSION = "v1" as const;
 
@@ -142,6 +141,10 @@ export function getPaymentRefundAuthRejection(
   return null;
 }
 
+function isValidRefundPaymentIntentId(value: string): boolean {
+  return /^pi_[A-Za-z0-9]+$/.test(value);
+}
+
 export function extractRefundPaymentIntentId(
   refund: StripeRefundView
 ): string | null {
@@ -149,7 +152,7 @@ export function extractRefundPaymentIntentId(
 
   if (typeof value === "string") {
     const trimmed = value.trim();
-    return isValidStripePaymentIntentId(trimmed) ? trimmed : null;
+    return isValidRefundPaymentIntentId(trimmed) ? trimmed : null;
   }
 
   if (value && typeof value === "object" && "id" in value) {
@@ -157,7 +160,7 @@ export function extractRefundPaymentIntentId(
 
     if (typeof id === "string") {
       const trimmed = id.trim();
-      return isValidStripePaymentIntentId(trimmed) ? trimmed : null;
+      return isValidRefundPaymentIntentId(trimmed) ? trimmed : null;
     }
   }
 
@@ -225,7 +228,7 @@ export function getPaymentRefundEligibilityError(
     );
   }
 
-  if (!isValidStripePaymentIntentId(paymentIntentId)) {
+  if (!isValidRefundPaymentIntentId(paymentIntentId)) {
     return new PaymentRefundError(
       409,
       "RECONCILIATION_REQUIRED",
@@ -315,8 +318,10 @@ function persistenceFailedError(paymentId: string): PaymentRefundError {
   );
 }
 
-async function persistAuthoritativeRefund(
-  db: PaymentRefundStore,
+export type RefundPersistStore = Pick<PaymentRefundStore, "$transaction">;
+
+export async function persistAuthoritativeRefund(
+  db: RefundPersistStore,
   payment: RefundablePaymentRow,
   booking: RefundableBookingRow
 ) {

@@ -263,14 +263,8 @@ export default function ReviewActions({
         );
       }
 
-      /*
-        NEXT PAGE
-
-        We will build /payment next.
-      */
-
       router.push(
-        `/payment?bookingId=${encodeURIComponent(
+        `/checkout?bookingId=${encodeURIComponent(
           bookingId
         )}`
       );

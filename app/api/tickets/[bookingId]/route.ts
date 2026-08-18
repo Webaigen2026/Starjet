@@ -4,6 +4,7 @@ import {
   authorizeBookingAccess,
   requireAuthenticatedUser
 } from "../../../lib/authorization";
+import { isTicketEligible } from "../../../lib/ticketAccess";
 
 export async function GET(
   request: NextRequest,
@@ -77,6 +78,18 @@ export async function GET(
 
     if (!access.authorized) {
       return access.response;
+    }
+
+    if (!isTicketEligible(booking)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Booking not found.",
+        },
+        {
+          status: 404,
+        }
+      );
     }
 
     return NextResponse.json({

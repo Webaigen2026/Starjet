@@ -1,11 +1,14 @@
 "use client";
 
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+import { getSafeLoginCallbackUrl } from "../../lib/safeCallbackUrl";
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,7 +32,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/admin");
+    router.push(getSafeLoginCallbackUrl(searchParams.get("callbackUrl")));
   }
 
   return (
@@ -65,5 +68,13 @@ export default function LoginPage() {
         </form>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

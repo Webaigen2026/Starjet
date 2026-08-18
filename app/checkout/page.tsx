@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth";
 
 import {
   ArrowLeft,
-  ArrowRight,
   CalendarDays,
   Check,
   LockKeyhole,
@@ -18,6 +17,7 @@ import Footer from "../components/Footer";
 import { authorizeBookingAccess } from "../lib/authorization";
 import { expireUnpaidReservation } from "../lib/reservationLifecycle";
 import { prisma } from "../lib/prisma";
+import CheckoutPayButton from "./CheckoutPayButton";
 
 /* =========================================================
    TYPES
@@ -47,7 +47,11 @@ export default async function CheckoutPage({
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/login");
+    redirect(
+      `/login?callbackUrl=${encodeURIComponent(
+        `/checkout?bookingId=${encodeURIComponent(bookingId)}`
+      )}`
+    );
   }
 
   await expireUnpaidReservation(prisma, bookingId);
@@ -83,10 +87,6 @@ export default async function CheckoutPage({
   });
 
   if (!booking) {
-    notFound();
-  }
-
-  if (booking.status === "FAILED" || booking.status === "CANCELLED") {
     notFound();
   }
 
@@ -158,14 +158,16 @@ export default async function CheckoutPage({
       booking.id
     )}`;
 
-  /* =======================================================
-     PAYMENT URL
-  ======================================================= */
-
-  const paymentUrl =
-    `/payment?bookingId=${encodeURIComponent(
-      booking.id
-    )}`;
+  const paymentSnapshot = {
+    id: booking.id,
+    status: booking.status,
+    paymentStatus: booking.paymentStatus,
+    payments: booking.payments.map((payment) => ({
+      status: payment.status,
+      provider: payment.provider,
+      providerRef: payment.providerRef,
+    })),
+  };
 
   /* =======================================================
      RENDER
@@ -608,7 +610,6 @@ export default async function CheckoutPage({
                   serviceFee={serviceFee}
                   totalAmount={totalAmount}
                   currency={currency}
-                  paymentUrl={paymentUrl}
                 />
               </div>
             </div>
@@ -617,8 +618,8 @@ export default async function CheckoutPage({
                 DESKTOP SUMMARY
             =============================================== */}
 
-            <aside className="hidden lg:block">
-              <div className="sticky top-24">
+            <aside className="lg:sticky lg:top-24">
+              <div className="hidden lg:block">
                 <PriceSummary
                   bookingId={booking.id}
                   bookingCode={
@@ -637,8 +638,15 @@ export default async function CheckoutPage({
                   serviceFee={serviceFee}
                   totalAmount={totalAmount}
                   currency={currency}
-                  paymentUrl={paymentUrl}
                 />
+              </div>
+              <div className="mt-5 overflow-hidden rounded-lg border border-slate-200 bg-white px-5 py-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] lg:mt-0 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+                <div className="lg:-mt-2">
+                  <CheckoutPayButton
+                    bookingId={booking.id}
+                    initialBooking={paymentSnapshot}
+                  />
+                </div>
               </div>
             </aside>
           </div>
@@ -800,7 +808,6 @@ function PriceSummary({
   serviceFee,
   totalAmount,
   currency,
-  paymentUrl,
 }: {
   bookingId: string;
   bookingCode: string;
@@ -811,7 +818,6 @@ function PriceSummary({
   serviceFee: number;
   totalAmount: number;
   currency: string;
-  paymentUrl: string;
 }) {
   return (
     <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
@@ -910,20 +916,9 @@ function PriceSummary({
           </div>
         </div>
 
-        {/* PAYMENT BUTTON */}
-
-        <Link
-          href={paymentUrl}
-          className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
-        >
-          Continue to payment
-
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-
         {/* SECURITY */}
 
-        <div className="mt-4 flex items-start gap-2">
+        <div className="mt-6 flex items-start gap-2">
           <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
 
           <p className="text-xs leading-5 text-slate-500">

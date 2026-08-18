@@ -144,6 +144,12 @@ export function isCompletedUnpaidLocalCheckoutSession(
   );
 }
 
+export function isExpiredUnpayableCheckoutSession(
+  session: StripeCheckoutSessionView
+): boolean {
+  return session.status === "expired" && session.payment_status !== "paid";
+}
+
 export function getPaymentStartRejection(
   booking: PaymentStartBooking,
   now: Date = new Date()
@@ -210,15 +216,20 @@ function findActivePendingStripeAttempt(
   return payments.find((payment) => isActivePendingStripeAttempt(payment));
 }
 
-async function reuseOrRejectExistingSession(
+async function inspectExistingCheckoutSession(
   stripe: StripeCheckoutPort,
   attempt: PaymentAttempt
-): Promise<{
-  url: string;
-  sessionId: string;
-  paymentId: string;
-  reused: true;
-} | null> {
+): Promise<
+  | {
+      action: "reuse";
+      url: string;
+      sessionId: string;
+      paymentId: string;
+    }
+  | {
+      action: "replace";
+    }
+> {
   if (!attempt.providerRef) {
     throw new PaymentStartError(
       409,
@@ -226,31 +237,43 @@ async function reuseOrRejectExistingSession(
     );
   }
 
-  let session: StripeCheckoutSessionView | null = null;
+  let session: StripeCheckoutSessionView;
 
   try {
     session = await stripe.checkout.sessions.retrieve(attempt.providerRef);
   } catch {
-    session = null;
+    throw new PaymentStartError(
+      502,
+      "Unable to verify the existing checkout session. Please try again."
+    );
   }
 
-  if (session && isReusableCheckoutSession(session)) {
+  if (isReusableCheckoutSession(session)) {
     return {
+      action: "reuse",
       url: session.url as string,
       sessionId: session.id,
       paymentId: attempt.id,
-      reused: true,
     };
   }
 
-  if (session && isCompletedUnpaidLocalCheckoutSession(session)) {
+  if (isCompletedUnpaidLocalCheckoutSession(session)) {
     throw new PaymentStartError(
       409,
       "A payment for this booking is already completing."
     );
   }
 
-  return null;
+  if (isExpiredUnpayableCheckoutSession(session)) {
+    return {
+      action: "replace",
+    };
+  }
+
+  throw new PaymentStartError(
+    502,
+    "Unable to verify the existing checkout session. Please try again."
+  );
 }
 
 async function insertPendingOrLoadWinner(
@@ -443,13 +466,18 @@ export async function startBookingCheckoutSession(params: {
   const existing = findActivePendingStripeAttempt(params.booking.payments);
 
   if (existing) {
-    const reused = await reuseOrRejectExistingSession(
+    const inspected = await inspectExistingCheckoutSession(
       params.stripe,
       existing
     );
 
-    if (reused) {
-      return reused;
+    if (inspected.action === "reuse") {
+      return {
+        url: inspected.url,
+        sessionId: inspected.sessionId,
+        paymentId: inspected.paymentId,
+        reused: true,
+      };
     }
 
     await params.payments.update({
@@ -469,13 +497,18 @@ export async function startBookingCheckoutSession(params: {
   );
 
   if (inserted.kind === "existing") {
-    const reused = await reuseOrRejectExistingSession(
+    const inspected = await inspectExistingCheckoutSession(
       params.stripe,
       inserted.payment
     );
 
-    if (reused) {
-      return reused;
+    if (inspected.action === "reuse") {
+      return {
+        url: inspected.url,
+        sessionId: inspected.sessionId,
+        paymentId: inspected.paymentId,
+        reused: true,
+      };
     }
 
     throw new PaymentStartError(

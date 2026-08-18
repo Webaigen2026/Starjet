@@ -8,6 +8,7 @@ import {
   bookingHasPaidCapture,
   getCheckoutIdempotencyKey,
   getPaymentStartRejection,
+  isExpiredUnpayableCheckoutSession,
   isReusableCheckoutSession,
   isUniqueConstraintError,
   PaymentStartError,
@@ -393,6 +394,161 @@ describe("startBookingCheckoutSession", () => {
     assert.equal(result.url, "https://checkout.stripe.test/cs_open");
     assert.equal(stripe.createdCount(), 0);
     assert.equal(payments.rows.length, 1);
+    assert.equal(payments.rows[0]?.status, "PENDING");
+    assert.equal(payments.rows[0]?.providerRef, "cs_open");
+  });
+
+  it("does not mark Payment FAILED or create a replacement when retrieve throws", async () => {
+    const pending: PaymentAttempt = {
+      id: "pay-existing",
+      bookingId: "booking-1",
+      status: "PENDING",
+      provider: "STRIPE",
+      providerRef: "cs_open",
+    };
+    const payments = createPayments([pending]);
+    const stripe = createStripe({
+      id: "cs_open",
+      url: "https://checkout.stripe.test/cs_open",
+      status: "open",
+      payment_status: "unpaid",
+    });
+
+    stripe.checkout.sessions.retrieve = async () => {
+      throw new Error("stripe retrieve timeout");
+    };
+
+    await assert.rejects(
+      () =>
+        startBookingCheckoutSession({
+          payments: payments.store,
+          stripe,
+          booking: draftBooking({ payments: [pending] }),
+          origin: "http://localhost:3000",
+          now,
+        }),
+      (error: unknown) => {
+        assert.equal(error instanceof PaymentStartError, true);
+        assert.equal((error as PaymentStartError).status, 502);
+        return true;
+      }
+    );
+
+    assert.equal(payments.rows.length, 1);
+    assert.equal(payments.rows[0]?.id, "pay-existing");
+    assert.equal(payments.rows[0]?.status, "PENDING");
+    assert.equal(payments.rows[0]?.providerRef, "cs_open");
+    assert.equal(stripe.createdCount(), 0);
+    assert.equal(
+      payments.writes.some((write) => write.data.status === "FAILED"),
+      false
+    );
+    assert.equal(
+      payments.writes.some((write) => write.data.status === "PAID"),
+      false
+    );
+  });
+
+  it("cannot create competing attempts while retrieve failure remains unresolved", async () => {
+    const pending: PaymentAttempt = {
+      id: "pay-existing",
+      bookingId: "booking-1",
+      status: "PENDING",
+      provider: "STRIPE",
+      providerRef: "cs_open",
+    };
+    const payments = createPayments([pending]);
+    const stripe = createStripe({
+      id: "cs_open",
+      url: "https://checkout.stripe.test/cs_open",
+      status: "open",
+      payment_status: "unpaid",
+    });
+
+    stripe.checkout.sessions.retrieve = async () => {
+      throw new Error("stripe retrieve timeout");
+    };
+
+    const results = await Promise.allSettled([
+      startBookingCheckoutSession({
+        payments: payments.store,
+        stripe,
+        booking: draftBooking({ payments: [pending] }),
+        origin: "http://localhost:3000",
+        now,
+      }),
+      startBookingCheckoutSession({
+        payments: payments.store,
+        stripe,
+        booking: draftBooking({ payments: [pending] }),
+        origin: "http://localhost:3000",
+        now,
+      }),
+    ]);
+
+    assert.equal(
+      results.every(
+        (result) =>
+          result.status === "rejected" &&
+          result.reason instanceof PaymentStartError &&
+          result.reason.status === 502
+      ),
+      true
+    );
+    assert.equal(payments.rows.length, 1);
+    assert.equal(payments.rows[0]?.status, "PENDING");
+    assert.equal(payments.rows[0]?.providerRef, "cs_open");
+    assert.equal(stripe.createdCount(), 0);
+  });
+
+  it("does not create a replacement or fabricate PAID for a complete/paid session", async () => {
+    const pending: PaymentAttempt = {
+      id: "pay-existing",
+      bookingId: "booking-1",
+      status: "PENDING",
+      provider: "STRIPE",
+      providerRef: "cs_paid",
+    };
+    const payments = createPayments([pending]);
+    const stripe = createStripe({
+      id: "cs_paid",
+      url: "https://checkout.stripe.test/cs_paid",
+      status: "complete",
+      payment_status: "paid",
+    });
+
+    await assert.rejects(
+      () =>
+        startBookingCheckoutSession({
+          payments: payments.store,
+          stripe,
+          booking: draftBooking({ payments: [pending] }),
+          origin: "http://localhost:3000",
+          now,
+        }),
+      (error: unknown) => {
+        assert.equal(error instanceof PaymentStartError, true);
+        assert.equal((error as PaymentStartError).status, 409);
+        assert.equal(
+          (error as PaymentStartError).message,
+          "A payment for this booking is already completing."
+        );
+        return true;
+      }
+    );
+
+    assert.equal(payments.rows.length, 1);
+    assert.equal(payments.rows[0]?.status, "PENDING");
+    assert.equal(payments.rows[0]?.providerRef, "cs_paid");
+    assert.equal(stripe.createdCount(), 0);
+    assert.equal(
+      payments.writes.some((write) => write.data.status === "PAID"),
+      false
+    );
+    assert.equal(
+      payments.writes.some((write) => write.data.status === "FAILED"),
+      false
+    );
   });
 
   it("does not reuse an expired Stripe session and allows a new PENDING attempt", async () => {
@@ -419,6 +575,14 @@ describe("startBookingCheckoutSession", () => {
       now,
     });
 
+    assert.equal(
+      isExpiredUnpayableCheckoutSession({
+        id: "cs_expired",
+        status: "expired",
+        payment_status: "unpaid",
+      }),
+      true
+    );
     assert.equal(isReusableCheckoutSession({
       id: "cs_expired",
       status: "expired",
@@ -602,6 +766,21 @@ describe("startBookingCheckoutSession", () => {
     assert.equal(payments.rows[0]?.status, "FAILED");
     assert.equal(payments.rows[1]?.status, "PENDING");
     assert.equal(payments.rows[1]?.providerRef, "cs_new");
+  });
+});
+
+describe("checkout session recovery does not take webhook authority", () => {
+  it("leaves Payment PAID transitions to the signed Stripe webhook", () => {
+    const helper = readProjectFile("app/lib/checkoutSession.ts");
+    const webhook = readProjectFile("app/lib/stripeWebhook.ts");
+    const route = readProjectFile(
+      "app/api/bookings/[id]/checkout-session/route.ts"
+    );
+
+    assert.equal(helper.includes('status: "PAID"'), false);
+    assert.equal(route.includes('status: "PAID"'), false);
+    assert.equal(webhook.includes('status: "PAID"'), true);
+    assert.equal(webhook.includes("markExactPaymentPaid"), true);
   });
 });
 

@@ -105,13 +105,17 @@ export function bookingHasPaidCapture(booking: {
   paymentStatus: string;
   payments?: Array<{ status: string }>;
 }): boolean {
-  if (booking.paymentStatus === "PAID") {
+  if (booking.payments?.some((payment) => payment.status === "PAID")) {
     return true;
   }
 
-  return Boolean(
-    booking.payments?.some((payment) => payment.status === "PAID")
-  );
+  if (
+    booking.payments?.some((payment) => payment.status === "REFUNDED")
+  ) {
+    return false;
+  }
+
+  return booking.paymentStatus === "PAID";
 }
 
 export function getCheckoutIdempotencyKey(

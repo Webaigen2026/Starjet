@@ -45,6 +45,25 @@ describe("customer ticket lifecycle gate", () => {
     assert.equal(isTicketEligible(booking("CONFIRMED", "PENDING")), false);
   });
 
+  it("does not treat a refunded Payment as a current paid capture", () => {
+    assert.equal(
+      isTicketEligible({
+        status: "CONFIRMED",
+        paymentStatus: "PAID",
+        payments: [{ status: "REFUNDED" }],
+      }),
+      false
+    );
+    assert.equal(
+      isTicketEligible({
+        status: "FAILED",
+        paymentStatus: "REFUNDED",
+        payments: [{ status: "REFUNDED" }],
+      }),
+      false
+    );
+  });
+
   it("does not allow the wrong owner or email claiming of userId:null", () => {
     assert.equal(
       authorizeBookingAccess(

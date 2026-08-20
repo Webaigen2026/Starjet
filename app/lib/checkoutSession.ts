@@ -106,6 +106,9 @@ export type CheckoutPaymentStore = PaymentStore & {
 export const PENDING_STRIPE_UNIQUE_INDEX =
   "Payment_one_pending_stripe_attempt";
 
+export const PAID_PER_BOOKING_UNIQUE_INDEX =
+  "Payment_one_paid_per_booking";
+
 export function isUniqueConstraintError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
     return false;
@@ -113,6 +116,24 @@ export function isUniqueConstraintError(error: unknown): boolean {
 
   const code = (error as { code?: unknown }).code;
   return code === "P2002" || code === "23505";
+}
+
+export function isPaidPerBookingUniqueConflict(error: unknown): boolean {
+  if (!isUniqueConstraintError(error)) {
+    return false;
+  }
+
+  const target = (error as { meta?: { target?: unknown } }).meta?.target;
+
+  if (Array.isArray(target)) {
+    return target.includes(PAID_PER_BOOKING_UNIQUE_INDEX);
+  }
+
+  if (typeof target === "string") {
+    return target.includes(PAID_PER_BOOKING_UNIQUE_INDEX);
+  }
+
+  return false;
 }
 
 export function isActivePendingStripeAttempt(payment: {

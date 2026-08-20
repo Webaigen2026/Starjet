@@ -114,7 +114,46 @@ function matchesWhere(
   where: Record<string, unknown>,
   payments: WebhookPaymentRow[]
 ): boolean {
-  const { OR, ...rest } = where;
+  const { OR, booking, ...rest } = where;
+
+  if (
+    booking &&
+    typeof booking === "object" &&
+    "payments" in booking &&
+    booking.payments &&
+    typeof booking.payments === "object" &&
+    "none" in booking.payments
+  ) {
+    const none = (booking.payments as { none: Record<string, unknown> }).none;
+    const excludedId =
+      none.id &&
+      typeof none.id === "object" &&
+      "not" in none.id
+        ? (none.id as { not: string }).not
+        : undefined;
+    const requiredStatus =
+      typeof none.status === "string" ? none.status : undefined;
+
+    const blocked = payments.some((payment) => {
+      if (payment.bookingId !== row.bookingId) {
+        return false;
+      }
+
+      if (payment.id === row.id) {
+        return false;
+      }
+
+      if (excludedId && payment.id === excludedId) {
+        return false;
+      }
+
+      return !requiredStatus || payment.status === requiredStatus;
+    });
+
+    if (blocked) {
+      return false;
+    }
+  }
 
   for (const [key, value] of Object.entries(rest)) {
     if (!matchesValue(row[key], value, row, payments)) {
@@ -223,6 +262,33 @@ function createWorld(options?: {
         }
 
         return { count };
+      },
+      findFirst: async ({
+        where,
+      }: {
+        where: {
+          bookingId: string;
+          status: string;
+          id?: { not: string };
+        };
+      }) => {
+        return (
+          world.payments.find((payment) => {
+            if (payment.bookingId !== where.bookingId) {
+              return false;
+            }
+
+            if (payment.status !== where.status) {
+              return false;
+            }
+
+            if (where.id?.not && payment.id === where.id.not) {
+              return false;
+            }
+
+            return true;
+          }) ?? null
+        );
       },
     },
     booking: {
@@ -378,6 +444,15 @@ function createWorld(options?: {
           booking: world.booking,
         };
       },
+      findFirst: async ({
+        where,
+      }: {
+        where: {
+          bookingId: string;
+          status: string;
+          id?: { not: string };
+        };
+      }) => tx.payment.findFirst({ where }),
     },
     $transaction: async <T,>(fn: (client: typeof tx) => Promise<T>) => {
       const run = transactionQueue.then(() => fn(tx));
@@ -891,6 +966,211 @@ describe("paid checkout session application", () => {
     assert.equal(world.payments[0]?.status, "PAID");
     assert.equal(world.payments[1]?.status, "PENDING");
     assert.equal(world.booking.status, "FAILED");
+  });
+
+  it("does not create a second PAID Payment when a newer attempt is already captured", async () => {
+    const world = createWorld({
+      booking: {
+        status: "FAILED",
+        paymentStatus: "PAID",
+      },
+      payments: [
+        {
+          id: "pay-old",
+          bookingId: "booking-1",
+          status: "FAILED",
+          providerRef: "cs_old",
+          stripePaymentIntentId: null,
+          amount: "123.45",
+          currency: "USD",
+        },
+        {
+          id: "pay-new",
+          bookingId: "booking-1",
+          status: "PAID",
+          providerRef: "cs_new",
+          stripePaymentIntentId: "pi_new",
+          amount: "123.45",
+          currency: "USD",
+        },
+      ],
+    });
+
+    await deliverPaid(
+      world,
+      "checkout.session.completed",
+      paidSession({
+        id: "cs_old",
+        payment_intent: "pi_old",
+        metadata: {
+          paymentId: "pay-old",
+          bookingId: "booking-1",
+        },
+      })
+    );
+
+    assert.equal(
+      world.payments.filter((payment) => payment.status === "PAID").length,
+      1
+    );
+    assert.equal(world.payments[0]?.status, "FAILED");
+    assert.equal(world.payments[1]?.status, "PAID");
+    assert.equal(world.booking.status, "FAILED");
+    assert.equal(world.booking.paymentStatus, "PAID");
+    assert.equal(world.incrementBy, 0);
+  });
+
+  it("allows only one PAID Payment when two distinct captures race", async () => {
+    const world = createWorld({
+      booking: {
+        status: "FAILED",
+      },
+      payments: [
+        {
+          id: "pay-old",
+          bookingId: "booking-1",
+          status: "FAILED",
+          providerRef: "cs_old",
+          amount: "123.45",
+          currency: "USD",
+        },
+        {
+          id: "pay-new",
+          bookingId: "booking-1",
+          status: "PENDING",
+          providerRef: "cs_new",
+          amount: "123.45",
+          currency: "USD",
+        },
+      ],
+    });
+
+    await deliverPaid(
+      world,
+      "checkout.session.completed",
+      paidSession({
+        id: "cs_old",
+        payment_intent: "pi_old",
+        metadata: {
+          paymentId: "pay-old",
+          bookingId: "booking-1",
+        },
+      })
+    );
+
+    await deliverPaid(
+      world,
+      "checkout.session.completed",
+      paidSession({
+        id: "cs_new",
+        payment_intent: "pi_new",
+        metadata: {
+          paymentId: "pay-new",
+          bookingId: "booking-1",
+        },
+      })
+    );
+
+    assert.equal(
+      world.payments.filter((payment) => payment.status === "PAID").length,
+      1
+    );
+    assert.equal(world.payments[0]?.status, "PAID");
+    assert.equal(world.payments[1]?.status, "PENDING");
+    assert.equal(world.booking.status, "FAILED");
+    assert.equal(world.incrementBy, 0);
+  });
+
+  it("returns 2xx when a concurrent distinct capture hits the paid-per-booking unique index", async () => {
+    const world = createWorld({
+      booking: {
+        status: "FAILED",
+        paymentStatus: "PAID",
+      },
+      payments: [
+        {
+          id: "pay-old",
+          bookingId: "booking-1",
+          status: "PAID",
+          providerRef: "cs_old",
+          stripePaymentIntentId: "pi_old",
+          amount: "123.45",
+          currency: "USD",
+        },
+        {
+          id: "pay-new",
+          bookingId: "booking-1",
+          status: "PENDING",
+          providerRef: "cs_new",
+          stripePaymentIntentId: null,
+          amount: "123.45",
+          currency: "USD",
+        },
+      ],
+    });
+
+    world.store.$transaction = async () => {
+      throw Object.assign(new Error("Unique constraint failed"), {
+        code: "P2002",
+        meta: { target: ["Payment_one_paid_per_booking"] },
+      });
+    };
+
+    const response = await postPaidWebhook(
+      world,
+      paidSession({
+        id: "cs_new",
+        payment_intent: "pi_new",
+        metadata: {
+          paymentId: "pay-new",
+          bookingId: "booking-1",
+        },
+      })
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(world.payments[0]?.status, "PAID");
+    assert.equal(world.payments[1]?.status, "PENDING");
+    assert.equal(world.payments[1]?.stripePaymentIntentId, null);
+    assert.equal(world.booking.status, "FAILED");
+    assert.equal(world.booking.paymentStatus, "PAID");
+    assert.equal(world.decrementOps, 0);
+    assert.equal(world.incrementBy, 0);
+  });
+
+  it("returns 5xx for a transient database failure but not for paid-per-booking unique conflicts", async () => {
+    const world = createWorld({
+      payments: [
+        {
+          id: "pay-new",
+          bookingId: "booking-1",
+          status: "PENDING",
+          providerRef: "cs_new",
+          stripePaymentIntentId: null,
+          amount: "123.45",
+          currency: "USD",
+        },
+      ],
+    });
+
+    world.store.$transaction = async () => {
+      throw new Error("db unavailable");
+    };
+
+    const transient = await postPaidWebhook(
+      world,
+      paidSession({
+        id: "cs_new",
+        payment_intent: "pi_new",
+        metadata: {
+          paymentId: "pay-new",
+          bookingId: "booking-1",
+        },
+      })
+    );
+
+    assert.equal(transient.status, 500);
+    assert.equal(world.payments[0]?.status, "PENDING");
   });
 
   it("marks only the exact attempt FAILED on async payment failure", async () => {
@@ -1492,5 +1772,8 @@ describe("webhook route architecture", () => {
     assert.equal(helper.includes("reserveScheduleSeats"), false);
     assert.equal(helper.includes("claimAndReleaseInventory"), true);
     assert.equal(helper.includes("success_url"), false);
+    assert.equal(helper.includes("noOtherPaidPaymentOnBookingWhere"), true);
+    assert.equal(helper.includes("STRIPE_WEBHOOK_DUPLICATE_PAID_CAPTURE"), true);
+    assert.equal(helper.includes("isPaidPerBookingUniqueConflict"), true);
   });
 });

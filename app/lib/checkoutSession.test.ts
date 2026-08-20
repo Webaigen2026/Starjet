@@ -11,7 +11,9 @@ import {
   isExpiredUnpayableCheckoutSession,
   isReusableCheckoutSession,
   isUniqueConstraintError,
+  isPaidPerBookingUniqueConflict,
   PaymentStartError,
+  PAID_PER_BOOKING_UNIQUE_INDEX,
   PENDING_STRIPE_UNIQUE_INDEX,
   startBookingCheckoutSession,
   type PaymentAttempt,
@@ -950,6 +952,17 @@ describe("payment attempt database integrity", () => {
     assert.match(sql, /duplicate PENDING STRIPE payments exist/);
   });
 
+  it("migration allows only one PAID Payment per booking", () => {
+    const sql = readProjectFile(
+      "prisma/migrations/20260819213000_payment_one_paid_per_booking/migration.sql"
+    );
+
+    assert.equal(sql.includes('CREATE UNIQUE INDEX "Payment_one_paid_per_booking"'), true);
+    assert.equal(sql.includes('ON "Payment" ("bookingId")'), true);
+    assert.equal(sql.includes('status = \'PAID\'::"PaymentStatus"'), true);
+    assert.match(sql, /duplicate PAID payments exist for one booking/);
+  });
+
   it("treats Prisma unique violations as a controlled race, not an unknown 500", () => {
     assert.equal(
       isUniqueConstraintError({ code: "P2002" }),
@@ -960,6 +973,24 @@ describe("payment attempt database integrity", () => {
       true
     );
     assert.equal(isUniqueConstraintError(new Error("boom")), false);
+  });
+
+  it("distinguishes paid-per-booking unique conflicts from other database failures", () => {
+    assert.equal(
+      isPaidPerBookingUniqueConflict({
+        code: "P2002",
+        meta: { target: [PAID_PER_BOOKING_UNIQUE_INDEX] },
+      }),
+      true
+    );
+    assert.equal(
+      isPaidPerBookingUniqueConflict({
+        code: "P2002",
+        meta: { target: [PENDING_STRIPE_UNIQUE_INDEX] },
+      }),
+      false
+    );
+    assert.equal(isPaidPerBookingUniqueConflict(new Error("db unavailable")), false);
   });
 });
 

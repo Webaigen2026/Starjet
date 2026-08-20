@@ -6,6 +6,9 @@ import {
   toUsdCents,
 } from "./stripeMoney";
 import {
+  isPaidPerBookingUniqueConflict,
+} from "./checkoutSession";
+import {
   isStripeRefundWebhookEvent,
   processStripeRefundEvent,
 } from "./stripeRefundWebhook";
@@ -83,6 +86,13 @@ export type StripeWebhookTx = {
     findUnique: (args: {
       where: { id?: string; providerRef?: string };
     }) => Promise<WebhookPaymentRow | null>;
+    findFirst: (args: {
+      where: {
+        bookingId: string;
+        status: string;
+        id?: { not: string };
+      };
+    }) => Promise<WebhookPaymentRow | null>;
     updateMany: (args: {
       where: Record<string, unknown>;
       data: Record<string, unknown>;
@@ -109,8 +119,18 @@ export type StripeWebhookTx = {
   };
 };
 
+type PaidCaptureLookup = {
+  findFirst: (args: {
+    where: {
+      bookingId: string;
+      status: string;
+      id?: { not: string };
+    };
+  }) => Promise<WebhookPaymentRow | null>;
+};
+
 export type StripeWebhookStore = {
-  payment: {
+  payment: PaidCaptureLookup & {
     findUnique: (args: {
       where: { providerRef?: string; stripePaymentIntentId?: string };
       include?: { booking?: boolean };
@@ -313,6 +333,76 @@ function failPaidCaptureForRetry(
   throw new StripeWebhookRetryError(code);
 }
 
+function noOtherPaidPaymentOnBookingWhere(payment: WebhookPaymentRow) {
+  return {
+    booking: {
+      payments: {
+        none: {
+          status: "PAID" as const,
+          id: {
+            not: payment.id,
+          },
+        },
+      },
+    },
+  };
+}
+
+async function findOtherPaidCaptureOnBooking(
+  lookup: PaidCaptureLookup,
+  bookingId: string,
+  paymentId: string
+): Promise<WebhookPaymentRow | null> {
+  return lookup.findFirst({
+    where: {
+      bookingId,
+      status: "PAID",
+      id: {
+        not: paymentId,
+      },
+    },
+  });
+}
+
+async function hasOtherPaidCaptureOnBooking(
+  tx: StripeWebhookTx,
+  bookingId: string,
+  paymentId: string
+): Promise<boolean> {
+  return (
+    (await findOtherPaidCaptureOnBooking(
+      tx.payment,
+      bookingId,
+      paymentId
+    )) != null
+  );
+}
+
+async function logDuplicatePaidCaptureConflict(
+  lookup: PaidCaptureLookup,
+  details: {
+    sessionId: string;
+    paymentId: string;
+    bookingId: string;
+    paymentIntentId: string;
+  }
+) {
+  const existingPaid = await findOtherPaidCaptureOnBooking(
+    lookup,
+    details.bookingId,
+    details.paymentId
+  );
+
+  logWebhookIntegrity("STRIPE_WEBHOOK_DUPLICATE_PAID_CAPTURE", {
+    reason: "STRIPE_WEBHOOK_DUPLICATE_PAID_CAPTURE",
+    sessionId: details.sessionId,
+    paymentIntentId: details.paymentIntentId,
+    paymentId: details.paymentId,
+    existingPaidPaymentId: existingPaid?.id ?? null,
+    bookingId: details.bookingId,
+  });
+}
+
 async function markExactPaymentPaid(
   tx: StripeWebhookTx,
   payment: WebhookPaymentRow,
@@ -326,6 +416,7 @@ async function markExactPaymentPaid(
       status: {
         in: ["PENDING", "FAILED"],
       },
+      ...noOtherPaidPaymentOnBookingWhere(payment),
     },
     data: {
       status: "PAID",
@@ -476,6 +567,21 @@ async function applyVerifiedPaidSession(
   }
 
   if (capturedPayment.status !== "PAID") {
+    if (
+      await hasOtherPaidCaptureOnBooking(
+        tx,
+        payment.bookingId,
+        payment.id
+      )
+    ) {
+      await logDuplicatePaidCaptureConflict(tx.payment, {
+        sessionId: session.id,
+        paymentId: payment.id,
+        bookingId: payment.bookingId,
+        paymentIntentId: options.paymentIntentId,
+      });
+    }
+
     return;
   }
 
@@ -609,54 +715,68 @@ async function processPaidCheckoutSession(
 
   const fulfillable = !metadataConflict && chargeMatches;
 
-  await db.$transaction(async (tx) => {
-    const lockedPayment = await tx.payment.findUnique({
-      where: {
-        id: payment.id,
-      },
-    });
-
-    if (
-      !lockedPayment ||
-      lockedPayment.providerRef !== session.id ||
-      lockedPayment.bookingId !== payment.bookingId
-    ) {
-      return;
-    }
-
-    if (
-      lockedPayment.stripePaymentIntentId &&
-      lockedPayment.stripePaymentIntentId !== paymentIntentId
-    ) {
-      failPaidCaptureForRetry("STRIPE_WEBHOOK_PAYMENT_INTENT_CONFLICT", {
-        sessionId: session.id,
-        paymentId: lockedPayment.id,
-        bookingId: lockedPayment.bookingId,
+  try {
+    await db.$transaction(async (tx) => {
+      const lockedPayment = await tx.payment.findUnique({
+        where: {
+          id: payment.id,
+        },
       });
-    }
 
-    const lockedBooking = await tx.booking.findUnique({
-      where: {
-        id: booking.id,
-      },
+      if (
+        !lockedPayment ||
+        lockedPayment.providerRef !== session.id ||
+        lockedPayment.bookingId !== payment.bookingId
+      ) {
+        return;
+      }
+
+      if (
+        lockedPayment.stripePaymentIntentId &&
+        lockedPayment.stripePaymentIntentId !== paymentIntentId
+      ) {
+        failPaidCaptureForRetry("STRIPE_WEBHOOK_PAYMENT_INTENT_CONFLICT", {
+          sessionId: session.id,
+          paymentId: lockedPayment.id,
+          bookingId: lockedPayment.bookingId,
+        });
+      }
+
+      const lockedBooking = await tx.booking.findUnique({
+        where: {
+          id: booking.id,
+        },
+      });
+
+      if (!lockedBooking) {
+        return;
+      }
+
+      await applyVerifiedPaidSession(
+        tx,
+        lockedPayment,
+        lockedBooking,
+        session,
+        now,
+        {
+          fulfillable,
+          paymentIntentId,
+        }
+      );
     });
-
-    if (!lockedBooking) {
+  } catch (error) {
+    if (isPaidPerBookingUniqueConflict(error)) {
+      await logDuplicatePaidCaptureConflict(db.payment, {
+        sessionId: session.id,
+        paymentId: payment.id,
+        bookingId: payment.bookingId,
+        paymentIntentId,
+      });
       return;
     }
 
-    await applyVerifiedPaidSession(
-      tx,
-      lockedPayment,
-      lockedBooking,
-      session,
-      now,
-      {
-        fulfillable,
-        paymentIntentId,
-      }
-    );
-  });
+    throw error;
+  }
 }
 
 async function processAbandonedCheckoutSession(
@@ -776,9 +896,11 @@ export async function handleStripeWebhookRequest(
 
   try {
     await deps.processEvent(event);
-  } catch {
+  } catch (error) {
     console.error("STRIPE_WEBHOOK_PROCESSING_FAILED", {
       type: event.type,
+      code:
+        error instanceof StripeWebhookRetryError ? error.code : undefined,
     });
 
     return NextResponse.json(

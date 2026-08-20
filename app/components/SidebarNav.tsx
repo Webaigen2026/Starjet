@@ -183,6 +183,7 @@ function SidebarLink({
       {!collapsed && item.badge && (
         <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-background">
           {item.badge}
+          .
         </span>
       )}
     </Link>

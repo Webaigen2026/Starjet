@@ -367,9 +367,20 @@ async function markExactPaymentFailed(
   });
 }
 
+function stillCapturedPaymentWhere(payment: WebhookPaymentRow) {
+  return {
+    some: {
+      id: payment.id,
+      providerRef: payment.providerRef,
+      status: "PAID" as const,
+    },
+  };
+}
+
 async function markTerminalBookingCaptured(
   tx: StripeWebhookTx,
-  bookingId: string
+  bookingId: string,
+  payment: WebhookPaymentRow
 ) {
   await tx.booking.updateMany({
     where: {
@@ -377,6 +388,7 @@ async function markTerminalBookingCaptured(
       status: {
         in: ["FAILED", "CANCELLED", "CONFIRMED", "CHECKED_IN", "BOARDED", "COMPLETED"],
       },
+      payments: stillCapturedPaymentWhere(payment),
     },
     data: {
       paymentStatus: "PAID",
@@ -402,7 +414,8 @@ async function convertReservedSeatsToBooked(
 async function failUnfulfillableDraft(
   tx: StripeWebhookTx,
   booking: WebhookBookingRow,
-  fromWhere: Record<string, unknown>
+  fromWhere: Record<string, unknown>,
+  payment: WebhookPaymentRow
 ) {
   const result = await claimAndReleaseInventory(tx as never, {
     bookingId: booking.id,
@@ -416,7 +429,7 @@ async function failUnfulfillableDraft(
   });
 
   if (result === "lost") {
-    await markTerminalBookingCaptured(tx, booking.id);
+    await markTerminalBookingCaptured(tx, booking.id, payment);
   }
 }
 
@@ -431,12 +444,40 @@ async function applyVerifiedPaidSession(
     paymentIntentId: string;
   }
 ) {
+  if (payment.status === "REFUNDED") {
+    logWebhookIntegrity("STRIPE_WEBHOOK_CAPTURE_AFTER_REFUND", {
+      sessionId: session.id,
+      paymentId: payment.id,
+      bookingId: payment.bookingId,
+    });
+    return;
+  }
+
   await markExactPaymentPaid(
     tx,
     payment,
     session.id,
     options.paymentIntentId
   );
+
+  const capturedPayment =
+    (await tx.payment.findUnique({
+      where: {
+        id: payment.id,
+      },
+    })) ?? payment;
+
+  if (
+    !capturedPayment ||
+    capturedPayment.providerRef !== session.id ||
+    capturedPayment.status === "REFUNDED"
+  ) {
+    return;
+  }
+
+  if (capturedPayment.status !== "PAID") {
+    return;
+  }
 
   const current =
     (await tx.booking.findUnique({
@@ -447,19 +488,28 @@ async function applyVerifiedPaidSession(
 
   if (!options.fulfillable) {
     if (current.status === "DRAFT") {
-      await failUnfulfillableDraft(tx, current, {
-        id: current.id,
-        status: "DRAFT",
-      });
+      await failUnfulfillableDraft(
+        tx,
+        current,
+        {
+          id: current.id,
+          status: "DRAFT",
+          payments: stillCapturedPaymentWhere(capturedPayment),
+        },
+        capturedPayment
+      );
     } else {
-      await markTerminalBookingCaptured(tx, current.id);
+      await markTerminalBookingCaptured(tx, current.id, capturedPayment);
     }
 
     return;
   }
 
   const confirmed = await tx.booking.updateMany({
-    where: confirmableDraftWhere(current.id, now),
+    where: {
+      ...confirmableDraftWhere(current.id, now),
+      payments: stillCapturedPaymentWhere(capturedPayment),
+    },
     data: {
       status: "CONFIRMED",
       paymentStatus: "PAID",
@@ -485,12 +535,16 @@ async function applyVerifiedPaidSession(
     await failUnfulfillableDraft(
       tx,
       afterConfirm,
-      expiredDraftWhere(afterConfirm.id, now)
+      {
+        ...expiredDraftWhere(afterConfirm.id, now),
+        payments: stillCapturedPaymentWhere(capturedPayment),
+      },
+      capturedPayment
     );
     return;
   }
 
-  await markTerminalBookingCaptured(tx, afterConfirm.id);
+  await markTerminalBookingCaptured(tx, afterConfirm.id, capturedPayment);
 }
 
 async function processPaidCheckoutSession(

@@ -83,6 +83,19 @@ function matchesValue(
       return new Date(String(rowValue)).getTime() <= new Date(String(clause.lte)).getTime();
     }
 
+    if ("some" in clause) {
+      const some = clause.some as Record<string, unknown>;
+      return payments.some(
+        (payment) =>
+          payment.bookingId === row.id &&
+          matchesWhere(
+            payment as unknown as Record<string, unknown>,
+            some,
+            payments
+          )
+      );
+    }
+
     if ("none" in clause) {
       const none = clause.none as { status?: string };
       return !payments.some(
@@ -1010,6 +1023,126 @@ describe("paid checkout session application", () => {
     assert.equal(openWorld.availableSeats, 10);
   });
 
+  it("does not resurrect paid booking state after the exact Payment is REFUNDED", async () => {
+    const world = createWorld({
+      booking: {
+        status: "CANCELLED",
+        paymentStatus: "REFUNDED",
+      },
+      payments: [
+        {
+          id: "pay-1",
+          bookingId: "booking-1",
+          status: "REFUNDED",
+          providerRef: "cs_1",
+          stripePaymentIntentId: "pi_1",
+          amount: "123.45",
+          currency: "USD",
+        },
+      ],
+      seats: [
+        {
+          id: "seat-1",
+          bookingId: null,
+          status: "AVAILABLE",
+        },
+      ],
+    });
+
+    await deliverPaid(world);
+    await deliverPaid(world, "checkout.session.async_payment_succeeded");
+
+    assert.equal(world.payments[0]?.status, "REFUNDED");
+    assert.equal(world.booking.paymentStatus, "REFUNDED");
+    assert.equal(world.booking.status, "CANCELLED");
+    assert.equal(world.payments.length, 1);
+    assert.equal(world.incrementBy, 0);
+    assert.equal(world.decrementOps, 0);
+    assert.equal(world.seatClears, 0);
+    assert.equal(world.seats[0]?.status, "AVAILABLE");
+    assert.equal(world.seats[0]?.bookingId, null);
+  });
+
+  it("does not confirm a DRAFT from a REFUNDED Payment", async () => {
+    const world = createWorld({
+      booking: {
+        status: "DRAFT",
+        paymentStatus: "REFUNDED",
+      },
+      payments: [
+        {
+          id: "pay-1",
+          bookingId: "booking-1",
+          status: "REFUNDED",
+          providerRef: "cs_1",
+          stripePaymentIntentId: "pi_1",
+          amount: "123.45",
+          currency: "USD",
+        },
+      ],
+    });
+
+    await deliverPaid(world);
+
+    assert.equal(world.payments[0]?.status, "REFUNDED");
+    assert.equal(world.booking.status, "DRAFT");
+    assert.equal(world.booking.paymentStatus, "REFUNDED");
+    assert.equal(
+      world.seats.every((seat) => seat.status === "RESERVED"),
+      true
+    );
+    assert.equal(world.incrementBy, 0);
+  });
+
+  it("does not set Booking.paymentStatus PAID when Payment is refunded before booking capture", async () => {
+    const world = createWorld({
+      booking: {
+        status: "CANCELLED",
+        paymentStatus: "PAID",
+      },
+      payments: [
+        {
+          id: "pay-1",
+          bookingId: "booking-1",
+          status: "PAID",
+          providerRef: "cs_1",
+          stripePaymentIntentId: "pi_1",
+          amount: "123.45",
+          currency: "USD",
+        },
+      ],
+    });
+
+    const originalTransaction = world.store.$transaction;
+    world.store.$transaction = async (fn) => {
+      return originalTransaction(async (tx) => {
+        const originalFindUnique = tx.payment.findUnique;
+        tx.payment.findUnique = async (args) => {
+          const found = await originalFindUnique(args);
+
+          if (found && found.status === "PAID") {
+            world.payments[0]!.status = "REFUNDED";
+            world.booking.paymentStatus = "REFUNDED";
+            return {
+              ...found,
+              status: "REFUNDED",
+            };
+          }
+
+          return found;
+        };
+
+        return fn(tx);
+      });
+    };
+
+    await deliverPaid(world);
+
+    assert.equal(world.payments[0]?.status, "REFUNDED");
+    assert.equal(world.booking.paymentStatus, "REFUNDED");
+    assert.equal(world.booking.status, "CANCELLED");
+  });
+
   it("keeps already PAID and CONFIRMED duplicate processing harmless", async () => {
     const world = createWorld({
       booking: {
@@ -1292,6 +1425,34 @@ describe("PaymentIntent identity", () => {
     assert.equal(world.payments[0]?.status, "PENDING");
     assert.equal(world.payments[0]?.stripePaymentIntentId, null);
     assert.equal(world.booking.status, "DRAFT");
+  });
+
+  it("returns 2xx for a late paid event after the exact Payment is REFUNDED", async () => {
+    const world = createWorld({
+      booking: {
+        status: "FAILED",
+        paymentStatus: "REFUNDED",
+      },
+      payments: [
+        {
+          id: "pay-1",
+          bookingId: "booking-1",
+          status: "REFUNDED",
+          providerRef: "cs_1",
+          stripePaymentIntentId: "pi_1",
+          amount: "123.45",
+          currency: "USD",
+        },
+      ],
+    });
+
+    const response = await postPaidWebhook(world);
+
+    assert.equal(response.status, 200);
+    assert.equal(world.payments[0]?.status, "REFUNDED");
+    assert.equal(world.booking.paymentStatus, "REFUNDED");
+    assert.equal(world.booking.status, "FAILED");
+    assert.equal(world.payments.length, 1);
   });
 
   it("returns 2xx for a duplicate valid paid event", async () => {

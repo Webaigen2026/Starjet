@@ -191,10 +191,18 @@ describe("pricing authority", () => {
 describe("startBookingCheckoutSession", () => {
   const now = new Date("2026-08-17T21:10:00.000Z");
 
-  function createPayments(initial: PaymentAttempt[] = []) {
+  function createPayments(
+    initial: PaymentAttempt[] = [],
+    bookingCharge: { totalAmount: string; currency: string } = {
+      totalAmount: "123.45",
+      currency: "USD",
+    }
+  ) {
     const rows = [...initial];
+    const booking = { ...bookingCharge };
     const writes: Array<{ op: string; data: Record<string, unknown> }> = [];
     let created = 0;
+    let transactionActive = false;
 
     function uniqueError() {
       return Object.assign(new Error("Unique constraint failed"), {
@@ -205,83 +213,147 @@ describe("startBookingCheckoutSession", () => {
       });
     }
 
+    const store = {
+      create: async ({
+        data,
+      }: {
+        data: {
+          bookingId: string;
+          amount: unknown;
+          currency: string;
+          status: string;
+          provider: string;
+        };
+      }) => {
+        const pendingExists = rows.some(
+          (payment) =>
+            payment.status === "PENDING" &&
+            payment.provider === "STRIPE" &&
+            payment.bookingId === data.bookingId
+        );
+
+        if (
+          pendingExists &&
+          data.status === "PENDING" &&
+          data.provider === "STRIPE"
+        ) {
+          throw uniqueError();
+        }
+
+        created += 1;
+        const row: PaymentAttempt = {
+          id: `pay-${created}`,
+          bookingId: data.bookingId,
+          status: data.status,
+          provider: data.provider,
+          providerRef: null,
+          amount: data.amount,
+          currency: data.currency,
+        };
+
+        assert.equal(data.status, "PENDING");
+        writes.push({ op: "create", data: { ...data } });
+        rows.push(row);
+        return row;
+      },
+      update: async ({
+        where,
+        data,
+      }: {
+        where: { id: string };
+        data: Record<string, unknown>;
+      }) => {
+        assert.notEqual(data.status, "PAID");
+        writes.push({ op: "update", data });
+
+        const row = rows.find((payment) => payment.id === where.id);
+
+        assert.ok(row);
+        Object.assign(row, data);
+        return row;
+      },
+      findFirst: async ({
+        where,
+      }: {
+        where: { bookingId: string; status: string; provider: string };
+      }) => {
+        return (
+          rows.find(
+            (payment) =>
+              payment.bookingId === where.bookingId &&
+              payment.status === where.status &&
+              payment.provider === where.provider
+          ) ?? null
+        );
+      },
+      establishPendingStripeAttempt: async ({
+        bookingId,
+      }: {
+        bookingId: string;
+      }) => {
+        transactionActive = true;
+
+        try {
+          const charge = resolveChargeFromBooking(booking);
+
+          try {
+            const payment = await store.create({
+              data: {
+                bookingId,
+                amount: charge.amount,
+                currency: charge.currency,
+                status: "PENDING",
+                provider: "STRIPE",
+              },
+            });
+
+            return {
+              kind: "created" as const,
+              payment,
+              charge,
+            };
+          } catch (error) {
+            if (!isUniqueConstraintError(error)) {
+              throw error;
+            }
+
+            const winner = await store.findFirst({
+              where: {
+                bookingId,
+                status: "PENDING",
+                provider: "STRIPE",
+              },
+            });
+
+            if (!winner) {
+              throw new PaymentStartError(
+                409,
+                "A payment attempt is already in progress. Retry shortly."
+              );
+            }
+
+            return {
+              kind: "existing" as const,
+              payment: winner,
+            };
+          }
+        } finally {
+          transactionActive = false;
+        }
+      },
+    };
+
     return {
       rows,
       writes,
-      store: {
-        create: async ({
-          data,
-        }: {
-          data: {
-            bookingId: string;
-            amount: unknown;
-            currency: string;
-            status: string;
-            provider: string;
-          };
-        }) => {
-          const pendingExists = rows.some(
-            (payment) =>
-              payment.status === "PENDING" &&
-              payment.provider === "STRIPE" &&
-              payment.bookingId === data.bookingId
-          );
-
-          if (
-            pendingExists &&
-            data.status === "PENDING" &&
-            data.provider === "STRIPE"
-          ) {
-            throw uniqueError();
-          }
-
-          created += 1;
-          const row: PaymentAttempt = {
-            id: `pay-${created}`,
-            bookingId: data.bookingId,
-            status: data.status,
-            provider: data.provider,
-            providerRef: null,
-            amount: data.amount,
-            currency: data.currency,
-          };
-
-          assert.equal(data.status, "PENDING");
-          writes.push({ op: "create", data: { ...data } });
-          rows.push(row);
-          return row;
-        },
-        update: async ({
-          where,
-          data,
-        }: {
-          where: { id: string };
-          data: Record<string, unknown>;
-        }) => {
-          assert.notEqual(data.status, "PAID");
-          writes.push({ op: "update", data });
-
-          const row = rows.find((payment) => payment.id === where.id);
-
-          assert.ok(row);
-          Object.assign(row, data);
-          return row;
-        },
-        findFirst: async ({
-          where,
-        }: {
-          where: { bookingId: string; status: string; provider: string };
-        }) => {
-          return (
-            rows.find(
-              (payment) =>
-                payment.bookingId === where.bookingId &&
-                payment.status === where.status &&
-                payment.provider === where.provider
-            ) ?? null
-          );
-        },
+      booking,
+      get transactionActive() {
+        return transactionActive;
       },
+      setBookingTotal(totalAmount: string) {
+        booking.totalAmount = totalAmount;
+      },
+      store,
     };
   }
 
@@ -725,6 +797,68 @@ describe("startBookingCheckoutSession", () => {
     assert.equal(payments.rows[0]?.providerRef, null);
   });
 
+  it("persists Payment.amount from the authoritative booking read inside establishment", async () => {
+    const payments = createPayments([], {
+      totalAmount: "100.00",
+      currency: "USD",
+    });
+    payments.setBookingTotal("149.98");
+    const stripe = createStripe({
+      id: "cs_open",
+      url: "https://checkout.stripe.test/cs_open",
+      status: "open",
+      payment_status: "unpaid",
+    });
+
+    const result = await startBookingCheckoutSession({
+      payments: payments.store,
+      stripe,
+      booking: draftBooking({ totalAmount: "100.00" }),
+      origin: "http://localhost:3000",
+      now,
+    });
+
+    assert.equal(result.reused, false);
+    assert.equal(payments.rows[0]?.amount, "149.98");
+
+    const lineItems = stripe.creates[0]?.params.line_items as Array<{
+      price_data: { unit_amount: number };
+    }>;
+    assert.equal(lineItems[0]?.price_data.unit_amount, 14998);
+  });
+
+  it("does not call Stripe while the payment-establishment transaction is active", async () => {
+    const payments = createPayments();
+    let stripeCalledDuringTransaction = false;
+
+    const stripe = createStripe({
+      id: "cs_open",
+      url: "https://checkout.stripe.test/cs_open",
+      status: "open",
+      payment_status: "unpaid",
+    });
+
+    const originalCreate = stripe.checkout.sessions.create;
+    stripe.checkout.sessions.create = async (...args) => {
+      if (payments.transactionActive) {
+        stripeCalledDuringTransaction = true;
+      }
+
+      return originalCreate(...args);
+    };
+
+    await startBookingCheckoutSession({
+      payments: payments.store,
+      stripe,
+      booking: draftBooking(),
+      origin: "http://localhost:3000",
+      now,
+    });
+
+    assert.equal(stripeCalledDuringTransaction, false);
+    assert.equal(payments.transactionActive, false);
+  });
+
   it("allows a new PENDING attempt after a failed Stripe Session create", async () => {
     const payments = createPayments();
     const failingStripe = createStripe({
@@ -785,6 +919,22 @@ describe("checkout session recovery does not take webhook authority", () => {
 });
 
 describe("payment attempt database integrity", () => {
+  it("locks the booking row and reads authoritative price before inserting Payment", () => {
+    const helper = readProjectFile("app/lib/checkoutSession.ts");
+    const route = readProjectFile(
+      "app/api/bookings/[id]/checkout-session/route.ts"
+    );
+
+    assert.equal(helper.includes("createPrismaCheckoutPaymentStore"), true);
+    assert.equal(helper.includes("establishPendingStripeAttempt"), true);
+    assert.match(helper, /FOR UPDATE/);
+    assert.equal(route.includes("createPrismaCheckoutPaymentStore(prisma)"), true);
+    assert.equal(
+      helper.includes("resolveChargeFromBooking(params.booking)"),
+      false
+    );
+  });
+
   it("migration allows multiple FAILED attempts and blocks two PENDING Stripe attempts", () => {
     const sql = readProjectFile(
       "prisma/migrations/20260817224500_payment_attempt_integrity/migration.sql"

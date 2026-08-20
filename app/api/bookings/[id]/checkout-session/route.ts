@@ -4,6 +4,7 @@ import { requireBookingOwnerOrStaff } from "../../../../lib/authorization";
 import { expireUnpaidReservation } from "../../../../lib/reservationLifecycle";
 import {
   PaymentStartError,
+  createPrismaCheckoutPaymentStore,
   getPaymentStartRejection,
   startBookingCheckoutSession,
 } from "../../../../lib/checkoutSession";
@@ -130,7 +131,7 @@ export async function POST(
     }
 
     const result = await startBookingCheckoutSession({
-      payments: prisma.payment as never,
+      payments: createPrismaCheckoutPaymentStore(prisma),
       stripe: getStripe() as never,
       booking,
       origin,

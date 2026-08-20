@@ -3,6 +3,7 @@ import {
   InvalidChargeError,
   resolveChargeFromBooking,
 } from "./stripeMoney";
+import type { PrismaClient } from "@prisma/client";
 
 export const STRIPE_CHECKOUT_MIN_EXPIRES_SECONDS = 30 * 60;
 export const STRIPE_CHECKOUT_EXPIRES_SECONDS =
@@ -80,6 +81,26 @@ type PaymentStore = {
       provider: string;
     };
   }) => Promise<PaymentAttempt | null>;
+};
+
+export type CheckoutPaymentStore = PaymentStore & {
+  establishPendingStripeAttempt: (args: {
+    bookingId: string;
+  }) => Promise<
+    | {
+        kind: "created";
+        payment: PaymentAttempt;
+        charge: {
+          amount: unknown;
+          currency: string;
+          amountCents: number;
+        };
+      }
+    | {
+        kind: "existing";
+        payment: PaymentAttempt;
+      }
+  >;
 };
 
 export const PENDING_STRIPE_UNIQUE_INDEX =
@@ -276,54 +297,121 @@ async function inspectExistingCheckoutSession(
   );
 }
 
-async function insertPendingOrLoadWinner(
+async function loadExistingPendingStripeAttempt(
   payments: PaymentStore,
-  booking: PaymentStartBooking,
-  charge: { amount: unknown; currency: string }
+  bookingId: string
+): Promise<PaymentAttempt> {
+  const winner = await payments.findFirst({
+    where: {
+      bookingId,
+      status: "PENDING",
+      provider: "STRIPE",
+    },
+  });
+
+  if (!winner) {
+    throw new PaymentStartError(
+      409,
+      "A payment attempt is already in progress. Retry shortly."
+    );
+  }
+
+  return winner;
+}
+
+export function createPrismaCheckoutPaymentStore(
+  prisma: PrismaClient
+): CheckoutPaymentStore {
+  const paymentStore = prisma.payment as unknown as PaymentStore;
+
+  return {
+    create: (args) => paymentStore.create(args),
+    update: (args) => paymentStore.update(args),
+    findFirst: (args) => paymentStore.findFirst(args),
+    establishPendingStripeAttempt: async ({ bookingId }) => {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          const rows = await tx.$queryRaw<
+            Array<{ totalAmount: unknown; currency: string }>
+          >`
+            SELECT "totalAmount", currency
+            FROM "Booking"
+            WHERE id = ${bookingId}
+            FOR UPDATE
+          `;
+
+          if (rows.length === 0) {
+            throw new PaymentStartError(404, "Booking not found.");
+          }
+
+          let charge;
+
+          try {
+            charge = resolveChargeFromBooking(rows[0]);
+          } catch (error) {
+            const message =
+              error instanceof InvalidChargeError
+                ? error.message
+                : "Booking charge is invalid.";
+
+            throw new PaymentStartError(400, message);
+          }
+
+          const payment = await tx.payment.create({
+            data: {
+              bookingId,
+              amount: charge.amount as string | number,
+              currency: charge.currency,
+              status: "PENDING",
+              provider: "STRIPE",
+            },
+          });
+
+          return {
+            kind: "created" as const,
+            payment,
+            charge,
+          };
+        });
+      } catch (error) {
+        if (error instanceof PaymentStartError) {
+          throw error;
+        }
+
+        if (!isUniqueConstraintError(error)) {
+          throw error;
+        }
+
+        return {
+          kind: "existing" as const,
+          payment: await loadExistingPendingStripeAttempt(
+            paymentStore,
+            bookingId
+          ),
+        };
+      }
+    },
+  };
+}
+
+async function insertPendingOrLoadWinner(
+  payments: CheckoutPaymentStore,
+  booking: PaymentStartBooking
 ): Promise<
-  | { kind: "created"; payment: PaymentAttempt }
+  | {
+      kind: "created";
+      payment: PaymentAttempt;
+      charge: {
+        amount: unknown;
+        currency: string;
+        amountCents: number;
+      };
+    }
   | { kind: "existing"; payment: PaymentAttempt }
 > {
-  try {
-    const payment = await payments.create({
-      data: {
-        bookingId: booking.id,
-        amount: charge.amount,
-        currency: charge.currency,
-        status: "PENDING",
-        provider: "STRIPE",
-      },
-    });
-
-    return {
-      kind: "created",
-      payment,
-    };
-  } catch (error) {
-    if (!isUniqueConstraintError(error)) {
-      throw error;
-    }
-
-    const winner = await payments.findFirst({
-      where: {
-        bookingId: booking.id,
-        status: "PENDING",
-        provider: "STRIPE",
-      },
-    });
-
-    if (!winner) {
-      throw new PaymentStartError(
-        409,
-        "A payment attempt is already in progress. Retry shortly."
-      );
-    }
-
-    return {
-      kind: "existing",
-      payment: winner,
-    };
-  }
+  return payments.establishPendingStripeAttempt({
+    bookingId: booking.id,
+  });
 }
 
 async function createStripeCheckoutSession(params: {
@@ -432,7 +520,7 @@ async function createStripeCheckoutSession(params: {
 }
 
 export async function startBookingCheckoutSession(params: {
-  payments: PaymentStore;
+  payments: CheckoutPaymentStore;
   stripe: StripeCheckoutPort;
   booking: PaymentStartBooking;
   origin: string;
@@ -448,19 +536,6 @@ export async function startBookingCheckoutSession(params: {
 
   if (rejection) {
     throw new PaymentStartError(rejection.status, rejection.message);
-  }
-
-  let charge;
-
-  try {
-    charge = resolveChargeFromBooking(params.booking);
-  } catch (error) {
-    const message =
-      error instanceof InvalidChargeError
-        ? error.message
-        : "Booking charge is invalid.";
-
-    throw new PaymentStartError(400, message);
   }
 
   const existing = findActivePendingStripeAttempt(params.booking.payments);
@@ -492,8 +567,7 @@ export async function startBookingCheckoutSession(params: {
 
   const inserted = await insertPendingOrLoadWinner(
     params.payments,
-    params.booking,
-    charge
+    params.booking
   );
 
   if (inserted.kind === "existing") {
@@ -506,7 +580,7 @@ export async function startBookingCheckoutSession(params: {
       return {
         url: inspected.url,
         sessionId: inspected.sessionId,
-        paymentId: inspected.paymentId,
+        paymentId: inserted.payment.id,
         reused: true,
       };
     }
@@ -522,7 +596,7 @@ export async function startBookingCheckoutSession(params: {
     payments: params.payments,
     booking: params.booking,
     payment: inserted.payment,
-    charge,
+    charge: inserted.charge,
     origin: params.origin,
     now,
   });

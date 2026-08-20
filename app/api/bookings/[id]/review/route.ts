@@ -8,6 +8,10 @@ import {
   calculateBookingTotal,
   calculateTravelProtectionAmount,
 } from "../../../../lib/bookingPricing";
+import {
+  getReviewPricingLockRejection,
+  reviewPricingUpdateWhere,
+} from "../../../../lib/reviewPaymentIntegrity";
 import { expireUnpaidReservation } from "../../../../lib/reservationLifecycle";
 
 type RouteProps = {
@@ -34,6 +38,9 @@ export async function PATCH(
       await prisma.booking.findUnique({
         where: {
           id,
+        },
+        include: {
+          payments: true,
         },
       });
 
@@ -70,6 +77,28 @@ export async function PATCH(
       );
     }
 
+    const pricingLock = getReviewPricingLockRejection({
+      id: booking.id,
+      status: booking.status,
+      paymentStatus: booking.paymentStatus,
+      reservationExpiresAt: booking.reservationExpiresAt,
+      totalAmount: booking.totalAmount,
+      currency: booking.currency,
+      payments: booking.payments,
+    });
+
+    if (pricingLock) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: pricingLock.message,
+        },
+        {
+          status: pricingLock.status,
+        }
+      );
+    }
+
     const travelProtection =
       Boolean(body.travelProtection);
 
@@ -100,12 +129,9 @@ export async function PATCH(
       discountAmount,
     });
 
-    const updatedBooking =
-      await prisma.booking.update({
-        where: {
-          id,
-        },
-
+    const updateResult =
+      await prisma.booking.updateMany({
+        where: reviewPricingUpdateWhere(id),
         data: {
           travelProtection,
 
@@ -128,6 +154,50 @@ export async function PATCH(
 
           totalAmount:
             calculatedTotal,
+        },
+      });
+
+    if (updateResult.count !== 1) {
+      const refreshedBooking =
+        await prisma.booking.findUnique({
+          where: {
+            id,
+          },
+          include: {
+            payments: true,
+          },
+        });
+
+      const concurrentLock = refreshedBooking
+        ? getReviewPricingLockRejection({
+            id: refreshedBooking.id,
+            status: refreshedBooking.status,
+            paymentStatus: refreshedBooking.paymentStatus,
+            reservationExpiresAt:
+              refreshedBooking.reservationExpiresAt,
+            totalAmount: refreshedBooking.totalAmount,
+            currency: refreshedBooking.currency,
+            payments: refreshedBooking.payments,
+          })
+        : null;
+
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            concurrentLock?.message ??
+            "Payment is already in progress. Booking choices cannot be changed until payment completes or the checkout session expires.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    const updatedBooking =
+      await prisma.booking.findUnique({
+        where: {
+          id,
         },
       });
 

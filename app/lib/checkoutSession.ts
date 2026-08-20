@@ -147,17 +147,11 @@ export function bookingHasPaidCapture(booking: {
   paymentStatus: string;
   payments?: Array<{ status: string }>;
 }): boolean {
-  if (booking.payments?.some((payment) => payment.status === "PAID")) {
-    return true;
-  }
-
-  if (
-    booking.payments?.some((payment) => payment.status === "REFUNDED")
-  ) {
-    return false;
-  }
-
-  return booking.paymentStatus === "PAID";
+  // Financial authority: a persisted Payment row with status PAID.
+  // Booking.paymentStatus is derived/cache state and must not fabricate capture.
+  return (
+    booking.payments?.some((payment) => payment.status === "PAID") ?? false
+  );
 }
 
 export function getCheckoutIdempotencyKey(

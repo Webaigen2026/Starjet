@@ -29,6 +29,14 @@ function readProjectFile(relativePath: string) {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
+const paidCapturePayments = [
+  {
+    status: "PAID",
+    provider: "STRIPE",
+    providerRef: "cs_1",
+  },
+] as const;
+
 function snapshot(
   overrides: Partial<CheckoutPaymentSnapshot> = {}
 ): CheckoutPaymentSnapshot {
@@ -265,6 +273,7 @@ describe("authoritative checkout views", () => {
         snapshot({
           status: "CONFIRMED",
           paymentStatus: "PAID",
+          payments: [...paidCapturePayments],
         })
       ),
       true
@@ -274,6 +283,7 @@ describe("authoritative checkout views", () => {
         snapshot({
           status: "CHECKED_IN",
           paymentStatus: "PAID",
+          payments: [...paidCapturePayments],
         })
       ),
       true
@@ -289,10 +299,21 @@ describe("authoritative checkout views", () => {
       false
     );
     assert.equal(
+      isTicketEligible(
+        snapshot({
+          status: "CONFIRMED",
+          paymentStatus: "PAID",
+          payments: [{ status: "PENDING", provider: "STRIPE", providerRef: null }],
+        })
+      ),
+      false
+    );
+    assert.equal(
       resolveCheckoutView(
         snapshot({
           status: "CONFIRMED",
           paymentStatus: "PAID",
+          payments: [...paidCapturePayments],
         })
       ),
       "confirmed"

@@ -114,7 +114,17 @@ describe("checkout eligibility", () => {
 
   it("rejects already-paid bookings", () => {
     const rejection = getPaymentStartRejection(
-      draftBooking({ paymentStatus: "PAID" }),
+      draftBooking({
+        paymentStatus: "PAID",
+        payments: [
+          {
+            id: "pay-paid",
+            status: "PAID",
+            provider: "STRIPE",
+            providerRef: "cs_paid",
+          },
+        ],
+      }),
       now
     );
 
@@ -991,6 +1001,85 @@ describe("payment attempt database integrity", () => {
       false
     );
     assert.equal(isPaidPerBookingUniqueConflict(new Error("db unavailable")), false);
+  });
+});
+
+describe("paid capture authority", () => {
+  it("treats a PAID Payment row as authoritative paid capture", () => {
+    assert.equal(
+      bookingHasPaidCapture({
+        paymentStatus: "PENDING",
+        payments: [{ status: "PAID" }],
+      }),
+      true
+    );
+  });
+
+  it("does not treat Booking.paymentStatus PAID alone as paid capture", () => {
+    assert.equal(
+      bookingHasPaidCapture({
+        paymentStatus: "PAID",
+        payments: [],
+      }),
+      false
+    );
+    assert.equal(
+      bookingHasPaidCapture({
+        paymentStatus: "PAID",
+      }),
+      false
+    );
+  });
+
+  it("does not treat PENDING or FAILED Payment rows as paid capture", () => {
+    assert.equal(
+      bookingHasPaidCapture({
+        paymentStatus: "PAID",
+        payments: [{ status: "PENDING" }],
+      }),
+      false
+    );
+    assert.equal(
+      bookingHasPaidCapture({
+        paymentStatus: "PAID",
+        payments: [{ status: "FAILED" }],
+      }),
+      false
+    );
+  });
+
+  it("does not treat REFUNDED Payment as active paid capture", () => {
+    assert.equal(
+      bookingHasPaidCapture({
+        paymentStatus: "REFUNDED",
+        payments: [{ status: "REFUNDED" }],
+      }),
+      false
+    );
+    assert.equal(
+      bookingHasPaidCapture({
+        paymentStatus: "PAID",
+        payments: [{ status: "REFUNDED" }],
+      }),
+      false
+    );
+  });
+
+  it("allows one PAID Payment with sibling non-PAID attempts", () => {
+    assert.equal(
+      bookingHasPaidCapture({
+        paymentStatus: "PAID",
+        payments: [{ status: "PAID" }, { status: "PENDING" }],
+      }),
+      true
+    );
+    assert.equal(
+      bookingHasPaidCapture({
+        paymentStatus: "PAID",
+        payments: [{ status: "PAID" }, { status: "FAILED" }],
+      }),
+      true
+    );
   });
 });
 

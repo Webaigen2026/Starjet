@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { authorizeBookingAccess } from "./authorization";
+import { bookingHasPaidCapture } from "./checkoutSession";
 import { isTicketEligible } from "./ticketAccess";
 import {
   DEFAULT_POST_LOGIN_PATH,
@@ -16,33 +17,75 @@ function readProjectFile(relativePath: string) {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-function booking(status: string, paymentStatus: string, paidRow = false) {
+function booking(
+  status: string,
+  paymentStatus: string,
+  payments: Array<{ status: string }> = [{ status: "PENDING" }]
+) {
   return {
     status,
     paymentStatus,
-    payments: paidRow ? [{ status: "PAID" }] : [{ status: "PENDING" }],
+    payments,
   };
+}
+
+function paidBooking(status: string, paymentStatus = "PAID") {
+  return booking(status, paymentStatus, [{ status: "PAID" }]);
 }
 
 describe("customer ticket lifecycle gate", () => {
   it("allows paid CONFIRMED, CHECKED_IN, BOARDED, and COMPLETED", () => {
     for (const status of ["CONFIRMED", "CHECKED_IN", "BOARDED", "COMPLETED"]) {
-      assert.equal(isTicketEligible(booking(status, "PAID")), true);
-      assert.equal(
-        isTicketEligible(booking(status, "PENDING", true)),
-        true
-      );
+      assert.equal(isTicketEligible(paidBooking(status)), true);
     }
   });
 
   it("does not allow DRAFT, FAILED, or CANCELLED even if paid", () => {
-    assert.equal(isTicketEligible(booking("DRAFT", "PAID")), false);
-    assert.equal(isTicketEligible(booking("FAILED", "PAID")), false);
-    assert.equal(isTicketEligible(booking("CANCELLED", "PAID")), false);
+    assert.equal(isTicketEligible(paidBooking("DRAFT")), false);
+    assert.equal(isTicketEligible(paidBooking("FAILED")), false);
+    assert.equal(isTicketEligible(paidBooking("CANCELLED")), false);
   });
 
   it("does not allow unpaid CONFIRMED bookings", () => {
     assert.equal(isTicketEligible(booking("CONFIRMED", "PENDING")), false);
+  });
+
+  it("does not expose ticket PII when booking-level PAID lacks a PAID Payment row", () => {
+    assert.equal(
+      bookingHasPaidCapture({
+        paymentStatus: "PAID",
+        payments: [],
+      }),
+      false
+    );
+    assert.equal(
+      isTicketEligible({
+        status: "CONFIRMED",
+        paymentStatus: "PAID",
+        payments: [],
+      }),
+      false
+    );
+    assert.equal(
+      isTicketEligible({
+        status: "CONFIRMED",
+        paymentStatus: "PAID",
+        payments: [{ status: "PENDING" }],
+      }),
+      false
+    );
+    assert.equal(
+      isTicketEligible({
+        status: "CONFIRMED",
+        paymentStatus: "PAID",
+        payments: [{ status: "FAILED" }],
+      }),
+      false
+    );
+  });
+
+  it("allows ticket access for CONFIRMED bookings with a real PAID Payment row", () => {
+    assert.equal(isTicketEligible(paidBooking("CONFIRMED")), true);
   });
 
   it("does not treat a refunded Payment as a current paid capture", () => {
@@ -129,16 +172,15 @@ describe("legacy ticket route parity", () => {
 describe("ticket access verification matrix", () => {
   it("allows paid ticket-eligible lifecycle states", () => {
     for (const status of ["CONFIRMED", "CHECKED_IN", "BOARDED", "COMPLETED"]) {
-      assert.equal(isTicketEligible(booking(status, "PAID")), true);
-      assert.equal(isTicketEligible(booking(status, "PENDING", true)), true);
+      assert.equal(isTicketEligible(paidBooking(status)), true);
     }
   });
 
   it("denies DRAFT, unpaid CONFIRMED, FAILED, CANCELLED, and refunded capture", () => {
-    assert.equal(isTicketEligible(booking("DRAFT", "PAID")), false);
+    assert.equal(isTicketEligible(paidBooking("DRAFT")), false);
     assert.equal(isTicketEligible(booking("CONFIRMED", "PENDING")), false);
-    assert.equal(isTicketEligible(booking("FAILED", "PAID")), false);
-    assert.equal(isTicketEligible(booking("CANCELLED", "PAID")), false);
+    assert.equal(isTicketEligible(paidBooking("FAILED")), false);
+    assert.equal(isTicketEligible(paidBooking("CANCELLED")), false);
     assert.equal(
       isTicketEligible({
         status: "CONFIRMED",

@@ -1,4 +1,10 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+
+import { authOptions } from "../../api/auth/[...nextauth]/route";
+import { authorizeBookingAccess } from "../../lib/authorization";
+import { isTicketEligible } from "../../lib/ticketAccess";
+import { prisma } from "../../lib/prisma";
 
 type Props = {
   params: Promise<{
@@ -6,33 +12,77 @@ type Props = {
   }>;
 };
 
-async function getTicket(bookingId: string) {
-  const res = await fetch(
-    `http://localhost:3000/api/tickets/${bookingId}`,
-    {
-      cache: "no-store",
-    }
-  );
-
-  if (!res.ok) {
-    return null;
-  }
-
-  return res.json();
-}
+type TicketPassenger = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  seat?: {
+    seatNumber?: string | null;
+    seatClass?: string | null;
+  } | null;
+};
 
 export default async function TicketPage({
   params,
 }: Props) {
   const { bookingId } = await params;
 
-  const response = await getTicket(bookingId);
+  const session = await getServerSession(authOptions);
 
-  if (!response?.success) {
+  if (!session?.user) {
+    redirect(
+      `/login?callbackUrl=${encodeURIComponent(`/tickets/${bookingId}`)}`
+    );
+  }
+
+  const booking = await prisma.booking.findUnique({
+    where: {
+      id: bookingId,
+    },
+    include: {
+      schedule: {
+        include: {
+          route: {
+            include: {
+              airline: true,
+              originAirport: true,
+              destinationAirport: true,
+            },
+          },
+        },
+      },
+      passengers: {
+        include: {
+          seat: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+      payments: {
+        select: {
+          status: true,
+        },
+      },
+    },
+  });
+
+  if (!booking) {
     notFound();
   }
 
-  const booking = response.data;
+  const access = authorizeBookingAccess(
+    session.user as { id?: string; role?: "ADMIN" | "STAFF" | "CUSTOMER" },
+    booking
+  );
+
+  if (!access.authorized) {
+    notFound();
+  }
+
+  if (!isTicketEligible(booking)) {
+    notFound();
+  }
 
   return (
     <main className="mx-auto max-w-6xl p-8">
@@ -95,7 +145,7 @@ export default async function TicketPage({
         <p className="mt-3">
           Total:
           <strong className="ml-2">
-            ${booking.totalAmount}
+            ${String(booking.totalAmount ?? "")}
           </strong>
         </p>
       </div>
@@ -105,7 +155,7 @@ export default async function TicketPage({
       </h2>
 
       <div className="mt-5 space-y-4">
-        {booking.passengers.map((passenger: any) => (
+        {booking.passengers.map((passenger: TicketPassenger) => (
           <div
             key={passenger.id}
             className="rounded-xl border p-5"

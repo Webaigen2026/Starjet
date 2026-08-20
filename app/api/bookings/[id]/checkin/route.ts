@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import {
+  authorizeBookingAccess,
+  requireAuthenticatedUser
+} from "../../../../lib/authorization";
+import { isCheckInAllowedFromStatus } from "../../../../lib/adminBookingLifecycle";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
 
     console.log("========================================");
@@ -56,21 +67,15 @@ export async function PATCH(
       );
     }
 
+    const access = authorizeBookingAccess(auth.user, booking);
+
+    if (!access.authorized) {
+      return access.response;
+    }
+
     //-----------------------------------------------------
     // Booking Status Validation
     //-----------------------------------------------------
-
-    if (booking.status === "CANCELLED") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Cancelled bookings cannot check in.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
 
     if (booking.status === "CHECKED_IN") {
       return NextResponse.json(
@@ -84,19 +89,14 @@ export async function PATCH(
       );
     }
 
-    if (
-      booking.status !== "CONFIRMED" &&
-      booking.status !== "COMPLETED" &&
-      booking.status !== "TICKETED"
-    ) {
+    if (!isCheckInAllowedFromStatus(booking.status)) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Booking must be CONFIRMED, COMPLETED or TICKETED before check-in.",
+          message: `Booking cannot be checked in from status ${booking.status}.`,
         },
         {
-          status: 400,
+          status: 409,
         }
       );
     }

@@ -12,10 +12,15 @@ export default async function CustomerDashboardPage() {
   }
 
   const email = session.user.email;
+  const userId = (session.user as { id?: string }).id;
+
+  if (!userId) {
+    redirect("/login");
+  }
 
   const [bookings, cargoRequests, charterRequests] = await Promise.all([
     prisma.booking.findMany({
-      where: { customerEmail: email },
+      where: { userId },
       orderBy: { createdAt: "desc" },
       take: 5,
     }),

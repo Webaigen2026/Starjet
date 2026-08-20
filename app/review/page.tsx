@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
 import {
   ArrowLeft,
   CalendarDays,
@@ -9,6 +10,9 @@ import {
   Plane,
 } from "lucide-react";
 
+import { authOptions } from "../api/auth/[...nextauth]/route";
+import { authorizeBookingAccess } from "../lib/authorization";
+import { expireUnpaidReservation } from "../lib/reservationLifecycle";
 import prisma from "../lib/prisma";
 import ReviewActions from "./ReviewActions";
 
@@ -136,18 +140,13 @@ export default async function ReviewPage({
     redirect("/flights");
   }
 
-  /* =======================================================
-     LOAD COMPLETE BOOKING
+  const session = await getServerSession(authOptions);
 
-     Booking
-       -> passengers
-       -> schedule
-           -> route
-               -> airline
-               -> originAirport
-               -> destinationAirport
-           -> aircraft
-  ======================================================= */
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  await expireUnpaidReservation(prisma, bookingId);
 
   const booking = await prisma.booking.findUnique({
     where: {
@@ -178,6 +177,19 @@ export default async function ReviewPage({
   });
 
   if (!booking) {
+    redirect("/flights");
+  }
+
+  if (booking.status === "FAILED" || booking.status === "CANCELLED") {
+    redirect("/flights");
+  }
+
+  const access = authorizeBookingAccess(
+    session.user as { id?: string; role?: "ADMIN" | "STAFF" | "CUSTOMER" },
+    booking
+  );
+
+  if (!access.authorized) {
     redirect("/flights");
   }
 

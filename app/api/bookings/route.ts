@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma";
+import {
+  getOptionalAuthUser,
+  requireOperationsStaff,
+} from "../../lib/authorization";
+import { calculateBookingTotal } from "../../lib/bookingPricing";
+import {
+  InsufficientInventoryError,
+  reserveScheduleSeats,
+} from "../../lib/scheduleInventory";
+import {
+  calculateReservationExpiresAt,
+  expireExpiredDraftsOnSchedules,
+} from "../../lib/reservationLifecycle";
 
 /* =========================================================
    TYPES
@@ -161,7 +174,12 @@ export async function POST(request: NextRequest) {
   try {
     /* -----------------------------------------------------
        READ REQUEST
+
+       Ownership is taken only from the authenticated
+       session. The request body must never supply userId.
     ----------------------------------------------------- */
+
+    const sessionUser = await getOptionalAuthUser();
 
     const body: CreateBookingBody = await request.json();
 
@@ -665,38 +683,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    /* -----------------------------------------------------
-       INVENTORY
-    ----------------------------------------------------- */
+    /* Inventory is reserved atomically inside the
+       transaction. A pre-read here is not authoritative.
+       Stale DRAFT holds on this schedule are expired first
+       in a bounded batch so abandoned reservations can
+       free seats before a new booking attempts reserve. */
 
-    if (
-      schedule.availableSeats <
-      passengersCount
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-
-          message:
-            schedule.availableSeats === 0
-              ? "This flight is sold out."
-              : `Only ${schedule.availableSeats} seat${
-                  schedule.availableSeats === 1
-                    ? ""
-                    : "s"
-                } remain on this flight.`,
-
-          availableSeats:
-            schedule.availableSeats,
-
-          requestedSeats:
-            passengersCount,
-        },
-        {
-          status: 409,
-        }
-      );
-    }
+    await expireExpiredDraftsOnSchedules(prisma, [
+      schedule.id,
+    ]);
 
     /* =====================================================
        FARE
@@ -727,10 +722,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const baseFareTotal =
-      baseFarePerPassenger *
-      passengersCount;
-
     /*
      * Tax engine can be connected later.
      */
@@ -739,10 +730,14 @@ export async function POST(request: NextRequest) {
 
     const serviceFee = 0;
 
-    const totalAmount =
-      baseFareTotal +
-      taxes +
-      serviceFee;
+    const totalAmount = calculateBookingTotal({
+      baseFarePerPassenger,
+      passengersCount,
+      taxes,
+      serviceFee,
+      travelProtectionAmount: 0,
+      discountAmount: 0,
+    });
 
     /* -----------------------------------------------------
        DATABASE FLIGHT INFORMATION
@@ -770,6 +765,25 @@ export async function POST(request: NextRequest) {
     const createdBooking =
       await prisma.$transaction(
         async (tx) => {
+          /* ---------------------------------------------
+             RESERVE AGGREGATE INVENTORY
+
+             Atomic:
+             UPDATE FlightSchedule
+             SET availableSeats = availableSeats - N
+             WHERE id = scheduleId
+               AND availableSeats >= N
+
+             This reserves N seats even when no Seat
+             rows have been generated.
+          --------------------------------------------- */
+
+          await reserveScheduleSeats(
+            tx,
+            schedule.id,
+            passengersCount
+          );
+
           /* ---------------------------------------------
              CREATE BOOKING
           --------------------------------------------- */
@@ -828,7 +842,13 @@ export async function POST(request: NextRequest) {
                 /*
                  * Booking.baseFare currently stores
                  * the PER-PASSENGER fare.
+                 *
+                 * Booking.userId is assigned only from
+                 * the authenticated session, never from
+                 * the request body. Guests stay null.
                  */
+
+                userId: sessionUser?.id ?? null,
 
                 baseFare:
                   baseFarePerPassenger,
@@ -847,6 +867,9 @@ export async function POST(request: NextRequest) {
 
                 paymentStatus:
                   "PENDING",
+
+                reservationExpiresAt:
+                  calculateReservationExpiresAt(),
               },
             });
 
@@ -1021,42 +1044,6 @@ export async function POST(request: NextRequest) {
             reservedSeats++;
           }
 
-          /* ---------------------------------------------
-             UPDATE INVENTORY WHEN SEAT MAP EXISTS
-          --------------------------------------------- */
-
-          const totalSeatRecords =
-            await tx.seat.count({
-              where: {
-                scheduleId:
-                  schedule.id,
-              },
-            });
-
-          if (totalSeatRecords > 0) {
-            const availableSeatCount =
-              await tx.seat.count({
-                where: {
-                  scheduleId:
-                    schedule.id,
-
-                  status:
-                    "AVAILABLE",
-                },
-              });
-
-            await tx.flightSchedule.update({
-              where: {
-                id: schedule.id,
-              },
-
-              data: {
-                availableSeats:
-                  availableSeatCount,
-              },
-            });
-          }
-
           return {
             booking,
             createdPassengers,
@@ -1144,6 +1131,24 @@ export async function POST(request: NextRequest) {
       error instanceof Error
         ? error.message
         : String(error);
+
+    if (error instanceof InsufficientInventoryError) {
+      const remaining = error.availableSeats ?? 0;
+
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            remaining === 0
+              ? "This flight is sold out."
+              : "Not enough seats available",
+          availableSeats: remaining,
+        },
+        {
+          status: 409,
+        }
+      );
+    }
 
     /* -----------------------------------------------------
        SEAT ERRORS
@@ -1243,6 +1248,12 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    const auth = await requireOperationsStaff();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const bookings =
       await prisma.booking.findMany({
         orderBy: {

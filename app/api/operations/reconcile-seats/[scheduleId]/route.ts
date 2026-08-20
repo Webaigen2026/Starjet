@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../../../lib/prisma";
+import { requireOperationsStaff } from "../../../../lib/authorization";
+import { syncAvailableSeatsToHeldBookings } from "../../../../lib/scheduleInventory";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ scheduleId: string }> }
 ) {
   try {
+    const auth = await requireOperationsStaff();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { scheduleId } = await params;
 
     const schedule = await prisma.flightSchedule.findUnique({
@@ -159,23 +167,7 @@ export async function PATCH(
           },
         });
 
-        const available = await tx.seat.count({
-          where: {
-            scheduleId,
-            status: "AVAILABLE",
-            bookingId: null,
-            passengerId: null,
-          },
-        });
-
-        await tx.flightSchedule.update({
-          where: {
-            id: scheduleId,
-          },
-          data: {
-            availableSeats: available,
-          },
-        });
+        await syncAvailableSeatsToHeldBookings(tx, scheduleId);
       });
     }
 
@@ -294,23 +286,7 @@ export async function PATCH(
           });
         }
 
-        const available = await tx.seat.count({
-          where: {
-            scheduleId,
-            status: "AVAILABLE",
-            bookingId: null,
-            passengerId: null,
-          },
-        });
-
-        await tx.flightSchedule.update({
-          where: {
-            id: scheduleId,
-          },
-          data: {
-            availableSeats: available,
-          },
-        });
+        await syncAvailableSeatsToHeldBookings(tx, scheduleId);
       });
     }
 
@@ -332,13 +308,6 @@ export async function PATCH(
       },
     });
 
-    const finalAvailable = finalSeats.filter(
-      (seat) =>
-        seat.status === "AVAILABLE" &&
-        seat.bookingId === null &&
-        seat.passengerId === null
-    ).length;
-
     const finalAssigned = finalSeats.filter(
       (seat) =>
         seat.bookingId !== null ||
@@ -347,16 +316,9 @@ export async function PATCH(
         seat.status === "RESERVED"
     ).length;
 
-    // Make absolutely sure schedule counter agrees
-    // with actual inventory.
-    await prisma.flightSchedule.update({
-      where: {
-        id: scheduleId,
-      },
-      data: {
-        availableSeats: finalAvailable,
-      },
-    });
+    const finalAvailable = await prisma.$transaction((tx) =>
+      syncAvailableSeatsToHeldBookings(tx, scheduleId)
+    );
 
     // ----------------------------------------------------
     // Final integrity check

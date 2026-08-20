@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import {
+  authorizeBookingAccess,
+  requireAuthenticatedUser
+} from "../../../../lib/authorization";
+import { claimAndReleaseInventory } from "../../../../lib/reservationLifecycle";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
 
     console.log("========================================");
@@ -42,6 +53,12 @@ export async function PATCH(
       );
     }
 
+    const access = authorizeBookingAccess(auth.user, booking);
+
+    if (!access.authorized) {
+      return access.response;
+    }
+
     // --------------------------------------------------------
     // Prevent Invalid Booking Cancellations
     // --------------------------------------------------------
@@ -50,6 +67,7 @@ export async function PATCH(
       "BOARDED",
       "COMPLETED",
       "CANCELLED",
+      "FAILED",
     ];
 
     if (nonCancellableBookingStatuses.includes(booking.status)) {
@@ -118,96 +136,33 @@ export async function PATCH(
 
     await prisma.$transaction(async (tx) => {
       // ------------------------------------------------------
-      // Cancel Booking
+      // Cancel Booking once. Concurrent cancels lose here.
       // ------------------------------------------------------
 
-      await tx.booking.update({
-        where: {
+      const claimed = await claimAndReleaseInventory(tx, {
+        bookingId: booking.id,
+        scheduleId: booking.scheduleId,
+        passengersCount: booking.passengersCount,
+        fromWhere: {
           id: booking.id,
+          status: {
+            notIn: [
+              "CANCELLED",
+              "BOARDED",
+              "COMPLETED",
+              "FAILED",
+            ],
+          },
         },
-        data: {
-          status: "CANCELLED",
-
-          // Only mark the booking as refunded when an actual
-          // PAID payment exists.
-          ...(hasPaidPayment
-            ? {
-                paymentStatus: "REFUNDED",
-              }
-            : {}),
-        },
+        toStatus: "CANCELLED",
       });
 
-      // ------------------------------------------------------
-      // Release Assigned Seats
-      // ------------------------------------------------------
-
-      if (releasedSeatCount > 0) {
-        await tx.seat.updateMany({
-          where: {
-            bookingId: booking.id,
-          },
-          data: {
-            bookingId: null,
-            passengerId: null,
-            status: "AVAILABLE",
-          },
-        });
+      if (claimed !== "won") {
+        throw new Error("BOOKING_ALREADY_CANCELLED");
       }
 
-      // ------------------------------------------------------
-      // Update Payment Records
-      // ------------------------------------------------------
-      //
-      // NOTE:
-      // This is database-only refund handling.
-      //
-      // When Stripe is integrated later, the real Stripe
-      // refund must succeed BEFORE marking the payment
-      // REFUNDED in the database.
-      // ------------------------------------------------------
-
-      if (hasPaidPayment) {
-        await tx.payment.updateMany({
-          where: {
-            bookingId: booking.id,
-            status: "PAID",
-          },
-          data: {
-            status: "REFUNDED",
-          },
-        });
-      }
-
-      // ------------------------------------------------------
-      // Recalculate Available Seats
-      // ------------------------------------------------------
-      //
-      // We calculate this from the real Seat table instead
-      // of blindly incrementing availableSeats.
-      // ------------------------------------------------------
-
-      const availableSeatCount = await tx.seat.count({
-        where: {
-          scheduleId: booking.scheduleId,
-          status: "AVAILABLE",
-          bookingId: null,
-          passengerId: null,
-        },
-      });
-
-      // ------------------------------------------------------
-      // Synchronize Flight Schedule
-      // ------------------------------------------------------
-
-      await tx.flightSchedule.update({
-        where: {
-          id: booking.scheduleId,
-        },
-        data: {
-          availableSeats: availableSeatCount,
-        },
-      });
+      // Captured Payments stay PAID until a future Stripe-authoritative
+      // refund. Cancellation must not claim money was REFUNDED.
     });
 
     // --------------------------------------------------------
@@ -260,14 +215,7 @@ export async function PATCH(
     // --------------------------------------------------------
 
     const availableSeats =
-      await prisma.seat.count({
-        where: {
-          scheduleId: booking.scheduleId,
-          status: "AVAILABLE",
-          bookingId: null,
-          passengerId: null,
-        },
-      });
+      result.schedule?.availableSeats ?? 0;
 
     console.log("Booking cancelled successfully.");
     console.log("Booking:", booking.bookingCode);
@@ -298,9 +246,7 @@ export async function PATCH(
 
             payment: {
               hadPaidPayment: hasPaidPayment,
-              refundStatus: hasPaidPayment
-                ? "REFUNDED"
-                : "NOT_REQUIRED",
+              refundStatus: "NOT_REFUNDED",
             },
 
             seatInventory: {
@@ -319,6 +265,22 @@ export async function PATCH(
     console.error("CANCEL BOOKING ERROR");
     console.error(error);
     console.error("========================================");
+
+    if (
+      error instanceof Error &&
+      error.message === "BOOKING_ALREADY_CANCELLED"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Booking cannot be cancelled because its status is CANCELLED.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
 
     return NextResponse.json(
       {

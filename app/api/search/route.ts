@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import { expireExpiredDraftsOnSchedules } from "@/app/lib/reservationLifecycle";
 
 export async function GET(request: NextRequest) {
   try {
@@ -78,7 +79,26 @@ export async function GET(request: NextRequest) {
       endDate,
     });
 
-    // Search schedules using routeId
+    const candidateSchedules = await prisma.flightSchedule.findMany({
+      where: {
+        routeId: route.id,
+        departureTime: {
+          gte: startDate,
+          lte: endDate,
+        },
+        status: "SCHEDULED",
+      },
+      select: {
+        id: true,
+      },
+      take: 100,
+    });
+
+    await expireExpiredDraftsOnSchedules(
+      prisma,
+      candidateSchedules.map((schedule) => schedule.id)
+    );
+
     const schedules = await prisma.flightSchedule.findMany({
       where: {
         routeId: route.id,

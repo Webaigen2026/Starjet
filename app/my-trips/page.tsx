@@ -10,7 +10,11 @@ export default async function MyTripsPage() {
     redirect("/login");
   }
 
-  const userId = (session.user as any).id;
+  const userId = (session.user as { id?: string }).id;
+
+  if (!userId) {
+    redirect("/login");
+  }
 
   const bookings = await prisma.booking.findMany({
     where: { userId },

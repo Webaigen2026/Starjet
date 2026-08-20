@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import {
+  authorizeBookingAccess,
+  requireAuthenticatedUser
+} from "../../../../lib/authorization";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
 
     const body = await request.json();
@@ -58,6 +68,12 @@ export async function PATCH(
           status: 404,
         }
       );
+    }
+
+    const access = authorizeBookingAccess(auth.user, booking);
+
+    if (!access.authorized) {
+      return access.response;
     }
 
     if (!booking.scheduleId || !booking.schedule) {
@@ -254,32 +270,6 @@ export async function PATCH(
         throw new Error("SEAT_NO_LONGER_AVAILABLE");
       }
 
-      // ------------------------------------------------
-      // Instead of blindly doing:
-      //
-      // availableSeats: { decrement: 1 }
-      //
-      // calculate the actual AVAILABLE seat count.
-      //
-      // This repairs old incorrect counters too.
-      // ------------------------------------------------
-
-      const actualAvailableSeats = await tx.seat.count({
-        where: {
-          scheduleId: booking.scheduleId!,
-          status: "AVAILABLE",
-        },
-      });
-
-      const updatedSchedule = await tx.flightSchedule.update({
-        where: {
-          id: booking.scheduleId!,
-        },
-        data: {
-          availableSeats: actualAvailableSeats,
-        },
-      });
-
       const updatedSeat = await tx.seat.findUnique({
         where: {
           id: seat.id,
@@ -292,8 +282,6 @@ export async function PATCH(
 
       return {
         updatedSeat,
-        updatedSchedule,
-        actualAvailableSeats,
       };
     });
 
@@ -306,10 +294,6 @@ export async function PATCH(
       message: "Seat assigned successfully.",
       data: {
         ...result.updatedSeat,
-
-        inventory: {
-          availableSeats: result.actualAvailableSeats,
-        },
       },
     });
   } catch (error) {

@@ -1,23 +1,28 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { prisma } from "../../../lib/prisma";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { requireAuthenticatedUser } from "../../../lib/authorization";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const auth = await requireAuthenticatedUser();
 
-    if (!session?.user) {
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
+    const userId = auth.user.id;
+
+    if (!userId) {
       return NextResponse.json(
         {
           success: false,
-          message: "Unauthorized",
+          message: "Authentication required.",
         },
-        { status: 401 }
+        {
+          status: 401,
+        }
       );
     }
-
-    const userId = (session.user as any).id;
 
     const bookings = await prisma.booking.findMany({
       where: {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import prisma from "@/app/lib/prisma";
+import { requireAdmin } from "@/app/lib/authorization";
 
 // GET /api/airlines
 export async function GET(request: NextRequest) {
@@ -67,6 +68,12 @@ export async function GET(request: NextRequest) {
 // POST /api/airlines
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const body = await request.json();
 
     if (

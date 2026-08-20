@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import { requireOperationsStaff } from "@/app/lib/authorization";
 
 //
 // GET ALL SCHEDULES
@@ -54,6 +55,12 @@ export async function GET(request: NextRequest) {
 //
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireOperationsStaff();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const body = await request.json();
 
     if (
@@ -61,7 +68,6 @@ export async function POST(request: NextRequest) {
       !body.aircraftId ||
       !body.departureTime ||
       !body.arrivalTime ||
-      body.availableSeats == null ||
       body.baseFare == null
     ) {
       return NextResponse.json(
@@ -108,8 +114,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (
+      !Number.isInteger(aircraft.capacity) ||
+      aircraft.capacity < 1
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "This aircraft does not have a valid capacity, so schedule inventory cannot be initialized.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     //
     // Create Schedule
+    //
+    // availableSeats is server-controlled inventory.
+    // Request-body availableSeats is ignored.
     //
     const schedule = await prisma.flightSchedule.create({
       data: {
@@ -117,7 +141,7 @@ export async function POST(request: NextRequest) {
         aircraftId: body.aircraftId,
         departureTime: new Date(body.departureTime),
         arrivalTime: new Date(body.arrivalTime),
-        availableSeats: Number(body.availableSeats),
+        availableSeats: aircraft.capacity,
         baseFare: Number(body.baseFare),
         status: body.status ?? "SCHEDULED",
       },

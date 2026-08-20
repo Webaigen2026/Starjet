@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import {
+  authorizeBookingAccess,
+  requireAuthenticatedUser
+} from "../../../../lib/authorization";
+import { expireUnpaidReservation } from "../../../../lib/reservationLifecycle";
+import { bookingHasPaidCapture } from "../../../../lib/checkoutSession";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
 
     console.log("================================");
@@ -77,6 +89,60 @@ export async function PATCH(
         },
         {
           status: 404,
+        }
+      );
+    }
+
+    const access = authorizeBookingAccess(auth.user, booking);
+
+    if (!access.authorized) {
+      return access.response;
+    }
+
+    const expiration = await expireUnpaidReservation(prisma, booking.id);
+
+    const currentBooking =
+      expiration === "expired"
+        ? await prisma.booking.findUnique({
+            where: {
+              id: booking.id,
+            },
+            include: {
+              schedule: true,
+              passengers: {
+                include: {
+                  seat: true,
+                },
+              },
+              seats: true,
+              payments: true,
+              user: true,
+            },
+          })
+        : booking;
+
+    if (!currentBooking || currentBooking.status === "FAILED") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "This reservation has expired and can no longer be confirmed.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    if (!bookingHasPaidCapture(currentBooking)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Booking cannot be confirmed until payment is completed.",
+        },
+        {
+          status: 409,
         }
       );
     }
@@ -497,39 +563,6 @@ export async function PATCH(
 
         data: {
           status: "CONFIRMED",
-        },
-      });
-
-      // --------------------------------------------------
-      // Recalculate real inventory
-      // --------------------------------------------------
-
-      const availableSeatCount =
-        await tx.seat.count({
-          where: {
-            scheduleId:
-              booking.scheduleId,
-
-            status: "AVAILABLE",
-
-            bookingId: null,
-
-            passengerId: null,
-          },
-        });
-
-      // --------------------------------------------------
-      // Synchronize schedule inventory
-      // --------------------------------------------------
-
-      await tx.flightSchedule.update({
-        where: {
-          id: booking.scheduleId,
-        },
-
-        data: {
-          availableSeats:
-            availableSeatCount,
         },
       });
     });

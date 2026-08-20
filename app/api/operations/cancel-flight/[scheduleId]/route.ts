@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import { requireOperationsStaff } from "../../../../lib/authorization";
+import { claimAndReleaseInventory } from "../../../../lib/reservationLifecycle";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ scheduleId: string }> }
 ) {
   try {
+    const auth = await requireOperationsStaff();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { scheduleId } = await params;
 
     const body = await request.json();
 
     const reason = body.reason ?? "Flight cancelled by airline.";
-
-    //---------------------------------------------------------
-    // Find Flight Schedule
-    //---------------------------------------------------------
 
     const schedule = await prisma.flightSchedule.findUnique({
       where: {
@@ -28,7 +32,6 @@ export async function PATCH(
             destinationAirport: true,
           },
         },
-        bookings: true,
       },
     });
 
@@ -44,10 +47,6 @@ export async function PATCH(
       );
     }
 
-    //---------------------------------------------------------
-    // Already Cancelled
-    //---------------------------------------------------------
-
     if (schedule.status === "CANCELLED") {
       return NextResponse.json(
         {
@@ -59,10 +58,6 @@ export async function PATCH(
         }
       );
     }
-
-    //---------------------------------------------------------
-    // Cannot cancel after arrival
-    //---------------------------------------------------------
 
     if (schedule.status === "ARRIVED") {
       return NextResponse.json(
@@ -76,46 +71,62 @@ export async function PATCH(
       );
     }
 
-    //---------------------------------------------------------
-    // Transaction
-    //---------------------------------------------------------
-
     const result = await prisma.$transaction(async (tx) => {
-      const updatedSchedule =
-        await tx.flightSchedule.update({
-          where: {
-            id: scheduleId,
+      const cancelledSchedule = await tx.flightSchedule.updateMany({
+        where: {
+          id: scheduleId,
+          status: {
+            notIn: ["CANCELLED", "ARRIVED"],
           },
-          data: {
-            status: "CANCELLED",
-          },
-        });
+        },
+        data: {
+          status: "CANCELLED",
+        },
+      });
 
-      const updatedBookings =
-        await tx.booking.updateMany({
-          where: {
-            scheduleId,
+      if (cancelledSchedule.count !== 1) {
+        throw new Error("FLIGHT_ALREADY_CANCELLED");
+      }
+
+      const heldBookings = await tx.booking.findMany({
+        where: {
+          scheduleId,
+          status: {
+            notIn: ["CANCELLED", "REFUNDED", "FAILED"],
+          },
+        },
+        select: {
+          id: true,
+          scheduleId: true,
+          passengersCount: true,
+        },
+      });
+
+      let releasedBookings = 0;
+
+      for (const booking of heldBookings) {
+        const claimed = await claimAndReleaseInventory(tx, {
+          bookingId: booking.id,
+          scheduleId: booking.scheduleId,
+          passengersCount: booking.passengersCount,
+          fromWhere: {
+            id: booking.id,
             status: {
-              notIn: [
-                "CANCELLED",
-                "REFUNDED",
-              ],
+              notIn: ["CANCELLED", "REFUNDED", "FAILED"],
             },
           },
-          data: {
-            status: "CANCELLED",
-          },
+          toStatus: "CANCELLED",
         });
 
+        if (claimed === "won") {
+          releasedBookings += 1;
+        }
+      }
+
       return {
-        updatedSchedule,
-        updatedBookings,
+        releasedBookings,
       };
     });
-
-    //---------------------------------------------------------
-    // Response
-    //---------------------------------------------------------
 
     return NextResponse.json(
       {
@@ -134,8 +145,7 @@ export async function PATCH(
 
           status: "CANCELLED",
 
-          affectedBookings:
-            result.updatedBookings.count,
+          affectedBookings: result.releasedBookings,
         },
       },
       {
@@ -151,6 +161,21 @@ export async function PATCH(
     console.error(
       "================================="
     );
+
+    if (
+      error instanceof Error &&
+      error.message === "FLIGHT_ALREADY_CANCELLED"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Flight has already been cancelled.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
     return NextResponse.json(
       {

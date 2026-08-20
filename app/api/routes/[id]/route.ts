@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import { requireAdmin } from "@/app/lib/authorization";
 
 // =========================
 // GET ROUTE BY ID
@@ -59,6 +60,12 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
 
     const body = await request.json();
@@ -112,6 +119,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
 
     await prisma.flightRoute.delete({

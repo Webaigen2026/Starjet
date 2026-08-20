@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import {
+  authorizeBookingAccess,
+  requireAuthenticatedUser,
+} from "../../../lib/authorization";
+import {
+  expireUnpaidReservation,
+  requestTouchesLifecycleStatus,
+} from "../../../lib/reservationLifecycle";
 
 type RouteProps = {
   params: Promise<{
@@ -16,7 +24,15 @@ export async function GET(
   { params }: RouteProps
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
+
+    await expireUnpaidReservation(prisma, id);
 
     const booking =
       await prisma.booking.findUnique({
@@ -62,6 +78,12 @@ export async function GET(
       );
     }
 
+    const access = authorizeBookingAccess(auth.user, booking);
+
+    if (!access.authorized) {
+      return access.response;
+    }
+
     return NextResponse.json({
       success: true,
       data: booking,
@@ -94,6 +116,12 @@ export async function PATCH(
   { params }: RouteProps
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
 
     const body = await request.json();
@@ -125,6 +153,25 @@ export async function PATCH(
       );
     }
 
+    const access = authorizeBookingAccess(auth.user, existingBooking);
+
+    if (!access.authorized) {
+      return access.response;
+    }
+
+    if (requestTouchesLifecycleStatus(body)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Booking status and paymentStatus cannot be changed on this endpoint. Use the dedicated cancel, confirm, or operations routes.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
     /* =====================================================
        BUILD BOOKING UPDATE
 
@@ -136,35 +183,12 @@ export async function PATCH(
     ===================================================== */
 
     const bookingUpdateData: {
-      status?: typeof existingBooking.status;
-
-      paymentStatus?: typeof existingBooking.paymentStatus;
-
       customerName?: string;
 
       customerEmail?: string;
 
       customerPhone?: string | null;
     } = {};
-
-    /* -----------------------------------------------------
-       EXISTING ADMIN STATUS LOGIC
-    ----------------------------------------------------- */
-
-    if (
-      body.status !== undefined
-    ) {
-      bookingUpdateData.status =
-        body.status;
-    }
-
-    if (
-      body.paymentStatus !==
-      undefined
-    ) {
-      bookingUpdateData.paymentStatus =
-        body.paymentStatus;
-    }
 
     /* -----------------------------------------------------
        CONTACT EDIT LOGIC

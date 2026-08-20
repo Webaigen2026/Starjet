@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import { requireAdmin } from "@/app/lib/authorization";
 
 // =========================
 // GET ALL ROUTES
@@ -85,6 +86,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const body = await request.json();
 
     console.log("========== REQUEST BODY ==========");

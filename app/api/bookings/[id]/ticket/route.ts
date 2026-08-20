@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import {
+  authorizeBookingAccess,
+  requireAuthenticatedUser
+} from "../../../../lib/authorization";
+import { isTicketEligible } from "../../../../lib/ticketAccess";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuthenticatedUser();
+
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id } = await params;
 
     const booking = await prisma.booking.findUnique({
@@ -43,17 +54,19 @@ export async function GET(
       );
     }
 
-    if (
-      booking.status === "DRAFT" ||
-      booking.status === "FAILED" ||
-      booking.status === "CANCELLED"
-    ) {
+    const access = authorizeBookingAccess(auth.user, booking);
+
+    if (!access.authorized) {
+      return access.response;
+    }
+
+    if (!isTicketEligible(booking)) {
       return NextResponse.json(
         {
           success: false,
-          message: "Ticket is not available for this booking.",
+          message: "Booking not found.",
         },
-        { status: 400 }
+        { status: 404 }
       );
     }
 

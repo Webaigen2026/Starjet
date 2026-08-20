@@ -1,4 +1,8 @@
+import { getServerSession } from "next-auth";
+
+import { authOptions } from "../../../api/auth/[...nextauth]/route";
 import { prisma } from "../../../lib/prisma";
+import AdminRefundActions from "./AdminRefundActions";
 import BookingLifecycleActions from "./BookingLifecycleActions";
 
 type BookingDetailsPageProps = {
@@ -11,6 +15,8 @@ export default async function BookingDetailsPage({
   params,
 }: BookingDetailsPageProps) {
   const { id } = await params;
+  const session = await getServerSession(authOptions);
+  const role = (session?.user as { role?: string } | undefined)?.role ?? "";
 
   const booking = await prisma.booking.findUnique({
     where: {
@@ -121,6 +127,17 @@ export default async function BookingDetailsPage({
           <BookingLifecycleActions
             bookingId={booking.id}
             currentStatus={booking.status}
+          />
+          <AdminRefundActions
+            role={role}
+            bookingCode={booking.bookingCode}
+            bookingStatus={booking.status}
+            payments={booking.payments.map((payment) => ({
+              id: payment.id,
+              status: payment.status,
+              amount: String(payment.amount),
+              currency: payment.currency,
+            }))}
           />
 
           <div className="space-y-4">
